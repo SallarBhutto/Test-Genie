@@ -73,8 +73,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/modules", async (req, res) => {
     try {
       console.log("Creating module with data:", req.body);
-      const validatedData = insertModuleSchema.parse(req.body);
-      const module = await storage.createModule(validatedData);
+      
+      // Create module data with required fields
+      const moduleData = {
+        name: req.body.name,
+        description: req.body.description || "",
+        projectId: req.body.projectId,
+        createdBy: req.body.createdBy || 1
+      };
+      
+      console.log("Processed module data:", moduleData);
+      const module = await storage.createModule(moduleData);
       console.log("Module created successfully:", module);
       res.status(201).json(module);
     } catch (error) {
