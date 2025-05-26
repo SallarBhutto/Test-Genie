@@ -197,12 +197,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/test-cases", async (req, res) => {
+    console.log("=== TEST CASE CREATION START ===");
+    console.log("Raw request body:", req.body);
+    
     try {
       const validatedData = insertTestCaseSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
+      
       const testCase = await storage.createTestCase(validatedData);
+      console.log("Test case created successfully:", testCase);
+      
       res.status(201).json(testCase);
     } catch (error) {
-      res.status(400).json({ message: "Invalid test case data" });
+      console.error("=== TEST CASE CREATION ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      
+      res.status(400).json({ 
+        message: "Invalid test case data", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
