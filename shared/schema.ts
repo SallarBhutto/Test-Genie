@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -173,6 +174,152 @@ export const insertRequirementSchema = createInsertSchema(requirements).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+// Types
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  modules: many(modules),
+  components: many(components),
+  testSuites: many(testSuites),
+  testCases: many(testCases),
+  testRuns: many(testRuns),
+  defectsReported: many(defects, { relationName: "reporter" }),
+  defectsAssigned: many(defects, { relationName: "assignee" }),
+  requirements: many(requirements),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [projects.createdBy],
+    references: [users.id],
+  }),
+  modules: many(modules),
+  testSuites: many(testSuites),
+  testRuns: many(testRuns),
+  defects: many(defects),
+  requirements: many(requirements),
+}));
+
+export const modulesRelations = relations(modules, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [modules.projectId],
+    references: [projects.id],
+  }),
+  createdBy: one(users, {
+    fields: [modules.createdBy],
+    references: [users.id],
+  }),
+  components: many(components),
+  testSuites: many(testSuites),
+}));
+
+export const componentsRelations = relations(components, ({ one, many }) => ({
+  module: one(modules, {
+    fields: [components.moduleId],
+    references: [modules.id],
+  }),
+  createdBy: one(users, {
+    fields: [components.createdBy],
+    references: [users.id],
+  }),
+  testSuites: many(testSuites),
+}));
+
+export const testSuitesRelations = relations(testSuites, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [testSuites.projectId],
+    references: [projects.id],
+  }),
+  module: one(modules, {
+    fields: [testSuites.moduleId],
+    references: [modules.id],
+  }),
+  component: one(components, {
+    fields: [testSuites.componentId],
+    references: [components.id],
+  }),
+  createdBy: one(users, {
+    fields: [testSuites.createdBy],
+    references: [users.id],
+  }),
+  testCases: many(testCases),
+}));
+
+export const testCasesRelations = relations(testCases, ({ one, many }) => ({
+  testSuite: one(testSuites, {
+    fields: [testCases.testSuiteId],
+    references: [testSuites.id],
+  }),
+  createdBy: one(users, {
+    fields: [testCases.createdBy],
+    references: [users.id],
+  }),
+  assignedTo: one(users, {
+    fields: [testCases.assignedTo],
+    references: [users.id],
+  }),
+  testRunResults: many(testRunResults),
+}));
+
+export const testRunsRelations = relations(testRuns, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [testRuns.projectId],
+    references: [projects.id],
+  }),
+  createdBy: one(users, {
+    fields: [testRuns.createdBy],
+    references: [users.id],
+  }),
+  testRunResults: many(testRunResults),
+}));
+
+export const testRunResultsRelations = relations(testRunResults, ({ one }) => ({
+  testCase: one(testCases, {
+    fields: [testRunResults.testCaseId],
+    references: [testCases.id],
+  }),
+  testRun: one(testRuns, {
+    fields: [testRunResults.testRunId],
+    references: [testRuns.id],
+  }),
+  executedBy: one(users, {
+    fields: [testRunResults.executedBy],
+    references: [users.id],
+  }),
+}));
+
+export const defectsRelations = relations(defects, ({ one }) => ({
+  project: one(projects, {
+    fields: [defects.projectId],
+    references: [projects.id],
+  }),
+  testCase: one(testCases, {
+    fields: [defects.testCaseId],
+    references: [testCases.id],
+  }),
+  reportedBy: one(users, {
+    fields: [defects.reportedBy],
+    references: [users.id],
+    relationName: "reporter",
+  }),
+  assignedTo: one(users, {
+    fields: [defects.assignedTo],
+    references: [users.id],
+    relationName: "assignee",
+  }),
+}));
+
+export const requirementsRelations = relations(requirements, ({ one }) => ({
+  project: one(projects, {
+    fields: [requirements.projectId],
+    references: [projects.id],
+  }),
+  createdBy: one(users, {
+    fields: [requirements.createdBy],
+    references: [users.id],
+  }),
+}));
 
 // Types
 export type User = typeof users.$inferSelect;

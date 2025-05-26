@@ -6,6 +6,8 @@ import {
   type TestRun, type InsertTestRun, type TestRunResult, type InsertTestRunResult,
   type Defect, type InsertDefect, type Requirement, type InsertRequirement
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -591,4 +593,318 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getProjects(): Promise<Project[]> {
+    return await db.select().from(projects);
+  }
+
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+
+  async updateProject(id: number, projectUpdate: Partial<Project>): Promise<Project | undefined> {
+    const [project] = await db
+      .update(projects)
+      .set(projectUpdate)
+      .where(eq(projects.id, id))
+      .returning();
+    return project || undefined;
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    const result = await db.delete(projects).where(eq(projects.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getModules(projectId?: number): Promise<Module[]> {
+    if (projectId) {
+      return await db.select().from(modules).where(eq(modules.projectId, projectId));
+    }
+    return await db.select().from(modules);
+  }
+
+  async getModule(id: number): Promise<Module | undefined> {
+    const [module] = await db.select().from(modules).where(eq(modules.id, id));
+    return module || undefined;
+  }
+
+  async createModule(insertModule: InsertModule): Promise<Module> {
+    const [module] = await db
+      .insert(modules)
+      .values(insertModule)
+      .returning();
+    return module;
+  }
+
+  async updateModule(id: number, moduleUpdate: Partial<Module>): Promise<Module | undefined> {
+    const [module] = await db
+      .update(modules)
+      .set(moduleUpdate)
+      .where(eq(modules.id, id))
+      .returning();
+    return module || undefined;
+  }
+
+  async deleteModule(id: number): Promise<boolean> {
+    const result = await db.delete(modules).where(eq(modules.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getComponents(moduleId?: number): Promise<Component[]> {
+    if (moduleId) {
+      return await db.select().from(components).where(eq(components.moduleId, moduleId));
+    }
+    return await db.select().from(components);
+  }
+
+  async getComponent(id: number): Promise<Component | undefined> {
+    const [component] = await db.select().from(components).where(eq(components.id, id));
+    return component || undefined;
+  }
+
+  async createComponent(insertComponent: InsertComponent): Promise<Component> {
+    const [component] = await db
+      .insert(components)
+      .values(insertComponent)
+      .returning();
+    return component;
+  }
+
+  async updateComponent(id: number, componentUpdate: Partial<Component>): Promise<Component | undefined> {
+    const [component] = await db
+      .update(components)
+      .set(componentUpdate)
+      .where(eq(components.id, id))
+      .returning();
+    return component || undefined;
+  }
+
+  async deleteComponent(id: number): Promise<boolean> {
+    const result = await db.delete(components).where(eq(components.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getTestSuites(projectId?: number): Promise<TestSuite[]> {
+    if (projectId) {
+      return await db.select().from(testSuites).where(eq(testSuites.projectId, projectId));
+    }
+    return await db.select().from(testSuites);
+  }
+
+  async getTestSuite(id: number): Promise<TestSuite | undefined> {
+    const [testSuite] = await db.select().from(testSuites).where(eq(testSuites.id, id));
+    return testSuite || undefined;
+  }
+
+  async createTestSuite(insertTestSuite: InsertTestSuite): Promise<TestSuite> {
+    const [testSuite] = await db
+      .insert(testSuites)
+      .values(insertTestSuite)
+      .returning();
+    return testSuite;
+  }
+
+  async updateTestSuite(id: number, testSuiteUpdate: Partial<TestSuite>): Promise<TestSuite | undefined> {
+    const [testSuite] = await db
+      .update(testSuites)
+      .set(testSuiteUpdate)
+      .where(eq(testSuites.id, id))
+      .returning();
+    return testSuite || undefined;
+  }
+
+  async deleteTestSuite(id: number): Promise<boolean> {
+    const result = await db.delete(testSuites).where(eq(testSuites.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getTestCases(testSuiteId?: number): Promise<TestCase[]> {
+    if (testSuiteId) {
+      return await db.select().from(testCases).where(eq(testCases.testSuiteId, testSuiteId));
+    }
+    return await db.select().from(testCases);
+  }
+
+  async getTestCase(id: number): Promise<TestCase | undefined> {
+    const [testCase] = await db.select().from(testCases).where(eq(testCases.id, id));
+    return testCase || undefined;
+  }
+
+  async createTestCase(insertTestCase: InsertTestCase): Promise<TestCase> {
+    const [testCase] = await db
+      .insert(testCases)
+      .values(insertTestCase)
+      .returning();
+    return testCase;
+  }
+
+  async updateTestCase(id: number, testCaseUpdate: Partial<TestCase>): Promise<TestCase | undefined> {
+    const [testCase] = await db
+      .update(testCases)
+      .set(testCaseUpdate)
+      .where(eq(testCases.id, id))
+      .returning();
+    return testCase || undefined;
+  }
+
+  async deleteTestCase(id: number): Promise<boolean> {
+    const result = await db.delete(testCases).where(eq(testCases.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getTestRuns(projectId?: number): Promise<TestRun[]> {
+    if (projectId) {
+      return await db.select().from(testRuns).where(eq(testRuns.projectId, projectId));
+    }
+    return await db.select().from(testRuns);
+  }
+
+  async getTestRun(id: number): Promise<TestRun | undefined> {
+    const [testRun] = await db.select().from(testRuns).where(eq(testRuns.id, id));
+    return testRun || undefined;
+  }
+
+  async createTestRun(insertTestRun: InsertTestRun): Promise<TestRun> {
+    const [testRun] = await db
+      .insert(testRuns)
+      .values(insertTestRun)
+      .returning();
+    return testRun;
+  }
+
+  async updateTestRun(id: number, testRunUpdate: Partial<TestRun>): Promise<TestRun | undefined> {
+    const [testRun] = await db
+      .update(testRuns)
+      .set(testRunUpdate)
+      .where(eq(testRuns.id, id))
+      .returning();
+    return testRun || undefined;
+  }
+
+  async deleteTestRun(id: number): Promise<boolean> {
+    const result = await db.delete(testRuns).where(eq(testRuns.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getTestRunResults(testRunId: number): Promise<TestRunResult[]> {
+    return await db.select().from(testRunResults).where(eq(testRunResults.testRunId, testRunId));
+  }
+
+  async createTestRunResult(insertResult: InsertTestRunResult): Promise<TestRunResult> {
+    const [result] = await db
+      .insert(testRunResults)
+      .values(insertResult)
+      .returning();
+    return result;
+  }
+
+  async updateTestRunResult(id: number, resultUpdate: Partial<TestRunResult>): Promise<TestRunResult | undefined> {
+    const [result] = await db
+      .update(testRunResults)
+      .set(resultUpdate)
+      .where(eq(testRunResults.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async getDefects(projectId?: number): Promise<Defect[]> {
+    if (projectId) {
+      return await db.select().from(defects).where(eq(defects.projectId, projectId));
+    }
+    return await db.select().from(defects);
+  }
+
+  async getDefect(id: number): Promise<Defect | undefined> {
+    const [defect] = await db.select().from(defects).where(eq(defects.id, id));
+    return defect || undefined;
+  }
+
+  async createDefect(insertDefect: InsertDefect): Promise<Defect> {
+    const [defect] = await db
+      .insert(defects)
+      .values(insertDefect)
+      .returning();
+    return defect;
+  }
+
+  async updateDefect(id: number, defectUpdate: Partial<Defect>): Promise<Defect | undefined> {
+    const [defect] = await db
+      .update(defects)
+      .set(defectUpdate)
+      .where(eq(defects.id, id))
+      .returning();
+    return defect || undefined;
+  }
+
+  async deleteDefect(id: number): Promise<boolean> {
+    const result = await db.delete(defects).where(eq(defects.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getRequirements(projectId?: number): Promise<Requirement[]> {
+    if (projectId) {
+      return await db.select().from(requirements).where(eq(requirements.projectId, projectId));
+    }
+    return await db.select().from(requirements);
+  }
+
+  async getRequirement(id: number): Promise<Requirement | undefined> {
+    const [requirement] = await db.select().from(requirements).where(eq(requirements.id, id));
+    return requirement || undefined;
+  }
+
+  async createRequirement(insertRequirement: InsertRequirement): Promise<Requirement> {
+    const [requirement] = await db
+      .insert(requirements)
+      .values(insertRequirement)
+      .returning();
+    return requirement;
+  }
+
+  async updateRequirement(id: number, requirementUpdate: Partial<Requirement>): Promise<Requirement | undefined> {
+    const [requirement] = await db
+      .update(requirements)
+      .set(requirementUpdate)
+      .where(eq(requirements.id, id))
+      .returning();
+    return requirement || undefined;
+  }
+
+  async deleteRequirement(id: number): Promise<boolean> {
+    const result = await db.delete(requirements).where(eq(requirements.id, id));
+    return result.rowCount > 0;
+  }
+}
+
+export const storage = new DatabaseStorage();
