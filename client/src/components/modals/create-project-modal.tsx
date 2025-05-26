@@ -40,11 +40,15 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return apiRequest("/api/projects", {
+      const response = await fetch("/api/projects", {
         method: "POST",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
       });
+      if (!response.ok) {
+        throw new Error("Failed to create project");
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });

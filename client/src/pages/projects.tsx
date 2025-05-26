@@ -1,12 +1,19 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, FolderOpen, Users, FileText } from "lucide-react";
+import CreateProjectModal from "@/components/modals/create-project-modal";
+import { getQueryFn } from "@/lib/queryClient";
+import type { Project } from "@shared/schema";
 
 export default function Projects() {
-  const { data: projects, isLoading } = useQuery({
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  
+  const { data: projects = [], isLoading } = useQuery({
     queryKey: ["/api/projects"],
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   if (isLoading) {
@@ -36,14 +43,14 @@ export default function Projects() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Projects</h1>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects?.map((project: any) => (
+        {(projects as Project[])?.map((project) => (
           <Card key={project.id} className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -81,6 +88,11 @@ export default function Projects() {
           </Card>
         ))}
       </div>
+
+      <CreateProjectModal 
+        open={createModalOpen} 
+        onOpenChange={setCreateModalOpen} 
+      />
     </div>
   );
 }
