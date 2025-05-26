@@ -8,12 +8,16 @@ import {
   Bug, 
   FileCheck, 
   TrendingUp, 
-  Users 
+  Users,
+  Package,
+  Layers
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
+  { name: "Modules", href: "/modules", icon: Package },
+  { name: "Components", href: "/components", icon: Layers },
   { name: "Test Cases", href: "/test-cases", icon: FileText },
   { name: "Test Runs", href: "/test-runs", icon: Play },
   { name: "Defects", href: "/defects", icon: Bug },
