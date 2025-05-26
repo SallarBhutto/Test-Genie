@@ -61,11 +61,14 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
         }),
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok && response.status !== 200) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to create module");
+      
+      // Accept both 200 and 201 as success
+      if (response.status >= 200 && response.status < 300) {
+        return response.json();
       }
-      return response.json();
+      
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to create module");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/modules"] });

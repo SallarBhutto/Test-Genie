@@ -63,11 +63,13 @@ export default function CreateComponentModal({ open, onOpenChange, modules }: Cr
         }),
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok && response.status !== 200) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to create component");
+      // Accept both 200 and 201 as success
+      if (response.status >= 200 && response.status < 300) {
+        return response.json();
       }
-      return response.json();
+      
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to create component");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/components"] });
