@@ -483,7 +483,13 @@ export class MemStorage implements IStorage {
     const testRun = this.testRuns.get(id);
     if (!testRun) return undefined;
     
-    const updatedTestRun = { ...testRun, ...testRunUpdate };
+    // Convert string dates to Date objects
+    const processedUpdate = { ...testRunUpdate };
+    if (processedUpdate.completedAt && typeof processedUpdate.completedAt === 'string') {
+      processedUpdate.completedAt = new Date(processedUpdate.completedAt);
+    }
+    
+    const updatedTestRun = { ...testRun, ...processedUpdate };
     this.testRuns.set(id, updatedTestRun);
     return updatedTestRun;
   }
