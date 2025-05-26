@@ -146,8 +146,8 @@ export default function TestRunExecute() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Status</p>
-                <Badge className={getStatusColor(testRun.status)}>
-                  {testRun.status?.toUpperCase() || 'PENDING'}
+                <Badge className={getStatusColor(testRun?.status || 'pending')}>
+                  {testRun?.status?.toUpperCase() || 'PENDING'}
                 </Badge>
               </div>
               <div>
