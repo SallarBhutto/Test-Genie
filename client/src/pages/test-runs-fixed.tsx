@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Play, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 
 export default function TestRuns() {
@@ -21,8 +21,7 @@ export default function TestRuns() {
   };
 
   const handleViewClick = (id: number) => {
-    console.log("VIEW DETAILS CLICKED FOR:", id);
-    alert(`View Details clicked for test run ${id}`);
+    setLocation(`/test-runs/${id}/results`);
   };
 
   if (isLoading) {
@@ -59,7 +58,8 @@ export default function TestRuns() {
                     variant="outline"
                     onClick={() => handleViewClick(testRun.id)}
                   >
-                    View Details
+                    <Eye className="w-3 h-3 mr-1" />
+                    View Results
                   </Button>
                   <Button 
                     size="sm"

@@ -41,6 +41,9 @@ export default function TestRunExecute() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/test-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/test-runs', testRunId] });
+      // Navigate back after successful update
+      setLocation('/test-runs');
     }
   });
 
@@ -87,9 +90,6 @@ export default function TestRunExecute() {
       status,
       completedAt: status === 'completed' ? new Date().toISOString() : null
     });
-
-    // Navigate back to test runs page after successful update
-    setLocation('/test-runs');
   };
 
   if (testRunLoading || testCasesLoading) {
