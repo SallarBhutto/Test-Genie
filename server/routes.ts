@@ -300,9 +300,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test-run-results/:testRunId", async (req, res) => {
     try {
       const testRunId = parseInt(req.params.testRunId);
+      console.log("Fetching test run results for testRunId:", testRunId);
       const results = await storage.getTestRunResults(testRunId);
+      console.log("Found results:", results);
       res.json(results);
     } catch (error) {
+      console.error("Error fetching test run results:", error);
       res.status(500).json({ message: "Failed to fetch test run results" });
     }
   });

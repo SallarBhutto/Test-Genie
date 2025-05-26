@@ -17,7 +17,7 @@ export default function TestRunResults() {
   });
 
   const { data: results, isLoading: resultsLoading } = useQuery<TestRunResult[]>({
-    queryKey: ['/api/test-run-results', testRunId],
+    queryKey: [`/api/test-run-results/${testRunId}`],
     enabled: !!testRunId
   });
 
