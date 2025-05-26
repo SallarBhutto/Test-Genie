@@ -5,13 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
+import ExecuteTestRunModal from "@/components/modals/execute-test-run-modal";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showExecuteModal, setShowExecuteModal] = useState(false);
+  const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
   
   const { data: testRuns, isLoading } = useQuery({
     queryKey: ["/api/test-runs"],
   });
+
+  const handleViewDetails = (testRunId: number) => {
+    // Navigate to test run details page
+    window.location.href = `/test-runs/${testRunId}`;
+  };
+
+  const handleExecuteTestRun = (testRunId: number) => {
+    setSelectedTestRunId(testRunId);
+    setShowExecuteModal(true);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -96,10 +109,17 @@ export default function TestRuns() {
                     <span>Project: {testRun.projectId}</span>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewDetails(testRun.id)}
+                    >
                       View Details
                     </Button>
-                    <Button size="sm">
+                    <Button 
+                      size="sm"
+                      onClick={() => handleExecuteTestRun(testRun.id)}
+                    >
                       <Play className="w-3 h-3 mr-1" />
                       Execute
                     </Button>
@@ -201,6 +221,12 @@ export default function TestRuns() {
       <CreateTestRunModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
+      />
+      
+      <ExecuteTestRunModal
+        open={showExecuteModal}
+        onOpenChange={setShowExecuteModal}
+        testRunId={selectedTestRunId}
       />
     </div>
   );

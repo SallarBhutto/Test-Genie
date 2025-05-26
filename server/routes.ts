@@ -321,6 +321,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Run Results
+  app.get("/api/test-run-results/:testRunId", async (req, res) => {
+    try {
+      const testRunId = parseInt(req.params.testRunId);
+      const results = await storage.getTestRunResults(testRunId);
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching test run results:", error);
+      res.status(500).json({ error: "Failed to fetch test run results" });
+    }
+  });
+
+  app.post("/api/test-run-results", async (req, res) => {
+    try {
+      const validatedData = insertTestRunResultSchema.parse(req.body);
+      const result = await storage.createTestRunResult(validatedData);
+      res.status(201).json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating test run result:", error);
+      res.status(500).json({ error: "Failed to create test run result" });
+    }
+  });
+
+  app.patch("/api/test-run-results/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.updateTestRunResult(id, req.body);
+      if (!result) {
+        return res.status(404).json({ error: "Test run result not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating test run result:", error);
+      res.status(500).json({ error: "Failed to update test run result" });
+    }
+  });
+
   // Dashboard Statistics
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
