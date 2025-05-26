@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
+import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 
 export default function TestRuns() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   const { data: testRuns, isLoading } = useQuery({
     queryKey: ["/api/test-runs"],
   });
@@ -38,7 +42,7 @@ export default function TestRuns() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Test Runs</h1>
-          <Button>
+          <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Test Run
           </Button>
@@ -60,7 +64,7 @@ export default function TestRuns() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Runs</h1>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Test Run
         </Button>
@@ -167,6 +171,11 @@ export default function TestRuns() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateTestRunModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+      />
     </div>
   );
 }
