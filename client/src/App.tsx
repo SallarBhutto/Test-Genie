@@ -13,6 +13,7 @@ import ComponentDetail from "@/pages/component-detail";
 import TestCases from "@/pages/test-cases";
 import TestRunsFixed from "@/pages/test-runs-fixed";
 import TestRunExecute from "@/pages/test-run-execute";
+import TestRunResults from "@/pages/test-run-results";
 import Defects from "@/pages/defects";
 import Requirements from "@/pages/requirements";
 import Reports from "@/pages/reports";
@@ -41,6 +42,7 @@ function Router() {
             <Route path="/test-cases" component={TestCases} />
             <Route path="/test-runs" component={TestRunsFixed} />
             <Route path="/test-runs/:id/execute" component={TestRunExecute} />
+            <Route path="/test-runs/:id/results" component={TestRunResults} />
             <Route path="/defects" component={Defects} />
             <Route path="/requirements" component={Requirements} />
             <Route path="/reports" component={Reports} />

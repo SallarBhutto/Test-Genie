@@ -268,6 +268,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/test-runs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const testRun = await storage.getTestRun(id);
+      if (!testRun) {
+        return res.status(404).json({ message: "Test run not found" });
+      }
+      res.json(testRun);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch test run" });
+    }
+  });
+
+  app.patch("/api/test-runs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const testRun = await storage.updateTestRun(id, req.body);
+      if (!testRun) {
+        return res.status(404).json({ message: "Test run not found" });
+      }
+      res.json(testRun);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update test run" });
+    }
+  });
+
+  // Test Run Results
+  app.get("/api/test-run-results/:testRunId", async (req, res) => {
+    try {
+      const testRunId = parseInt(req.params.testRunId);
+      const results = await storage.getTestRunResults(testRunId);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch test run results" });
+    }
+  });
+
+  app.post("/api/test-run-results", async (req, res) => {
+    try {
+      const validatedData = insertTestRunResultSchema.parse(req.body);
+      const result = await storage.createTestRunResult(validatedData);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid test run result data" });
+    }
+  });
+
   // Defects
   app.get("/api/defects", async (req, res) => {
     try {
