@@ -5,8 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
+import ProjectDetail from "@/pages/project-detail";
 import Modules from "@/pages/modules";
+import ModuleDetail from "@/pages/module-detail";
 import Components from "@/pages/components";
+import ComponentDetail from "@/pages/component-detail";
 import TestCases from "@/pages/test-cases";
 import TestRuns from "@/pages/test-runs";
 import Defects from "@/pages/defects";
@@ -27,9 +30,12 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/projects" component={Projects} />
+            <Route path="/projects/:id" component={ProjectDetail} />
             <Route path="/modules" component={Modules} />
+            <Route path="/modules/:id" component={ModuleDetail} />
             <Route path="/modules/:moduleId/components" component={Components} />
             <Route path="/components" component={Components} />
+            <Route path="/components/:id" component={ComponentDetail} />
             <Route path="/components/:componentId/test-cases" component={TestCases} />
             <Route path="/test-cases" component={TestCases} />
             <Route path="/test-runs" component={TestRuns} />
