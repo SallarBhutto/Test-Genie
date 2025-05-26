@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
-import ExecuteTestRunModal from "@/components/modals/execute-test-run-modal";
+import SimpleExecuteModal from "@/components/modals/simple-execute-modal";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -223,7 +224,7 @@ export default function TestRuns() {
         onOpenChange={setShowCreateModal}
       />
       
-      <ExecuteTestRunModal
+      <SimpleExecuteModal
         open={showExecuteModal}
         onOpenChange={setShowExecuteModal}
         testRunId={selectedTestRunId}

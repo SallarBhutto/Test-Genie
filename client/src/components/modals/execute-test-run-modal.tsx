@@ -39,15 +39,16 @@ export default function ExecuteTestRunModal({ open, onOpenChange, testRunId }: E
 
   const updateResultMutation = useMutation({
     mutationFn: async (data: { testCaseId: number; status: string; notes: string }) => {
-      return apiRequest("/api/test-run-results", {
+      return fetch("/api/test-run-results", {
         method: "POST",
-        body: {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           testRunId,
           testCaseId: data.testCaseId,
           status: data.status,
           notes: data.notes,
           executedBy: 1, // Current user ID
-        },
+        }),
       });
     },
     onSuccess: () => {
