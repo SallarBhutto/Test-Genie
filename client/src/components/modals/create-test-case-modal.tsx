@@ -457,7 +457,7 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {testSuites?.map((suite: any) => (
+                        {(testSuites as any[])?.map((suite) => (
                           <SelectItem key={suite.id} value={suite.id.toString()}>
                             {suite.name}
                           </SelectItem>
