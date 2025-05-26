@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
-import SimpleExecuteModal from "@/components/modals/simple-execute-modal";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showExecuteModal, setShowExecuteModal] = useState(false);
-  const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
+  const [, setLocation] = useLocation();
 
   const { data: testRuns, isLoading } = useQuery({
     queryKey: ['/api/test-runs']
@@ -18,9 +17,7 @@ export default function TestRuns() {
 
   const handleExecuteClick = (id: number) => {
     console.log("EXECUTE CLICKED FOR:", id);
-    alert(`Execute clicked for test run ${id}`);
-    setSelectedTestRunId(id);
-    setShowExecuteModal(true);
+    setLocation(`/test-runs/${id}/execute`);
   };
 
   const handleViewClick = (id: number) => {
@@ -82,14 +79,6 @@ export default function TestRuns() {
         <CreateTestRunModal
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
-        />
-      )}
-      
-      {showExecuteModal && (
-        <SimpleExecuteModal
-          open={showExecuteModal}
-          onOpenChange={setShowExecuteModal}
-          testRunId={selectedTestRunId}
         />
       )}
     </div>
