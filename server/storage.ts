@@ -804,12 +804,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTestRun(id: number, testRunUpdate: Partial<TestRun>): Promise<TestRun | undefined> {
-    const [testRun] = await db
-      .update(testRuns)
-      .set(testRunUpdate)
-      .where(eq(testRuns.id, id))
-      .returning();
-    return testRun || undefined;
+    try {
+      console.log("Database updateTestRun called with:", { id, testRunUpdate });
+      
+      // Convert ISO string to Date object if completedAt is provided
+      if (testRunUpdate.completedAt && typeof testRunUpdate.completedAt === 'string') {
+        testRunUpdate.completedAt = new Date(testRunUpdate.completedAt);
+      }
+      
+      const [testRun] = await db
+        .update(testRuns)
+        .set(testRunUpdate)
+        .where(eq(testRuns.id, id))
+        .returning();
+      
+      console.log("Database updateTestRun result:", testRun);
+      return testRun || undefined;
+    } catch (error) {
+      console.error("Database updateTestRun error:", error);
+      throw error;
+    }
   }
 
   async deleteTestRun(id: number): Promise<boolean> {

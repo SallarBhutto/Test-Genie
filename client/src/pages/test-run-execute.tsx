@@ -105,10 +105,12 @@ export default function TestRunExecute() {
       }
 
       // Update the test run status and redirect
-      updateTestRunMutation.mutate({
-        status,
-        completedAt: status === 'completed' ? new Date().toISOString() : null
-      });
+      const updateData: any = { status };
+      if (status === 'completed') {
+        updateData.completedAt = new Date().toISOString();
+      }
+      
+      updateTestRunMutation.mutate(updateData);
     } catch (error) {
       console.error('Failed to save test results:', error);
       alert('Failed to save test results. Please try again.');
