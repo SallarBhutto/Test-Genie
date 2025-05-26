@@ -21,6 +21,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -47,9 +51,14 @@ interface CreateTestRunModalProps {
 export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRunModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
+  });
+
+  const { data: testCases } = useQuery({
+    queryKey: ["/api/test-cases"],
   });
 
   const form = useForm<FormData>({
@@ -186,6 +195,70 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                 </FormItem>
               )}
             />
+
+            {/* Test Case Selection Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <FormLabel>Select Test Cases</FormLabel>
+                <Badge variant="secondary">
+                  {selectedTestCases.length} selected
+                </Badge>
+              </div>
+              <ScrollArea className="h-48 border rounded-md p-3">
+                {(testCases as any[])?.length > 0 ? (
+                  <div className="space-y-2">
+                    {(testCases as any[]).map((testCase) => (
+                      <div key={testCase.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`testcase-${testCase.id}`}
+                          checked={selectedTestCases.includes(testCase.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTestCases([...selectedTestCases, testCase.id]);
+                            } else {
+                              setSelectedTestCases(selectedTestCases.filter(id => id !== testCase.id));
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`testcase-${testCase.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{testCase.testCaseId}: {testCase.title}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {testCase.priority}
+                            </Badge>
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedTestCases((testCases as any[])?.map(tc => tc.id) || [])}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedTestCases([])}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-500 text-center py-4">
+                    No test cases available. Create test cases first.
+                  </p>
+                )}
+              </ScrollArea>
+            </div>
 
             <DialogFooter>
               <Button 

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 
@@ -94,7 +93,16 @@ export default function TestRuns() {
                   </p>
                   <div className="flex justify-between text-xs text-neutral-500">
                     <span>Created: {new Date(testRun.createdAt).toLocaleDateString()}</span>
-                    <span>Project ID: {testRun.projectId}</span>
+                    <span>Project: {testRun.projectId}</span>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" variant="outline">
+                      View Details
+                    </Button>
+                    <Button size="sm">
+                      <Play className="w-3 h-3 mr-1" />
+                      Execute
+                    </Button>
                   </div>
                 </div>
               </CardContent>
