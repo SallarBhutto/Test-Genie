@@ -155,12 +155,36 @@ export class MemStorage implements IStorage {
     };
     this.projects.set(project1.id, project1);
 
+    // Seed modules
+    const module1: Module = {
+      id: this.currentId++,
+      name: "Authentication Module",
+      description: "User authentication and authorization functionality",
+      projectId: project1.id,
+      createdBy: user1.id,
+      createdAt: new Date(),
+    };
+    this.modules.set(module1.id, module1);
+
+    // Seed components
+    const component1: Component = {
+      id: this.currentId++,
+      name: "Login Component",
+      description: "User login interface and validation",
+      moduleId: module1.id,
+      createdBy: user1.id,
+      createdAt: new Date(),
+    };
+    this.components.set(component1.id, component1);
+
     // Seed test suite
     const testSuite1: TestSuite = {
       id: this.currentId++,
       name: "Login Module",
       description: "Authentication and login functionality tests",
       projectId: project1.id,
+      moduleId: module1.id,
+      componentId: component1.id,
       createdBy: user1.id,
       createdAt: new Date(),
     };
@@ -286,6 +310,80 @@ export class MemStorage implements IStorage {
 
   async deleteProject(id: number): Promise<boolean> {
     return this.projects.delete(id);
+  }
+
+  // Modules
+  async getModules(projectId?: number): Promise<Module[]> {
+    const allModules = Array.from(this.modules.values());
+    if (projectId) {
+      return allModules.filter(module => module.projectId === projectId);
+    }
+    return allModules;
+  }
+
+  async getModule(id: number): Promise<Module | undefined> {
+    return this.modules.get(id);
+  }
+
+  async createModule(insertModule: InsertModule): Promise<Module> {
+    const module: Module = {
+      id: this.currentId++,
+      ...insertModule,
+      description: insertModule.description || null,
+      createdAt: new Date(),
+    };
+    this.modules.set(module.id, module);
+    return module;
+  }
+
+  async updateModule(id: number, moduleUpdate: Partial<Module>): Promise<Module | undefined> {
+    const module = this.modules.get(id);
+    if (!module) return undefined;
+    
+    const updatedModule = { ...module, ...moduleUpdate };
+    this.modules.set(id, updatedModule);
+    return updatedModule;
+  }
+
+  async deleteModule(id: number): Promise<boolean> {
+    return this.modules.delete(id);
+  }
+
+  // Components
+  async getComponents(moduleId?: number): Promise<Component[]> {
+    const allComponents = Array.from(this.components.values());
+    if (moduleId) {
+      return allComponents.filter(component => component.moduleId === moduleId);
+    }
+    return allComponents;
+  }
+
+  async getComponent(id: number): Promise<Component | undefined> {
+    return this.components.get(id);
+  }
+
+  async createComponent(insertComponent: InsertComponent): Promise<Component> {
+    const component: Component = {
+      id: this.currentId++,
+      ...insertComponent,
+      description: insertComponent.description || null,
+      createdAt: new Date(),
+    };
+    this.components.set(component.id, component);
+    return component;
+  }
+
+  async updateComponent(id: number, componentUpdate: Partial<Component>): Promise<Component | undefined> {
+    const component = this.components.get(id);
+    if (!component) return undefined;
+    
+    const updatedComponent = { ...component, ...componentUpdate };
+    this.components.set(id, updatedComponent);
+    return updatedComponent;
+  }
+
+  async deleteComponent(id: number): Promise<boolean> {
+    return this.components.delete(id);
   }
 
   // Test Suites
