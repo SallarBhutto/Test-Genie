@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema } from "@shared/schema";
+import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertModuleSchema, insertComponentSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -56,6 +56,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(project);
     } catch (error) {
       res.status(400).json({ message: "Invalid project data" });
+    }
+  });
+
+  // Modules
+  app.get("/api/modules", async (req, res) => {
+    try {
+      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const modules = await storage.getModules(projectId);
+      res.json(modules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch modules" });
+    }
+  });
+
+  app.post("/api/modules", async (req, res) => {
+    try {
+      const validatedData = insertModuleSchema.parse(req.body);
+      const module = await storage.createModule(validatedData);
+      res.status(201).json(module);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid module data" });
+    }
+  });
+
+  // Components
+  app.get("/api/components", async (req, res) => {
+    try {
+      const moduleId = req.query.moduleId ? parseInt(req.query.moduleId as string) : undefined;
+      const components = await storage.getComponents(moduleId);
+      res.json(components);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch components" });
+    }
+  });
+
+  app.post("/api/components", async (req, res) => {
+    try {
+      const validatedData = insertComponentSchema.parse(req.body);
+      const component = await storage.createComponent(validatedData);
+      res.status(201).json(component);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid component data" });
     }
   });
 

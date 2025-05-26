@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Component } from "lucide-react";
 import { Link } from "wouter";
+import CreateModuleModal from "@/components/modals/create-module-modal";
 import type { Module, Project } from "@shared/schema";
 
 export default function Modules() {
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
   });
@@ -43,7 +46,7 @@ export default function Modules() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Modules</h1>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Module
         </Button>
@@ -126,6 +129,12 @@ export default function Modules() {
           </Link>
         </div>
       )}
+
+      <CreateModuleModal 
+        open={createModalOpen} 
+        onOpenChange={setCreateModalOpen}
+        projects={projects as Project[]}
+      />
     </div>
   );
 }
