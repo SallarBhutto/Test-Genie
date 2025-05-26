@@ -22,11 +22,31 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const modules = pgTable("modules", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const components = pgTable("components", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  moduleId: integer("module_id").references(() => modules.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const testSuites = pgTable("test_suites", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   projectId: integer("project_id").references(() => projects.id).notNull(),
+  moduleId: integer("module_id").references(() => modules.id),
+  componentId: integer("component_id").references(() => components.id),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -111,6 +131,16 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
+export const insertModuleSchema = createInsertSchema(modules).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertComponentSchema = createInsertSchema(components).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTestSuiteSchema = createInsertSchema(testSuites).omit({
   id: true,
   createdAt: true,
@@ -149,6 +179,10 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Module = typeof modules.$inferSelect;
+export type InsertModule = z.infer<typeof insertModuleSchema>;
+export type Component = typeof components.$inferSelect;
+export type InsertComponent = z.infer<typeof insertComponentSchema>;
 export type TestSuite = typeof testSuites.$inferSelect;
 export type InsertTestSuite = z.infer<typeof insertTestSuiteSchema>;
 export type TestCase = typeof testCases.$inferSelect;

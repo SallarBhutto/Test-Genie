@@ -1,6 +1,7 @@
 import {
-  users, projects, testSuites, testCases, testRuns, testRunResults, defects, requirements,
+  users, projects, modules, components, testSuites, testCases, testRuns, testRunResults, defects, requirements,
   type User, type InsertUser, type Project, type InsertProject,
+  type Module, type InsertModule, type Component, type InsertComponent,
   type TestSuite, type InsertTestSuite, type TestCase, type InsertTestCase,
   type TestRun, type InsertTestRun, type TestRunResult, type InsertTestRunResult,
   type Defect, type InsertDefect, type Requirement, type InsertRequirement
@@ -19,6 +20,20 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<Project>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
+
+  // Modules
+  getModules(projectId?: number): Promise<Module[]>;
+  getModule(id: number): Promise<Module | undefined>;
+  createModule(module: InsertModule): Promise<Module>;
+  updateModule(id: number, module: Partial<Module>): Promise<Module | undefined>;
+  deleteModule(id: number): Promise<boolean>;
+
+  // Components
+  getComponents(moduleId?: number): Promise<Component[]>;
+  getComponent(id: number): Promise<Component | undefined>;
+  createComponent(component: InsertComponent): Promise<Component>;
+  updateComponent(id: number, component: Partial<Component>): Promise<Component | undefined>;
+  deleteComponent(id: number): Promise<boolean>;
 
   // Test Suites
   getTestSuites(projectId?: number): Promise<TestSuite[]>;
@@ -64,6 +79,8 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User> = new Map();
   private projects: Map<number, Project> = new Map();
+  private modules: Map<number, Module> = new Map();
+  private components: Map<number, Component> = new Map();
   private testSuites: Map<number, TestSuite> = new Map();
   private testCases: Map<number, TestCase> = new Map();
   private testRuns: Map<number, TestRun> = new Map();
