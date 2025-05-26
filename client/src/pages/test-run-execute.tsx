@@ -84,36 +84,24 @@ export default function TestRunExecute() {
       return;
     }
 
-    const totalTests = Array.isArray(testCases) ? testCases.length : 0;
-    const executedTests = Object.keys(results).length;
-    const failedTests = Object.values(results).filter(r => r.status === 'failed').length;
-
-    const status = failedTests > 0 ? 'failed' : executedTests === totalTests ? 'completed' : 'in_progress';
-
-    // Save each test result to the database
+    // Save test results and update status
     try {
-      // Clear any existing results for this test run first
       for (const [testCaseId, result] of Object.entries(results)) {
         await apiRequest('POST', '/api/test-run-results', {
           testRunId: testRunId,
           testCaseId: parseInt(testCaseId),
           status: result.status,
           notes: result.notes || '',
-          executedBy: 1, // Current user ID
+          executedBy: 1,
           executedAt: new Date().toISOString()
         });
       }
 
-      // Update the test run status and redirect
-      const updateData: any = { status };
-      if (status === 'completed') {
-        updateData.completedAt = new Date().toISOString();
-      }
-      
-      updateTestRunMutation.mutate(updateData);
+      // Simple status update without problematic fields
+      updateTestRunMutation.mutate({ status: 'completed' });
     } catch (error) {
-      console.error('Failed to save test results:', error);
-      alert('Failed to save test results. Please try again.');
+      console.error('Failed to complete test execution:', error);
+      alert('Failed to complete test execution. Please try again.');
     }
   };
 

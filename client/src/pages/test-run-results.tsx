@@ -26,7 +26,7 @@ export default function TestRunResults() {
   });
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'passed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'failed':
