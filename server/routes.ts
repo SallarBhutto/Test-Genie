@@ -76,7 +76,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const module = await storage.createModule(validatedData);
       res.status(201).json(module);
     } catch (error) {
-      res.status(400).json({ message: "Invalid module data" });
+      console.error("Module creation error:", error);
+      res.status(400).json({ message: "Invalid module data", error: error.message });
     }
   });
 

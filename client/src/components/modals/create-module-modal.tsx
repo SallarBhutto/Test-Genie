@@ -61,8 +61,9 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
         }),
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) {
-        throw new Error("Failed to create module");
+      if (!response.ok && response.status !== 200) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create module");
       }
       return response.json();
     },

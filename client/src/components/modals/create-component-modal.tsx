@@ -63,8 +63,9 @@ export default function CreateComponentModal({ open, onOpenChange, modules }: Cr
         }),
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) {
-        throw new Error("Failed to create component");
+      if (!response.ok && response.status !== 200) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create component");
       }
       return response.json();
     },
