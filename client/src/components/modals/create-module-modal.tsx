@@ -27,8 +27,8 @@ import type { Project } from "@shared/schema";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  projectId: z.coerce.number().min(1, "Project is required"),
+  description: z.string().default(""),
+  projectId: z.number().min(1, "Project is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -105,6 +105,7 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
   });
 
   const onSubmit = (data: FormData) => {
+    console.log("Form data being submitted:", data);
     createMutation.mutate(data);
   };
 
@@ -123,7 +124,10 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Project</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                  <Select 
+                    onValueChange={(value) => field.onChange(Number(value))} 
+                    value={field.value ? field.value.toString() : ""}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a project" />
