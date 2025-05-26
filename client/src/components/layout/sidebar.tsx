@@ -36,7 +36,7 @@ export default function Sidebar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <Bug className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-neutral-900 dark:text-white">Auto QA AI</h1>
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-white">TestGenie</h1>
         </div>
       </div>
       

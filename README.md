@@ -1,8 +1,8 @@
-# Auto QA AI - Test Management Platform
+# TestGenie - Test Management Platform
 
 A comprehensive QA Touch replica with advanced test management capabilities, featuring a hierarchical project structure and enterprise-grade UI for efficient software testing workflows.
 
-![Auto QA AI Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![TestGenie Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 
 ## 🚀 Features
 
@@ -56,7 +56,7 @@ A comprehensive QA Touch replica with advanced test management capabilities, fea
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd auto-qa-ai
+   cd testgenie
    ```
 
 2. **Install dependencies**
@@ -221,4 +221,4 @@ Built with modern design principles:
 
 ---
 
-**Auto QA AI** - Professional test management made simple and efficient.
+**TestGenie** - Professional test management made simple and efficient.
