@@ -44,11 +44,14 @@ export default function TestRuns() {
   };
 
   const handleExecuteTestRun = (testRunId: number) => {
+    console.log("Execute button clicked for test run:", testRunId);
     setSelectedTestRunId(testRunId);
     setShowExecuteModal(true);
+    console.log("Modal should open now");
   };
 
   const handleViewDetails = (testRunId: number) => {
+    console.log("View Details button clicked for test run:", testRunId);
     alert(`Viewing details for Test Run ID: ${testRunId}`);
   };
 
