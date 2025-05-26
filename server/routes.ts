@@ -284,12 +284,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/test-runs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log("Updating test run", id, "with data:", req.body);
       const testRun = await storage.updateTestRun(id, req.body);
       if (!testRun) {
         return res.status(404).json({ message: "Test run not found" });
       }
       res.json(testRun);
     } catch (error) {
+      console.error("Error updating test run:", error);
       res.status(500).json({ message: "Failed to update test run" });
     }
   });
