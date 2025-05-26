@@ -12,28 +12,18 @@ export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showExecuteModal, setShowExecuteModal] = useState(false);
   const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
-  
+
   const { data: testRuns, isLoading } = useQuery({
-    queryKey: ["/api/test-runs"],
+    queryKey: ['/api/test-runs']
   });
 
-  const handleViewDetails = (testRunId: number) => {
-    // Navigate to test run details page
-    window.location.href = `/test-runs/${testRunId}`;
-  };
-
-  const handleExecuteTestRun = (testRunId: number) => {
-    setSelectedTestRunId(testRunId);
-    setShowExecuteModal(true);
-  };
-
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
+    switch (status.toLowerCase()) {
+      case 'completed':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "in_progress":
-        return <Play className="w-5 h-5 text-blue-500" />;
-      case "aborted":
+      case 'in_progress':
+        return <Clock className="w-5 h-5 text-blue-500" />;
+      case 'failed':
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
         return <Clock className="w-5 h-5 text-gray-500" />;
@@ -41,30 +31,44 @@ export default function TestRuns() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusClasses = {
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-      aborted: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-      not_started: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
-    };
-    return statusClasses[status as keyof typeof statusClasses] || statusClasses.not_started;
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case 'in_progress':
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case 'failed':
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+    }
+  };
+
+  const handleExecuteTestRun = (testRunId: number) => {
+    setSelectedTestRunId(testRunId);
+    setShowExecuteModal(true);
+  };
+
+  const handleViewDetails = (testRunId: number) => {
+    alert(`Viewing details for Test Run ID: ${testRunId}`);
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Test Runs</h1>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Test Run
-          </Button>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Runs</h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-32 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
+              <CardHeader>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -130,93 +134,10 @@ export default function TestRuns() {
             </Card>
           ))
         ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-neutral-500 dark:text-neutral-400">No test runs found. Create your first test run!</p>
+          <div className="col-span-full text-center py-8">
+            <p className="text-neutral-500">No test runs found.</p>
           </div>
         )}
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>120/120 tests</span>
-              </div>
-              <Progress value={100} className="h-2" />
-              <div className="flex justify-between text-sm text-neutral-500">
-                <span>Started: 2 hours ago</span>
-                <span>Duration: 1h 15m</span>
-              </div>
-              <div className="pt-2">
-                <div className="text-sm font-medium text-green-600">95% Pass Rate</div>
-                <div className="text-xs text-neutral-500">114 passed, 6 failed</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon("in_progress")}
-                <div>
-                  <CardTitle className="text-lg">Payment Gateway Tests</CardTitle>
-                  <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 mt-1">
-                    In Progress
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>67/89 tests</span>
-              </div>
-              <Progress value={75} className="h-2" />
-              <div className="flex justify-between text-sm text-neutral-500">
-                <span>Started: 45 min ago</span>
-                <span>Est. remaining: 20m</span>
-              </div>
-              <div className="pt-2">
-                <div className="text-sm font-medium text-blue-600">Running...</div>
-                <div className="text-xs text-neutral-500">Current: Payment validation tests</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {getStatusIcon("aborted")}
-                <div>
-                  <CardTitle className="text-lg">API Integration Tests</CardTitle>
-                  <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 mt-1">
-                    Failed
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>35/45 tests</span>
-              </div>
-              <Progress value={78} className="h-2" />
-              <div className="flex justify-between text-sm text-neutral-500">
-                <span>Started: 1 day ago</span>
-                <span>Failed at: Step 36</span>
-              </div>
-              <div className="pt-2">
-                <div className="text-sm font-medium text-red-600">78% Pass Rate</div>
-                <div className="text-xs text-neutral-500">35 passed, 10 failed</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <CreateTestRunModal
