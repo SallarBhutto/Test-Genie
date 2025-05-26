@@ -53,22 +53,37 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await fetch("/api/modules", {
-        method: "POST",
-        body: JSON.stringify({
-          ...data,
-          createdBy: 1, // Default user ID
-        }),
-        headers: { "Content-Type": "application/json" },
-      });
-      
-      // Accept both 200 and 201 as success
-      if (response.status >= 200 && response.status < 300) {
-        return response.json();
+      try {
+        const response = await fetch("/api/modules", {
+          method: "POST",
+          body: JSON.stringify({
+            ...data,
+            createdBy: 1, // Default user ID
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+        
+        // Accept 200, 201 as success
+        if (response.status === 200 || response.status === 201) {
+          const result = await response.json();
+          console.log("Module creation successful:", result);
+          return result;
+        }
+        
+        // Handle error responses
+        let errorMessage = "Failed to create module";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error("Could not parse error response:", e);
+        }
+        
+        throw new Error(errorMessage);
+      } catch (error) {
+        console.error("Module creation error:", error);
+        throw error;
       }
-      
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to create module");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/modules"] });

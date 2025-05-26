@@ -72,12 +72,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/modules", async (req, res) => {
     try {
+      console.log("Creating module with data:", req.body);
       const validatedData = insertModuleSchema.parse(req.body);
       const module = await storage.createModule(validatedData);
+      console.log("Module created successfully:", module);
       res.status(201).json(module);
     } catch (error) {
       console.error("Module creation error:", error);
-      res.status(400).json({ message: "Invalid module data", error: error.message });
+      res.status(400).json({ message: "Invalid module data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
