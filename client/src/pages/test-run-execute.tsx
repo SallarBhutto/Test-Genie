@@ -89,16 +89,13 @@ export default function TestRunExecute() {
     // Save each test result to the database
     try {
       for (const [testCaseId, result] of Object.entries(results)) {
-        await apiRequest('/api/test-run-results', {
-          method: 'POST',
-          body: {
-            testRunId: testRunId,
-            testCaseId: parseInt(testCaseId),
-            status: result.status,
-            notes: result.notes || null,
-            executedBy: 1, // Current user ID
-            executedAt: new Date().toISOString()
-          }
+        await apiRequest('POST', '/api/test-run-results', {
+          testRunId: testRunId,
+          testCaseId: parseInt(testCaseId),
+          status: result.status,
+          notes: result.notes || null,
+          executedBy: 1, // Current user ID
+          executedAt: new Date().toISOString()
         });
       }
 
