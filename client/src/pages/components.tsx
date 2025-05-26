@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Layers, FileText } from "lucide-react";
 import { Link, useParams } from "wouter";
+import CreateComponentModal from "@/components/modals/create-component-modal";
 import type { Component, Module, TestCase } from "@shared/schema";
 
 export default function Components() {
   const { moduleId } = useParams();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
     queryKey: ["/api/modules"],
@@ -71,7 +73,7 @@ export default function Components() {
             {currentModule ? `${currentModule.name} Components` : 'All Components'}
           </h1>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Component
         </Button>
@@ -137,6 +139,12 @@ export default function Components() {
           </Card>
         )}
       </div>
+
+      <CreateComponentModal 
+        open={createModalOpen} 
+        onOpenChange={setCreateModalOpen}
+        modules={modules as Module[]}
+      />
     </div>
   );
 }
