@@ -101,7 +101,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Test Run</DialogTitle>
           <DialogDescription>
