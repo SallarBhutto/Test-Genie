@@ -5,58 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
+import SimpleExecuteModal from "@/components/modals/simple-execute-modal";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
+  const [showExecuteModal, setShowExecuteModal] = useState(false);
+  const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
+
   const { data: testRuns, isLoading } = useQuery({
-    queryKey: ["/api/test-runs"],
+    queryKey: ['/api/test-runs']
   });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "in_progress":
-        return <Play className="w-5 h-5 text-blue-500" />;
-      case "aborted":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-500" />;
-    }
+  const handleExecuteClick = (id: number) => {
+    console.log("EXECUTE CLICKED FOR:", id);
+    alert(`Execute clicked for test run ${id}`);
+    setSelectedTestRunId(id);
+    setShowExecuteModal(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusClasses = {
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-      aborted: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-      not_started: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
-    };
-    return statusClasses[status as keyof typeof statusClasses] || statusClasses.not_started;
+  const handleViewClick = (id: number) => {
+    console.log("VIEW DETAILS CLICKED FOR:", id);
+    alert(`View Details clicked for test run ${id}`);
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Test Runs</h1>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Test Run
-          </Button>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-neutral-500">Loading test runs...</p>
-        </div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Runs</h1>
+        <h1 className="text-3xl font-bold">Test Runs</h1>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Test Run
@@ -64,55 +43,55 @@ export default function TestRuns() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {(testRuns as any[])?.length > 0 ? (
-          (testRuns as any[]).map((testRun) => (
-            <Card key={testRun.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {getStatusIcon(testRun.status)}
-                    <div>
-                      <CardTitle className="text-lg">{testRun.name}</CardTitle>
-                      <Badge className={getStatusBadge(testRun.status)}>
-                        {testRun.status.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
+        {(testRuns as any[])?.map((testRun) => (
+          <Card key={testRun.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="text-lg">{testRun.name}</CardTitle>
+              <Badge className="w-fit">
+                {testRun.status?.toUpperCase() || 'PENDING'}
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  {testRun.description || 'No description'}
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleViewClick(testRun.id)}
+                  >
+                    View Details
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => handleExecuteClick(testRun.id)}
+                  >
+                    <Play className="w-3 h-3 mr-1" />
+                    Execute
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {testRun.description || 'No description provided'}
-                  </p>
-                  <div className="flex justify-between text-xs text-neutral-500">
-                    <span>Created: {new Date(testRun.createdAt).toLocaleDateString()}</span>
-                    <span>Project: {testRun.projectId}</span>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" variant="outline">
-                      View Details
-                    </Button>
-                    <Button size="sm">
-                      <Play className="w-3 h-3 mr-1" />
-                      Execute
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-neutral-500 dark:text-neutral-400">No test runs found. Create your first test run!</p>
-          </div>
-        )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <CreateTestRunModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-      />
+      {showCreateModal && (
+        <CreateTestRunModal
+          open={showCreateModal}
+          onOpenChange={setShowCreateModal}
+        />
+      )}
+      
+      {showExecuteModal && (
+        <SimpleExecuteModal
+          open={showExecuteModal}
+          onOpenChange={setShowExecuteModal}
+          testRunId={selectedTestRunId}
+        />
+      )}
     </div>
   );
 }
