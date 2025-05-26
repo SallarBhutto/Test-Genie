@@ -78,7 +78,7 @@ export default function TestRunExecute() {
     }
   };
 
-  const handleCompleteExecution = () => {
+  const handleCompleteExecution = async () => {
     const totalTests = Array.isArray(testCases) ? testCases.length : 0;
     const executedTests = Object.keys(results).length;
     const passedTests = Object.values(results).filter(r => r.status === 'passed').length;
@@ -86,10 +86,30 @@ export default function TestRunExecute() {
 
     const status = failedTests > 0 ? 'failed' : executedTests === totalTests ? 'completed' : 'in_progress';
 
-    updateTestRunMutation.mutate({
-      status,
-      completedAt: status === 'completed' ? new Date().toISOString() : null
-    });
+    // Save each test result to the database
+    try {
+      for (const [testCaseId, result] of Object.entries(results)) {
+        await apiRequest('/api/test-run-results', {
+          method: 'POST',
+          body: {
+            testRunId: testRunId,
+            testCaseId: parseInt(testCaseId),
+            status: result.status,
+            notes: result.notes || null,
+            executedBy: 1, // Current user ID
+            executedAt: new Date().toISOString()
+          }
+        });
+      }
+
+      // Update the test run status
+      updateTestRunMutation.mutate({
+        status,
+        completedAt: status === 'completed' ? new Date().toISOString() : null
+      });
+    } catch (error) {
+      console.error('Failed to save test results:', error);
+    }
   };
 
   if (testRunLoading || testCasesLoading) {
