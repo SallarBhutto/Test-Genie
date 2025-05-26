@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,27 +7,38 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, ArrowLeft, Play } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { TestRun, TestCase } from "@shared/schema";
 
 export default function TestRunExecute() {
   const [, params] = useRoute("/test-runs/:id/execute");
+  const [, setLocation] = useLocation();
   const testRunId = params?.id ? parseInt(params.id) : null;
   
   const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});
 
-  const { data: testRun, isLoading: testRunLoading } = useQuery({
+  const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
     queryKey: ['/api/test-runs', testRunId],
     enabled: !!testRunId
   });
 
-  const { data: testCases, isLoading: testCasesLoading } = useQuery({
+  const { data: testCases, isLoading: testCasesLoading } = useQuery<TestCase[]>({
     queryKey: ['/api/test-cases']
   });
 
   const updateTestRunMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/test-runs/${testRunId}`, {
-      method: 'PATCH',
-      body: data
-    }),
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/test-runs/${testRunId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update test run');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/test-runs'] });
     }
@@ -65,7 +76,7 @@ export default function TestRunExecute() {
   };
 
   const handleCompleteExecution = () => {
-    const totalTests = testCases?.length || 0;
+    const totalTests = Array.isArray(testCases) ? testCases.length : 0;
     const executedTests = Object.keys(results).length;
     const passedTests = Object.values(results).filter(r => r.status === 'passed').length;
     const failedTests = Object.values(results).filter(r => r.status === 'failed').length;
@@ -77,8 +88,8 @@ export default function TestRunExecute() {
       completedAt: status === 'completed' ? new Date().toISOString() : null
     });
 
-    alert(`Test execution completed!\nTotal: ${totalTests}\nExecuted: ${executedTests}\nPassed: ${passedTests}\nFailed: ${failedTests}`);
-    window.history.back();
+    // Navigate back to test runs page after successful update
+    setLocation('/test-runs');
   };
 
   if (testRunLoading || testCasesLoading) {
@@ -104,22 +115,14 @@ export default function TestRunExecute() {
     );
   }
 
-  // Sample test cases for demonstration
-  const sampleTestCases = [
-    { id: 1, title: "Login with valid credentials", testCaseId: "TC-001", priority: "High" },
-    { id: 2, title: "Login with invalid password", testCaseId: "TC-002", priority: "High" },
-    { id: 3, title: "Password reset functionality", testCaseId: "TC-003", priority: "Medium" },
-    { id: 4, title: "Remember me checkbox", testCaseId: "TC-004", priority: "Low" },
-  ];
-
-  const displayTestCases = testCases?.length > 0 ? testCases : sampleTestCases;
+  const displayTestCases = Array.isArray(testCases) ? testCases : [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button 
           variant="ghost" 
-          onClick={() => window.history.back()}
+          onClick={() => setLocation('/test-runs')}
           className="p-2"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -129,7 +132,7 @@ export default function TestRunExecute() {
             Execute Test Run
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400">
-            {testRun.name}
+            {testRun?.name || 'Loading...'}
           </p>
         </div>
       </div>
