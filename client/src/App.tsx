@@ -11,7 +11,7 @@ import ModuleDetail from "@/pages/module-detail";
 import Components from "@/pages/components";
 import ComponentDetail from "@/pages/component-detail";
 import TestCases from "@/pages/test-cases";
-import TestRuns from "@/pages/test-runs";
+import TestRunsFixed from "@/pages/test-runs-fixed";
 import Defects from "@/pages/defects";
 import Requirements from "@/pages/requirements";
 import Reports from "@/pages/reports";
@@ -38,7 +38,7 @@ function Router() {
             <Route path="/components/:id" component={ComponentDetail} />
             <Route path="/components/:componentId/test-cases" component={TestCases} />
             <Route path="/test-cases" component={TestCases} />
-            <Route path="/test-runs" component={TestRuns} />
+            <Route path="/test-runs" component={TestRunsFixed} />
             <Route path="/defects" component={Defects} />
             <Route path="/requirements" component={Requirements} />
             <Route path="/reports" component={Reports} />
