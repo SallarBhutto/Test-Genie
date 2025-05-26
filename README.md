@@ -1,6 +1,6 @@
 # TestGenie - Test Management Platform
 
-A comprehensive QA Touch replica with advanced test management capabilities, featuring a hierarchical project structure and enterprise-grade UI for efficient software testing workflows.
+A comprehensive QA management App with advanced test management capabilities, featuring a hierarchical project structure and enterprise-grade UI for efficient software testing workflows.
 
 ![TestGenie Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 
