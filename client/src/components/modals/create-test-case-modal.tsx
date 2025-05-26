@@ -36,6 +36,9 @@ import { Plus, X } from "lucide-react";
 
 const formSchema = insertTestCaseSchema.extend({
   steps: z.array(z.string()).min(1, "At least one test step is required"),
+  projectId: z.number().min(1, "Project is required"),
+  moduleId: z.number().optional(),
+  componentId: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -47,6 +50,8 @@ interface CreateTestCaseModalProps {
 
 export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCaseModalProps) {
   const [steps, setSteps] = useState<string[]>([""]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -54,9 +59,33 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
     queryKey: ["/api/users"],
   });
 
+  const { data: projects } = useQuery({
+    queryKey: ["/api/projects"],
+  });
+
+  const { data: modules } = useQuery({
+    queryKey: ["/api/modules"],
+    enabled: !!selectedProjectId,
+  });
+
+  const { data: components } = useQuery({
+    queryKey: ["/api/components"],
+    enabled: !!selectedModuleId,
+  });
+
   const { data: testSuites } = useQuery({
     queryKey: ["/api/test-suites"],
   });
+
+  // Filter modules by selected project
+  const filteredModules = modules?.filter((module: any) => 
+    selectedProjectId ? module.projectId === selectedProjectId : true
+  ) || [];
+
+  // Filter components by selected module
+  const filteredComponents = components?.filter((component: any) => 
+    selectedModuleId ? component.moduleId === selectedModuleId : true
+  ) || [];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -71,7 +100,10 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
       status: "draft",
       testSuiteId: 0,
       assignedTo: undefined,
-      createdBy: 1, // This would come from auth context in a real app
+      createdBy: 1,
+      projectId: 0,
+      moduleId: undefined,
+      componentId: undefined,
     },
   });
 
@@ -138,6 +170,108 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Hierarchical Project → Module → Component Selection */}
+            <div className="space-y-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+              <h3 className="text-sm font-medium text-neutral-900 dark:text-white">Project Structure</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(Number(value));
+                          setSelectedProjectId(Number(value));
+                          setSelectedModuleId(null);
+                          form.setValue("moduleId", undefined);
+                          form.setValue("componentId", undefined);
+                        }}
+                        value={field.value ? field.value.toString() : ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select project" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(projects as any[])?.map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="moduleId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Module (Optional)</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(Number(value));
+                          setSelectedModuleId(Number(value));
+                          form.setValue("componentId", undefined);
+                        }}
+                        value={field.value ? field.value.toString() : ""}
+                        disabled={!selectedProjectId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select module" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredModules?.map((module) => (
+                            <SelectItem key={module.id} value={module.id.toString()}>
+                              {module.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="componentId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Component (Optional)</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(Number(value))}
+                        value={field.value ? field.value.toString() : ""}
+                        disabled={!selectedModuleId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select component" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredComponents?.map((component) => (
+                            <SelectItem key={component.id} value={component.id.toString()}>
+                              {component.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

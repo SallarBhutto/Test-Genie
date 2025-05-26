@@ -71,24 +71,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/modules", async (req, res) => {
+    console.log("=== MODULE CREATION START ===");
+    console.log("Raw request body:", req.body);
+    
     try {
-      console.log("Creating module with data:", req.body);
+      // Validate required fields
+      if (!req.body.name || !req.body.projectId) {
+        console.log("Validation failed: missing name or projectId");
+        return res.status(400).json({ message: "Name and project are required" });
+      }
       
-      // Create module data with required fields
+      // Create module data
       const moduleData = {
-        name: req.body.name,
-        description: req.body.description || "",
-        projectId: req.body.projectId,
-        createdBy: req.body.createdBy || 1
+        name: String(req.body.name).trim(),
+        description: String(req.body.description || "").trim(),
+        projectId: Number(req.body.projectId),
+        createdBy: Number(req.body.createdBy || 1)
       };
       
-      console.log("Processed module data:", moduleData);
+      console.log("Creating module with processed data:", moduleData);
+      
       const module = await storage.createModule(moduleData);
       console.log("Module created successfully:", module);
+      
       res.status(201).json(module);
     } catch (error) {
-      console.error("Module creation error:", error);
-      res.status(400).json({ message: "Invalid module data", error: error instanceof Error ? error.message : "Unknown error" });
+      console.error("=== MODULE CREATION ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+      
+      res.status(500).json({ 
+        message: "Failed to create module", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
