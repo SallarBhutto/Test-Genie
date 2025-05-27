@@ -313,6 +313,11 @@ export default function Team() {
           </div>
         </CardContent>
       </Card>
+
+      <CreateUserModal 
+        open={showCreateUser} 
+        onOpenChange={setShowCreateUser} 
+      />
     </div>
   );
 }
