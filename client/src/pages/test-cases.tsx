@@ -108,9 +108,14 @@ export default function TestCases() {
     const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesProject = !filters.project || filters.project === "all" || filters.project === "E-Commerce Testing";
-    const matchesModule = !filters.module || filters.module === "all" || filters.module === "Authentication Module";
-    const matchesComponent = !filters.component || filters.component === "all" || filters.component === "Login Component";
+    // Get the actual names for filtering
+    const project = Array.isArray(projects) ? projects.find((p: any) => p.id === testCase.projectId) : null;
+    const module = Array.isArray(modules) ? modules.find((m: any) => m.id === testCase.moduleId) : null;
+    const component = Array.isArray(components) ? components.find((c: any) => c.id === testCase.componentId) : null;
+    
+    const matchesProject = !filters.project || filters.project === "all" || (project && project.name === filters.project);
+    const matchesModule = !filters.module || filters.module === "all" || (module && module.name === filters.module);
+    const matchesComponent = !filters.component || filters.component === "all" || (component && component.name === filters.component);
     const matchesPriority = !filters.priority || filters.priority === "all" || testCase.priority === filters.priority;
     const matchesStatus = !filters.status || filters.status === "all" || testCase.status === filters.status;
     
@@ -186,7 +191,9 @@ export default function TestCases() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
-                  <SelectItem value="E-Commerce Testing">E-Commerce Testing</SelectItem>
+                  {Array.isArray(projects) && projects.map((project: any) => (
+                    <SelectItem key={project.id} value={project.name}>{project.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
@@ -196,7 +203,9 @@ export default function TestCases() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Modules</SelectItem>
-                  <SelectItem value="Authentication Module">Authentication Module</SelectItem>
+                  {Array.isArray(modules) && modules.map((module: any) => (
+                    <SelectItem key={module.id} value={module.name}>{module.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
@@ -206,7 +215,9 @@ export default function TestCases() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Components</SelectItem>
-                  <SelectItem value="Login Component">Login Component</SelectItem>
+                  {Array.isArray(components) && components.map((component: any) => (
+                    <SelectItem key={component.id} value={component.name}>{component.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               
