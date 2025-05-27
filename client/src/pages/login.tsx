@@ -20,7 +20,8 @@ export default function Login() {
     e.preventDefault();
     login(formData, {
       onSuccess: () => {
-        setLocation("/dashboard");
+        // Force a page reload to ensure authentication state is properly updated
+        window.location.href = "/dashboard";
       },
     });
   };
