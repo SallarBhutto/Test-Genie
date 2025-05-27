@@ -58,16 +58,16 @@ export default function CreateUserModal({ open, onOpenChange }: CreateUserModalP
   const createUserMutation = useMutation({
     mutationFn: (data: FormData) => apiRequest('POST', '/api/users', data),
     onSuccess: () => {
-      // Clear and refetch users data immediately
-      queryClient.removeQueries({ queryKey: ['/api/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      queryClient.refetchQueries({ queryKey: ['/api/users'] });
+      // Force complete cache refresh
+      queryClient.clear();
       toast({
         title: "Success",
         description: "User created successfully",
       });
       form.reset();
       onOpenChange(false);
+      // Force page reload to show new user
+      window.location.reload();
     },
     onError: () => {
       toast({
