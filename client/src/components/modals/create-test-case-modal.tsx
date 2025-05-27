@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -486,24 +487,20 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="assignedTo"
+                name="createdBy"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assign To</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select team member" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {users?.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id.toString()}>
-                            {user.fullName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Created By</FormLabel>
+                    <FormControl>
+                      <Input 
+                        value="John Smith" 
+                        disabled 
+                        className="bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Automatically set to current user
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -189,7 +189,7 @@ export default function TestCases() {
                   <TableHead>Component</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead>Last Updated</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -239,15 +239,13 @@ export default function TestCases() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        {testCase.assignee?.avatar && (
-                          <img 
-                            src={testCase.assignee.avatar} 
-                            alt={testCase.assignee.fullName} 
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
+                        <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                          <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                            JS
+                          </span>
+                        </div>
                         <span className="text-sm">
-                          {testCase.assignee?.fullName || "Unassigned"}
+                          John Smith
                         </span>
                       </div>
                     </TableCell>
