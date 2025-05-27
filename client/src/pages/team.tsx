@@ -5,10 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX } from "lucide-react";
+import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX, Trash2 } from "lucide-react";
 import { useState } from "react";
 import CreateUserModal from "@/components/modals/create-user-modal";
 import { User } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +25,8 @@ export default function Team() {
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const { data: testCases = [] } = useQuery({
