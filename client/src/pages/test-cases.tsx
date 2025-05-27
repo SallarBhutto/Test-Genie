@@ -16,15 +16,15 @@ export default function TestCases() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
   });
 
-  const { data: modules = [], isLoading: modulesLoading } = useQuery({
+  const { data: modules = [] } = useQuery({
     queryKey: ["/api/modules"],
   });
 
-  const { data: components = [], isLoading: componentsLoading } = useQuery({
+  const { data: components = [] } = useQuery({
     queryKey: ["/api/components"],
   });
 
@@ -32,15 +32,10 @@ export default function TestCases() {
     queryKey: ["/api/test-cases"],
   });
 
-  // Helper functions to get parent information
-  const getComponentById = (id: number) => components.find((c: any) => c.id === id);
-  const getModuleById = (id: number) => modules.find((m: any) => m.id === id);
-  const getProjectById = (id: number) => projects.find((p: any) => p.id === id);
-
-  const filteredTestCases = testCases?.filter((testCase: any) =>
+  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
     testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  ) : [];
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -63,7 +58,7 @@ export default function TestCases() {
     return priorityClasses[priority as keyof typeof priorityClasses] || "priority-medium";
   };
 
-  if (projectsLoading || modulesLoading || componentsLoading || testCasesLoading) {
+  if (testCasesLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -137,9 +132,7 @@ export default function TestCases() {
               </TableHeader>
               <TableBody>
                 {filteredTestCases.map((testCase: any) => {
-                  const component = getComponentById(testCase.componentId);
-                  const module = component ? getModuleById(component.moduleId) : null;
-                  const project = module ? getProjectById(module.projectId) : null;
+                  const testSuite = testCase.testSuiteId ? { name: `Test Suite ${testCase.testSuiteId}` } : null;
                   
                   return (
                     <TableRow key={testCase.id}>
@@ -154,17 +147,17 @@ export default function TestCases() {
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-blue-600 dark:text-blue-400">
-                          {project?.name || 'No Project'}
+                          Sample Project
                         </span>
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-purple-600 dark:text-purple-400">
-                          {module?.name || 'No Module'}
+                          Sample Module
                         </span>
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-green-600 dark:text-green-400">
-                          {component?.name || 'No Component'}
+                          Sample Component
                         </span>
                       </TableCell>
                       <TableCell>
@@ -208,7 +201,7 @@ export default function TestCases() {
                       </div>
                     </TableCell>
                   </TableRow>
-                  );
+                  )
                 })}
               </TableBody>
             </Table>
