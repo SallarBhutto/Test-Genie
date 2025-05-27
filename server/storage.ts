@@ -18,6 +18,11 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   getUsers(): Promise<User[]>;
 
+  // Sessions
+  createSession(session: { id: string; userId: number; expiresAt: Date }): Promise<{ id: string; userId: number; expiresAt: Date; createdAt: Date }>;
+  getSession(id: string): Promise<{ id: string; userId: number; expiresAt: Date; createdAt: Date } | undefined>;
+  deleteSession(id: string): Promise<boolean>;
+
   // Projects
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
@@ -949,6 +954,25 @@ export class DatabaseStorage implements IStorage {
   async deleteRequirement(id: number): Promise<boolean> {
     const result = await db.delete(requirements).where(eq(requirements.id, id));
     return result.rowCount > 0;
+  }
+
+  // Sessions
+  async createSession(sessionData: { id: string; userId: number; expiresAt: Date }): Promise<{ id: string; userId: number; expiresAt: Date; createdAt: Date }> {
+    const [session] = await db
+      .insert(sessions)
+      .values(sessionData)
+      .returning();
+    return session;
+  }
+
+  async getSession(id: string): Promise<{ id: string; userId: number; expiresAt: Date; createdAt: Date } | undefined> {
+    const [session] = await db.select().from(sessions).where(eq(sessions.id, id));
+    return session;
+  }
+
+  async deleteSession(id: string): Promise<boolean> {
+    const result = await db.delete(sessions).where(eq(sessions.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

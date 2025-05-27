@@ -3,9 +3,135 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import crypto from "crypto";
+
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  const sessionId = req.headers.authorization?.split(' ')[1];
+  if (!sessionId) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  // Verify session exists and is valid
+  // For now, we'll implement basic session management
+  req.sessionId = sessionId;
+  next();
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Create session
+      const sessionId = crypto.randomUUID();
+      const session = await storage.createSession({
+        id: sessionId,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      });
+
+      // Update last login
+      await storage.updateUser(user.id, { lastLogin: new Date() });
+
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          avatar: user.avatar,
+        },
+        sessionId: session.id,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      
+      // Create session for new user
+      const sessionId = crypto.randomUUID();
+      const session = await storage.createSession({
+        id: sessionId,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      });
+
+      res.status(201).json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          avatar: user.avatar,
+        },
+        sessionId: session.id,
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(400).json({ 
+        message: "Signup failed", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const sessionId = req.headers.authorization?.split(' ')[1];
+      if (sessionId) {
+        await storage.deleteSession(sessionId);
+      }
+      res.json({ message: "Logged out successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  app.get("/api/auth/me", requireAuth, async (req: any, res) => {
+    try {
+      const session = await storage.getSession(req.sessionId);
+      if (!session || session.expiresAt < new Date()) {
+        return res.status(401).json({ message: "Session expired" });
+      }
+
+      const user = await storage.getUser(session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatar: user.avatar,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
   // Users
   app.get("/api/users", async (req, res) => {
     try {
