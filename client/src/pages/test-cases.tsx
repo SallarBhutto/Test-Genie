@@ -16,9 +16,26 @@ export default function TestCases() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: testCases, isLoading } = useQuery({
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ["/api/projects"],
+  });
+
+  const { data: modules = [], isLoading: modulesLoading } = useQuery({
+    queryKey: ["/api/modules"],
+  });
+
+  const { data: components = [], isLoading: componentsLoading } = useQuery({
+    queryKey: ["/api/components"],
+  });
+
+  const { data: testCases, isLoading: testCasesLoading } = useQuery({
     queryKey: ["/api/test-cases"],
   });
+
+  // Helper functions to get parent information
+  const getComponentById = (id: number) => components.find((c: any) => c.id === id);
+  const getModuleById = (id: number) => modules.find((m: any) => m.id === id);
+  const getProjectById = (id: number) => projects.find((p: any) => p.id === id);
 
   const filteredTestCases = testCases?.filter((testCase: any) =>
     testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -46,7 +63,7 @@ export default function TestCases() {
     return priorityClasses[priority as keyof typeof priorityClasses] || "priority-medium";
   };
 
-  if (isLoading) {
+  if (projectsLoading || modulesLoading || componentsLoading || testCasesLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -108,6 +125,9 @@ export default function TestCases() {
                   </TableHead>
                   <TableHead>Test Case ID</TableHead>
                   <TableHead>Title</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Module</TableHead>
+                  <TableHead>Component</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Assigned To</TableHead>
@@ -116,22 +136,42 @@ export default function TestCases() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTestCases.map((testCase: any) => (
-                  <TableRow key={testCase.id}>
-                    <TableCell>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell className="font-medium text-primary">
-                      {testCase.testCaseId}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {testCase.title}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={cn("status-badge", getPriorityBadge(testCase.priority))}>
-                        {testCase.priority}
-                      </Badge>
-                    </TableCell>
+                {filteredTestCases.map((testCase: any) => {
+                  const component = getComponentById(testCase.componentId);
+                  const module = component ? getModuleById(component.moduleId) : null;
+                  const project = module ? getProjectById(module.projectId) : null;
+                  
+                  return (
+                    <TableRow key={testCase.id}>
+                      <TableCell>
+                        <Checkbox />
+                      </TableCell>
+                      <TableCell className="font-medium text-primary">
+                        {testCase.testCaseId}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {testCase.title}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-blue-600 dark:text-blue-400">
+                          {project?.name || 'No Project'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-purple-600 dark:text-purple-400">
+                          {module?.name || 'No Module'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-green-600 dark:text-green-400">
+                          {component?.name || 'No Component'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("status-badge", getPriorityBadge(testCase.priority))}>
+                          {testCase.priority}
+                        </Badge>
+                      </TableCell>
                     <TableCell>
                       <Badge className={cn("status-badge", getStatusBadge(testCase.status))}>
                         {testCase.status}
@@ -168,7 +208,8 @@ export default function TestCases() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

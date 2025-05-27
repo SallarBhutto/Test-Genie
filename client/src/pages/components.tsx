@@ -12,6 +12,10 @@ export default function Components() {
   const { moduleId } = useParams();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ["/api/projects"],
+  });
+
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
     queryKey: ["/api/modules"],
   });
@@ -29,7 +33,7 @@ export default function Components() {
     (components as Component[]).filter(comp => comp.moduleId === parseInt(moduleId)) :
     (components as Component[]);
 
-  if (modulesLoading || componentsLoading || testCasesLoading) {
+  if (projectsLoading || modulesLoading || componentsLoading || testCasesLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
