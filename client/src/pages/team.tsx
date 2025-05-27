@@ -7,9 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
+import CreateUserModal from "@/components/modals/create-user-modal";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateUser, setShowCreateUser] = useState(false);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["/api/users"],
@@ -88,7 +90,7 @@ export default function Team() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Team</h1>
-        <Button>
+        <Button onClick={() => setShowCreateUser(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Member
         </Button>
