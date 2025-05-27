@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema } from "@shared/schema";
+import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -25,6 +25,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(400).json({ 
+        message: "Invalid user data", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
