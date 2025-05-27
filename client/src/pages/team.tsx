@@ -28,7 +28,9 @@ export default function Team() {
   const deleteUserMutation = useMutation({
     mutationFn: (userId: number) => apiRequest('DELETE', `/api/users/${userId}`),
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ['/api/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      refetch();
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -49,10 +51,8 @@ export default function Team() {
     }
   };
 
-  const { data: users = [], isLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading, refetch } = useQuery<User[]>({
     queryKey: ["/api/users"],
-    staleTime: 0,
-    refetchOnMount: true,
   });
 
   const { data: testCases = [] } = useQuery({
