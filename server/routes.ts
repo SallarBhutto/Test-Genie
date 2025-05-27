@@ -30,10 +30,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", async (req, res) => {
     try {
+      console.log("POST /api/users called with body:", req.body);
       const validatedData = insertUserSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
       const user = await storage.createUser(validatedData);
+      console.log("Created user:", user);
       res.status(201).json(user);
     } catch (error) {
+      console.error("Error creating user:", error);
       res.status(400).json({ 
         message: "Invalid user data", 
         error: error instanceof Error ? error.message : "Unknown error" 
