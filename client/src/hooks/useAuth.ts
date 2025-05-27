@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface User {
   id: number;
@@ -10,88 +10,126 @@ interface User {
   avatar?: string;
 }
 
-interface AuthResponse {
-  user: User;
-  sessionId: string;
+interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+interface SignupRequest {
+  username: string;
+  password: string;
+  email: string;
+  fullName: string;
 }
 
 export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const sessionId = localStorage.getItem("sessionId");
+        if (!sessionId) {
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${sessionId}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          localStorage.removeItem("sessionId");
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.removeItem("sessionId");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const response = await apiRequest<AuthResponse>("/api/auth/login", {
+    mutationFn: async ({ username, password }: LoginRequest) => {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
-        body: { username, password },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
       });
-      
-      // Store session ID in localStorage
-      localStorage.setItem("sessionId", response.sessionId);
-      
-      // Set authorization header for future requests
-      const authHeader = `Bearer ${response.sessionId}`;
-      queryClient.setQueryData(["authHeader"], authHeader);
-      
-      return response;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Login failed" }));
+        throw new Error(errorData.message || "Login failed");
+      }
+
+      const data = await response.json();
+      return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/me"], data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setUser(data.user);
+      localStorage.setItem("sessionId", data.sessionId);
     },
   });
 
   const signupMutation = useMutation({
-    mutationFn: async (userData: {
-      username: string;
-      password: string;
-      email: string;
-      fullName: string;
-    }) => {
-      const response = await apiRequest<AuthResponse>("/api/auth/signup", {
+    mutationFn: async ({ username, password, email, fullName }: SignupRequest) => {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
-        body: userData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ username, password, email, fullName }),
       });
-      
-      // Store session ID in localStorage
-      localStorage.setItem("sessionId", response.sessionId);
-      
-      // Set authorization header for future requests
-      const authHeader = `Bearer ${response.sessionId}`;
-      queryClient.setQueryData(["authHeader"], authHeader);
-      
-      return response;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Signup failed" }));
+        throw new Error(errorData.message || "Signup failed");
+      }
+
+      const data = await response.json();
+      return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/me"], data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setUser(data.user);
+      localStorage.setItem("sessionId", data.sessionId);
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const sessionId = localStorage.getItem("sessionId");
+      
       if (sessionId) {
-        await apiRequest("/api/auth/logout", {
+        await fetch("/api/auth/logout", {
           method: "POST",
+          credentials: "include",
           headers: {
             Authorization: `Bearer ${sessionId}`,
           },
         });
       }
       
-      // Clear session data
       localStorage.removeItem("sessionId");
-      queryClient.removeQueries({ queryKey: ["authHeader"] });
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setUser(null);
+      queryClient.clear();
     },
   });
 
@@ -108,15 +146,4 @@ export function useAuth() {
     loginError: loginMutation.error,
     signupError: signupMutation.error,
   };
-}
-
-// Initialize auth on app start
-export function initializeAuth() {
-  const sessionId = localStorage.getItem("sessionId");
-  if (sessionId) {
-    // Set up authorization header for API requests
-    const authHeader = `Bearer ${sessionId}`;
-    return authHeader;
-  }
-  return null;
 }
