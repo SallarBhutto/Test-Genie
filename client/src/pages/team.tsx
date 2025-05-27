@@ -298,10 +298,18 @@ export default function Team() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => alert(`Edit user: ${user.fullName}`)}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => alert(`More options for: ${user.fullName}`)}
+                          >
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </div>
