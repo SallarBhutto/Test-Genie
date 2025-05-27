@@ -20,12 +20,59 @@ export default function TestCases() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTestCase, setEditingTestCase] = useState(null);
   const [filters, setFilters] = useState({
-    project: "",
-    module: "",
-    component: "",
-    priority: "",
-    status: "",
+    project: "all",
+    module: "all",
+    component: "all",
+    priority: "all",
+    status: "all",
   });
+
+  // Get filtered modules based on selected project
+  const getAvailableModules = () => {
+    if (!filters.project || filters.project === "all") {
+      return Array.isArray(modules) ? modules : [];
+    }
+    const selectedProject = Array.isArray(projects) ? projects.find((p: any) => p.name === filters.project) : null;
+    if (!selectedProject) return [];
+    return Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
+  };
+
+  // Get filtered components based on selected module
+  const getAvailableComponents = () => {
+    if (!filters.module || filters.module === "all") {
+      if (!filters.project || filters.project === "all") {
+        return Array.isArray(components) ? components : [];
+      }
+      // Show components from selected project
+      const selectedProject = Array.isArray(projects) ? projects.find((p: any) => p.name === filters.project) : null;
+      if (!selectedProject) return [];
+      const projectModules = Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
+      const moduleIds = projectModules.map((m: any) => m.id);
+      return Array.isArray(components) ? components.filter((c: any) => moduleIds.includes(c.moduleId)) : [];
+    }
+    const selectedModule = Array.isArray(modules) ? modules.find((m: any) => m.name === filters.module) : null;
+    if (!selectedModule) return [];
+    return Array.isArray(components) ? components.filter((c: any) => c.moduleId === selectedModule.id) : [];
+  };
+
+  // Handle project filter change - reset dependent filters
+  const handleProjectChange = (value: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      project: value,
+      module: "all",
+      component: "all"
+    }));
+  };
+
+  // Handle module filter change - reset component filter
+  const handleModuleChange = (value: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      module: value,
+      component: "all"
+    }));
+  };
   const { toast } = useToast();
 
   const { data: projects = [] } = useQuery({
@@ -185,7 +232,7 @@ export default function TestCases() {
           {/* Filter Controls */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <Select value={filters.project} onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}>
+              <Select value={filters.project} onValueChange={handleProjectChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
@@ -197,13 +244,13 @@ export default function TestCases() {
                 </SelectContent>
               </Select>
               
-              <Select value={filters.module} onValueChange={(value) => setFilters(prev => ({ ...prev, module: value }))}>
+              <Select value={filters.module} onValueChange={handleModuleChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Modules" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Modules</SelectItem>
-                  {Array.isArray(modules) && modules.map((module: any) => (
+                  {getAvailableModules().map((module: any) => (
                     <SelectItem key={module.id} value={module.name}>{module.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -215,7 +262,7 @@ export default function TestCases() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Components</SelectItem>
-                  {Array.isArray(components) && components.map((component: any) => (
+                  {getAvailableComponents().map((component: any) => (
                     <SelectItem key={component.id} value={component.name}>{component.name}</SelectItem>
                   ))}
                 </SelectContent>
