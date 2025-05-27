@@ -108,11 +108,11 @@ export default function TestCases() {
     const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesProject = !filters.project || filters.project === "E-Commerce Testing";
-    const matchesModule = !filters.module || filters.module === "Authentication Module";
-    const matchesComponent = !filters.component || filters.component === "Login Component";
-    const matchesPriority = !filters.priority || testCase.priority === filters.priority;
-    const matchesStatus = !filters.status || testCase.status === filters.status;
+    const matchesProject = !filters.project || filters.project === "all" || filters.project === "E-Commerce Testing";
+    const matchesModule = !filters.module || filters.module === "all" || filters.module === "Authentication Module";
+    const matchesComponent = !filters.component || filters.component === "all" || filters.component === "Login Component";
+    const matchesPriority = !filters.priority || filters.priority === "all" || testCase.priority === filters.priority;
+    const matchesStatus = !filters.status || filters.status === "all" || testCase.status === filters.status;
     
     return matchesSearch && matchesProject && matchesModule && matchesComponent && matchesPriority && matchesStatus;
   }) : [];
@@ -185,7 +185,7 @@ export default function TestCases() {
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Projects</SelectItem>
+                  <SelectItem value="all">All Projects</SelectItem>
                   <SelectItem value="E-Commerce Testing">E-Commerce Testing</SelectItem>
                 </SelectContent>
               </Select>
@@ -195,7 +195,7 @@ export default function TestCases() {
                   <SelectValue placeholder="All Modules" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Modules</SelectItem>
+                  <SelectItem value="all">All Modules</SelectItem>
                   <SelectItem value="Authentication Module">Authentication Module</SelectItem>
                 </SelectContent>
               </Select>
@@ -205,7 +205,7 @@ export default function TestCases() {
                   <SelectValue placeholder="All Components" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Components</SelectItem>
+                  <SelectItem value="all">All Components</SelectItem>
                   <SelectItem value="Login Component">Login Component</SelectItem>
                 </SelectContent>
               </Select>
@@ -215,7 +215,7 @@ export default function TestCases() {
                   <SelectValue placeholder="All Priorities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Priorities</SelectItem>
+                  <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
@@ -228,7 +228,7 @@ export default function TestCases() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                 </SelectContent>
@@ -247,7 +247,7 @@ export default function TestCases() {
               </div>
               <Button 
                 variant="outline" 
-                onClick={() => setFilters({ project: "", module: "", component: "", priority: "", status: "" })}
+                onClick={() => setFilters({ project: "all", module: "all", component: "all", priority: "all", status: "all" })}
               >
                 Clear Filters
               </Button>
