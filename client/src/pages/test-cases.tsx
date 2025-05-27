@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
 import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
@@ -18,6 +19,13 @@ export default function TestCases() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTestCase, setEditingTestCase] = useState(null);
+  const [filters, setFilters] = useState({
+    project: "",
+    module: "",
+    component: "",
+    priority: "",
+    status: "",
+  });
   const { toast } = useToast();
 
   const { data: projects = [] } = useQuery({
@@ -96,10 +104,18 @@ export default function TestCases() {
     updateStatusMutation.mutate({ id: testCase.id, status: newStatus });
   };
 
-  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
-    testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) => {
+    const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesProject = !filters.project || filters.project === "E-Commerce Testing";
+    const matchesModule = !filters.module || filters.module === "Authentication Module";
+    const matchesComponent = !filters.component || filters.component === "Login Component";
+    const matchesPriority = !filters.priority || testCase.priority === filters.priority;
+    const matchesStatus = !filters.status || testCase.status === filters.status;
+    
+    return matchesSearch && matchesProject && matchesModule && matchesComponent && matchesPriority && matchesStatus;
+  }) : [];
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -159,9 +175,67 @@ export default function TestCases() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Test Cases</CardTitle>
-            <div className="flex items-center space-x-3">
+          <CardTitle>All Test Cases</CardTitle>
+          
+          {/* Filter Controls */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Select value={filters.project} onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Projects</SelectItem>
+                  <SelectItem value="E-Commerce Testing">E-Commerce Testing</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={filters.module} onValueChange={(value) => setFilters(prev => ({ ...prev, module: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Modules" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Modules</SelectItem>
+                  <SelectItem value="Authentication Module">Authentication Module</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={filters.component} onValueChange={(value) => setFilters(prev => ({ ...prev, component: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Components" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Components</SelectItem>
+                  <SelectItem value="Login Component">Login Component</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={filters.priority} onValueChange={(value) => setFilters(prev => ({ ...prev, priority: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Priorities</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center justify-between">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <Input
@@ -171,6 +245,12 @@ export default function TestCases() {
                   className="pl-10 w-64"
                 />
               </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setFilters({ project: "", module: "", component: "", priority: "", status: "" })}
+              >
+                Clear Filters
+              </Button>
             </div>
           </div>
         </CardHeader>
