@@ -63,6 +63,9 @@ export const testCases = pgTable("test_cases", {
   priority: text("priority").notNull().default("medium"), // low, medium, high, critical
   status: text("status").notNull().default("draft"), // draft, ready, passed, failed, blocked
   testSuiteId: integer("test_suite_id").references(() => testSuites.id).notNull(),
+  projectId: integer("project_id").references(() => projects.id),
+  moduleId: integer("module_id").references(() => modules.id),
+  componentId: integer("component_id").references(() => components.id),
   assignedTo: integer("assigned_to").references(() => users.id),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
