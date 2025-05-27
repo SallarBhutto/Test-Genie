@@ -28,12 +28,11 @@ export default function Team() {
   const deleteUserMutation = useMutation({
     mutationFn: (userId: number) => apiRequest('DELETE', `/api/users/${userId}`),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast({
         title: "Success",
         description: "User deleted successfully",
       });
-      // Force page reload to show updated user list
-      window.location.reload();
     },
     onError: () => {
       toast({
