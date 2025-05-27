@@ -201,7 +201,7 @@ export default function TestCases() {
                       </div>
                     </TableCell>
                   </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
