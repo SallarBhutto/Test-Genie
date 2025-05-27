@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
 import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,30 @@ export default function TestCases() {
     },
   });
 
+  // Status update mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => 
+      fetch(`/api/test-cases/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/test-cases'] });
+      toast({
+        title: "Status Updated",
+        description: "Test case status has been updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update test case status",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handler functions
   const handleEditTestCase = (testCase: any) => {
     setEditingTestCase(testCase);
@@ -65,6 +89,11 @@ export default function TestCases() {
     if (window.confirm('Are you sure you want to delete this test case?')) {
       deleteTestCaseMutation.mutate(id);
     }
+  };
+
+  const handleStatusToggle = (testCase: any) => {
+    const newStatus = testCase.status === 'draft' ? 'active' : 'draft';
+    updateStatusMutation.mutate({ id: testCase.id, status: newStatus });
   };
 
   const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
@@ -227,6 +256,22 @@ export default function TestCases() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleStatusToggle(testCase)}
+                          className={cn(
+                            "hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20",
+                            testCase.status === 'active' && "text-green-600 bg-green-50 dark:bg-green-900/20"
+                          )}
+                          title={testCase.status === 'draft' ? 'Mark as Active' : 'Mark as Draft'}
+                        >
+                          {testCase.status === 'draft' ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Clock className="w-4 h-4" />
+                          )}
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon"
