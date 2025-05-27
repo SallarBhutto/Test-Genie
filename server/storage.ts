@@ -1,5 +1,5 @@
 import {
-  users, projects, modules, components, testSuites, testCases, testRuns, testRunResults, defects, requirements,
+  users, sessions, projects, modules, components, testSuites, testCases, testRuns, testRunResults, defects, requirements,
   type User, type InsertUser, type Project, type InsertProject,
   type Module, type InsertModule, type Component, type InsertComponent,
   type TestSuite, type InsertTestSuite, type TestCase, type InsertTestCase,
@@ -977,3 +977,23 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Initialize default admin user
+export async function initializeDefaultUser() {
+  try {
+    // Check if admin user exists
+    const existingAdmin = await storage.getUserByUsername("admin");
+    if (!existingAdmin) {
+      await storage.createUser({
+        username: "admin",
+        password: "admin",
+        email: "admin@testgenie.com",
+        fullName: "Administrator",
+        role: "admin",
+      });
+      console.log("Default admin user created: username=admin, password=admin");
+    }
+  } catch (error) {
+    console.error("Failed to create default admin user:", error);
+  }
+}

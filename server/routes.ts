@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, initializeDefaultUser } from "./storage";
 import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
@@ -19,6 +19,9 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Initialize default admin user
+  await initializeDefaultUser();
   
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
