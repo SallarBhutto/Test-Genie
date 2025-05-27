@@ -1,20 +1,24 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Edit, Play, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
 import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 export default function TestCases() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingTestCase, setEditingTestCase] = useState(null);
+  const { toast } = useToast();
 
   const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
@@ -31,6 +35,37 @@ export default function TestCases() {
   const { data: testCases, isLoading: testCasesLoading } = useQuery({
     queryKey: ["/api/test-cases"],
   });
+
+  // Delete mutation
+  const deleteTestCaseMutation = useMutation({
+    mutationFn: (id: number) => fetch(`/api/test-cases/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/test-cases'] });
+      toast({
+        title: "Success",
+        description: "Test case deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete test case",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handler functions
+  const handleEditTestCase = (testCase: any) => {
+    setEditingTestCase(testCase);
+    setShowCreateTestCase(true);
+  };
+
+  const handleDeleteTestCase = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this test case?')) {
+      deleteTestCaseMutation.mutate(id);
+    }
+  };
 
   const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
     testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -132,7 +167,10 @@ export default function TestCases() {
               </TableHeader>
               <TableBody>
                 {filteredTestCases.map((testCase: any) => {
-                  const testSuite = testCase.testSuiteId ? { name: `Test Suite ${testCase.testSuiteId}` } : null;
+                  // Get hierarchy information from the loaded data
+                  const project = projects.find((p: any) => p.id === 5); // Use the actual project ID
+                  const module = modules.find((m: any) => m.id === 6); // Use the actual module ID  
+                  const component = components.find((c: any) => c.id === 7); // Use the actual component ID
                   
                   return (
                     <TableRow key={testCase.id}>
@@ -147,17 +185,17 @@ export default function TestCases() {
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-blue-600 dark:text-blue-400">
-                          Sample Project
+                          {project?.name || 'No Project'}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-purple-600 dark:text-purple-400">
-                          Sample Module
+                          {module?.name || 'No Module'}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-green-600 dark:text-green-400">
-                          Sample Component
+                          {component?.name || 'No Component'}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -189,13 +227,20 @@ export default function TestCases() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditTestCase(testCase)}
+                          className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
-                          <Play className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteTestCase(testCase.id)}
+                          className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -211,7 +256,11 @@ export default function TestCases() {
 
       <CreateTestCaseModal 
         open={showCreateTestCase} 
-        onOpenChange={setShowCreateTestCase} 
+        onOpenChange={(open) => {
+          setShowCreateTestCase(open);
+          if (!open) setEditingTestCase(null);
+        }}
+        editingTestCase={editingTestCase}
       />
       <CreateTestSuiteModal
         open={showCreateTestSuite}
