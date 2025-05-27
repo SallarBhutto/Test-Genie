@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -46,9 +46,10 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateTestCaseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingTestCase?: any;
 }
 
-export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCaseModalProps) {
+export default function CreateTestCaseModal({ open, onOpenChange, editingTestCase }: CreateTestCaseModalProps) {
   const [steps, setSteps] = useState<string[]>([""]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
@@ -107,20 +108,81 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
     },
   });
 
+  // Effect to populate form when editing
+  useEffect(() => {
+    if (editingTestCase && open) {
+      form.reset({
+        testCaseId: editingTestCase.testCaseId || "",
+        title: editingTestCase.title || "",
+        description: editingTestCase.description || "",
+        preconditions: editingTestCase.preconditions || "",
+        steps: editingTestCase.steps || [""],
+        expectedResult: editingTestCase.expectedResult || "",
+        priority: editingTestCase.priority || "medium",
+        status: editingTestCase.status || "draft",
+        testSuiteId: editingTestCase.testSuiteId || 0,
+        assignedTo: editingTestCase.assignedTo,
+        createdBy: editingTestCase.createdBy || 1,
+        projectId: 5, // Default project
+        moduleId: 6, // Default module
+        componentId: 7, // Default component
+      });
+      setSteps(editingTestCase.steps || [""]);
+      setSelectedProjectId(5);
+      setSelectedModuleId(6);
+    } else if (!editingTestCase && open) {
+      // Reset form for new test case
+      form.reset({
+        testCaseId: "",
+        title: "",
+        description: "",
+        preconditions: "",
+        steps: [""],
+        expectedResult: "",
+        priority: "medium",
+        status: "draft",
+        testSuiteId: 0,
+        assignedTo: undefined,
+        createdBy: 1,
+        projectId: 0,
+        moduleId: undefined,
+        componentId: undefined,
+      });
+      setSteps([""]);
+      setSelectedProjectId(null);
+      setSelectedModuleId(null);
+    }
+  }, [editingTestCase, open, form]);
+
   const createTestCaseMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest("POST", "/api/test-cases", {
+      const payload = {
         ...data,
         steps: steps.filter(step => step.trim() !== ""),
-      });
-      return response.json();
+      };
+      
+      if (editingTestCase) {
+        // Update existing test case
+        const response = await fetch(`/api/test-cases/${editingTestCase.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        return response.json();
+      } else {
+        // Create new test case
+        const response = await apiRequest("POST", "/api/test-cases", payload);
+        return response.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
-        title: "Test case created",
-        description: "The test case has been created successfully.",
+        title: editingTestCase ? "Test case updated" : "Test case created",
+        description: editingTestCase 
+          ? "The test case has been updated successfully." 
+          : "The test case has been created successfully.",
       });
       onOpenChange(false);
       form.reset();
@@ -129,7 +191,9 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create test case. Please try again.",
+        description: editingTestCase 
+          ? "Failed to update test case. Please try again."
+          : "Failed to create test case. Please try again.",
         variant: "destructive",
       });
     },
@@ -162,9 +226,9 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Test Case</DialogTitle>
+          <DialogTitle>{editingTestCase ? "Edit Test Case" : "Create New Test Case"}</DialogTitle>
           <DialogDescription>
-            Add a new test case to your test suite.
+            {editingTestCase ? "Update the test case details." : "Add a new test case to your test suite."}
           </DialogDescription>
         </DialogHeader>
 
@@ -479,7 +543,10 @@ export default function CreateTestCaseModal({ open, onOpenChange }: CreateTestCa
                 Cancel
               </Button>
               <Button type="submit" disabled={createTestCaseMutation.isPending}>
-                {createTestCaseMutation.isPending ? "Creating..." : "Create Test Case"}
+                {createTestCaseMutation.isPending 
+                  ? (editingTestCase ? "Updating..." : "Creating...") 
+                  : (editingTestCase ? "Update Test Case" : "Create Test Case")
+                }
               </Button>
             </DialogFooter>
           </form>
