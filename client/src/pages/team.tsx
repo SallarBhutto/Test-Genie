@@ -22,6 +22,32 @@ import {
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: number) => apiRequest('DELETE', `/api/users/${userId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error", 
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteUser = (user: User) => {
+    if (confirm(`Are you sure you want to delete ${user.fullName}?`)) {
+      deleteUserMutation.mutate(user.id);
+    }
+  };
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -308,22 +334,26 @@ export default function Team() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => alert(`Edit user: ${user.fullName}`)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => alert(`More options for: ${user.fullName}`)}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => alert(`Edit functionality coming soon for ${user.fullName}`)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user)}
+                              className="text-red-600 dark:text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );
