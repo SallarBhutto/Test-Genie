@@ -334,10 +334,10 @@ export default function TestCases() {
               </TableHeader>
               <TableBody>
                 {filteredTestCases.map((testCase: any) => {
-                  // Get hierarchy information from the loaded data
-                  const project = projects.find((p: any) => p.id === 5); // Use the actual project ID
-                  const module = modules.find((m: any) => m.id === 6); // Use the actual module ID  
-                  const component = components.find((c: any) => c.id === 7); // Use the actual component ID
+                  // Get hierarchy information from the loaded data using actual test case IDs
+                  const project = projects.find((p: any) => p.id === testCase.projectId);
+                  const module = modules.find((m: any) => m.id === testCase.moduleId);  
+                  const component = components.find((c: any) => c.id === testCase.componentId);
                   
                   return (
                     <TableRow key={testCase.id}>
