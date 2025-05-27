@@ -8,28 +8,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
 import CreateUserModal from "@/components/modals/create-user-modal";
+import { User } from "@shared/schema";
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateUser, setShowCreateUser] = useState(false);
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
-  const { data: testCases } = useQuery({
+  const { data: testCases = [] } = useQuery({
     queryKey: ["/api/test-cases"],
   });
 
-  const { data: defects } = useQuery({
+  const { data: defects = [] } = useQuery({
     queryKey: ["/api/defects"],
   });
 
-  const filteredUsers = users?.filter((user: any) =>
+  const filteredUsers = users.filter((user: User) =>
     user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
 
   const getRoleBadge = (role: string) => {
     const roleClasses = {
@@ -51,9 +52,9 @@ export default function Team() {
 
   // Calculate user statistics
   const getUserStats = (userId: number) => {
-    const assignedTestCases = testCases?.filter((tc: any) => tc.assignedTo === userId).length || 0;
-    const assignedDefects = defects?.filter((d: any) => d.assignedTo === userId).length || 0;
-    const reportedDefects = defects?.filter((d: any) => d.reportedBy === userId).length || 0;
+    const assignedTestCases = testCases.filter((tc: any) => tc.assignedTo === userId).length || 0;
+    const assignedDefects = defects.filter((d: any) => d.assignedTo === userId).length || 0;
+    const reportedDefects = defects.filter((d: any) => d.reportedBy === userId).length || 0;
     
     return {
       assignedTestCases,
