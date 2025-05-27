@@ -613,10 +613,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    console.log("DatabaseStorage.createUser called with:", insertUser);
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        username: insertUser.username,
+        password: insertUser.password || 'hashed_password_default',
+        email: insertUser.email,
+        fullName: insertUser.fullName,
+        role: insertUser.role || 'tester',
+        avatar: insertUser.avatar || null
+      })
       .returning();
+    console.log("DatabaseStorage.createUser result:", user);
     return user;
   }
 
