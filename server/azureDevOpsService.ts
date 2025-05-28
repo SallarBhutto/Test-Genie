@@ -110,6 +110,15 @@ export class AzureDevOpsService {
         }
       ];
 
+      // Add Area Path if team name is provided
+      if (projectTeamName) {
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.AreaPath',
+          value: `${this.config.project}\\${projectTeamName}`
+        });
+      }
+
       // Add test case reference if available
       if (testCaseTitle) {
         workItemFields.push({

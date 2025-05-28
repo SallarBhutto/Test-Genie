@@ -33,6 +33,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     defaultValues: {
       name: "",
       description: "",
+      teamName: "",
       status: "Active",
       createdBy: 1, // Default user ID
     },
@@ -103,6 +104,23 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   <FormControl>
                     <Textarea 
                       placeholder="Enter project description" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teamName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team Name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., Frontend Team, Backend Team, QA Team" 
                       {...field} 
                       value={field.value || ""}
                     />
