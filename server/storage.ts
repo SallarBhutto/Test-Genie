@@ -108,12 +108,17 @@ export class MemStorage implements IStorage {
     // Seed users
     const user1: User = {
       id: this.currentId++,
-      username: "john.smith",
-      password: "hashed_password",
-      email: "john.smith@qatouch.com",
-      fullName: "John Smith",
+      username: "admin",
+      password: "admin",
+      email: "admin@qualitybytes.com",
+      fullName: "Admin User",
       role: "admin",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face",
+      isActive: true,
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      lastLogin: null,
       createdAt: new Date(),
     };
     
@@ -125,6 +130,11 @@ export class MemStorage implements IStorage {
       fullName: "Sarah Wilson",
       role: "tester",
       avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=32&h=32&fit=crop&crop=face",
+      isActive: true,
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      lastLogin: null,
       createdAt: new Date(),
     };
 
@@ -136,6 +146,11 @@ export class MemStorage implements IStorage {
       fullName: "Mike Chen",
       role: "tester",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face",
+      isActive: true,
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      lastLogin: null,
       createdAt: new Date(),
     };
 
@@ -147,6 +162,11 @@ export class MemStorage implements IStorage {
       fullName: "Lisa Rodriguez",
       role: "manager",
       avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face",
+      isActive: true,
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      lastLogin: null,
       createdAt: new Date(),
     };
 
