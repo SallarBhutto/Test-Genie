@@ -703,6 +703,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             console.log(`✅ Azure DevOps work item created: ${azureResult.workItemId} for defect ${defect.defectId}`);
+            
+            // Return defect with Azure DevOps information
+            return res.status(201).json({
+              ...defect,
+              azureWorkItemId: azureResult.workItemId,
+              azureWorkItemUrl: azureWorkItemUrl,
+              azureDevOpsSuccess: true
+            });
           } else {
             console.warn(`⚠️ Failed to create Azure DevOps work item for defect ${defect.defectId}:`, azureResult.error);
           }

@@ -77,13 +77,24 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
       const response = await apiRequest("POST", "/api/defects", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/defects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      toast({
-        title: "Defect reported",
-        description: "The defect has been reported successfully.",
-      });
+      
+      // Show different messages based on Azure DevOps integration
+      if (result.azureDevOpsSuccess && result.azureWorkItemId) {
+        toast({
+          title: "Defect reported successfully!",
+          description: `Defect created and automatically synced to Azure DevOps as Bug #${result.azureWorkItemId}`,
+          duration: 6000,
+        });
+      } else {
+        toast({
+          title: "Defect reported",
+          description: "The defect has been reported successfully.",
+        });
+      }
+      
       onOpenChange(false);
       form.reset();
     },

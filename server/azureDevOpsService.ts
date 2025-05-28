@@ -119,14 +119,18 @@ export class AzureDevOpsService {
         });
       }
 
-      // Add test case reference if available
+      // Add repro steps with description and test case reference
+      let reproSteps = `**Defect Description:**\n${defect.description}\n\n**Defect ID:** ${defect.defectId}`;
+      
       if (testCaseTitle) {
-        workItemFields.push({
-          op: 'add',
-          path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
-          value: `Related Test Case: ${testCaseTitle}\n\nDefect ID: ${defect.defectId}`
-        });
+        reproSteps += `\n\n**Related Test Case:** ${testCaseTitle}`;
       }
+      
+      workItemFields.push({
+        op: 'add',
+        path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
+        value: reproSteps
+      });
 
       const url = `${this.baseUrl}/wit/workitems/$Bug?api-version=${this.config.apiVersion}`;
       
