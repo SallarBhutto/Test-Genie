@@ -656,11 +656,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try to create corresponding Azure DevOps work item
       console.log('🔍 About to check if Azure DevOps is configured...');
-      try {
-        const isConfigured = await azureDevOpsService.isConfigured();
-        console.log('🔍 Azure DevOps configuration check result:', isConfigured);
-        
-        if (isConfigured) {
+      
+      // Get settings directly to debug
+      const debugSettings = await settingsService.getSettings();
+      console.log('🔍 Direct settings check:', {
+        enabled: debugSettings.azureDevOps?.enabled,
+        org: debugSettings.azureDevOps?.organization,
+        project: debugSettings.azureDevOps?.project,
+        hasToken: !!debugSettings.azureDevOps?.personalAccessToken
+      });
+      
+      const isConfigured = await azureDevOpsService.isConfigured();
+      console.log('🔍 Azure DevOps configuration check result:', isConfigured);
+      
+      if (isConfigured) {
           try {
           // Get user information for the reporter
           const reporter = await storage.getUser(defect.reportedBy);
