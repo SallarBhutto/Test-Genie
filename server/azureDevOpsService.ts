@@ -217,10 +217,20 @@ export class AzureDevOpsService {
   async isConfigured(): Promise<boolean> {
     try {
       const settings = await settingsService.getSettings();
-      return !!(settings.azureDevOps.enabled && 
+      console.log('🔍 Checking Azure DevOps configuration:', {
+        enabled: settings.azureDevOps.enabled,
+        hasOrg: !!settings.azureDevOps.organization,
+        hasProject: !!settings.azureDevOps.project,
+        hasToken: !!settings.azureDevOps.personalAccessToken
+      });
+      
+      const configured = !!(settings.azureDevOps.enabled && 
                settings.azureDevOps.organization && 
                settings.azureDevOps.project && 
                settings.azureDevOps.personalAccessToken);
+      
+      console.log('🔍 Azure DevOps isConfigured result:', configured);
+      return configured;
     } catch (error) {
       console.error('Error checking Azure DevOps configuration:', error);
       return false;
