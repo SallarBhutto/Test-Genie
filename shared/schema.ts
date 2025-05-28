@@ -12,6 +12,9 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("tester"), // admin, manager, tester
   avatar: text("avatar"),
   isActive: boolean("is_active").notNull().default(true),
+  isEmailVerified: boolean("is_email_verified").notNull().default(false),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
