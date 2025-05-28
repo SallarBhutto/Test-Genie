@@ -4,6 +4,12 @@ import { storage, initializeDefaultUser } from "./storage";
 import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
+import { 
+  generateVerificationToken, 
+  generateVerificationExpiry, 
+  sendVerificationEmail, 
+  sendWelcomeEmail 
+} from "./emailService";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -37,6 +43,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      // Check if email is verified
+      if (!user.isEmailVerified) {
+        return res.status(403).json({ 
+          message: "Please verify your email address before logging in. Check your inbox for the verification email.",
+          emailVerificationRequired: true,
+          email: user.email
+        });
+      }
+
       // Create session
       const sessionId = crypto.randomUUID();
       const session = await storage.createSession({
@@ -68,26 +83,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(validatedData);
       
-      // Create session for new user
-      const sessionId = crypto.randomUUID();
-      const session = await storage.createSession({
-        id: sessionId,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Generate verification token and expiry
+      const verificationToken = generateVerificationToken();
+      const verificationExpiry = generateVerificationExpiry();
+
+      // Create user with email verification fields
+      const user = await storage.createUser({
+        ...validatedData,
+        isEmailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpiry,
       });
 
+      // Send verification email
+      const emailSent = await sendVerificationEmail(
+        user.email,
+        user.username,
+        verificationToken
+      );
+
+      if (!emailSent) {
+        console.error("Failed to send verification email to:", user.email);
+        // Still allow signup to proceed, user can request resend later
+      }
+
       res.status(201).json({
+        message: "Account created successfully! Please check your email to verify your account before logging in.",
         user: {
           id: user.id,
           username: user.username,
           email: user.email,
           fullName: user.fullName,
-          role: user.role,
-          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
         },
-        sessionId: session.id,
+        emailSent,
       });
     } catch (error) {
       console.error("Signup error:", error);
@@ -95,6 +131,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Signup failed", 
         error: error instanceof Error ? error.message : "Unknown error" 
       });
+    }
+  });
+
+  // Email verification route
+  app.get("/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h1 style="color: #dc2626;">Invalid Verification Link</h1>
+              <p>The verification link is invalid or missing. Please check your email and try again.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Find user by verification token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h1 style="color: #dc2626;">Invalid Verification Token</h1>
+              <p>This verification token is invalid or has already been used.</p>
+              <a href="/login" style="color: #2563eb;">Go to Login</a>
+            </body>
+          </html>
+        `);
+      }
+
+      // Check if token has expired
+      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h1 style="color: #dc2626;">Verification Link Expired</h1>
+              <p>This verification link has expired. Please request a new verification email.</p>
+              <a href="/signup" style="color: #2563eb;">Sign Up Again</a>
+            </body>
+          </html>
+        `);
+      }
+
+      // Update user as verified
+      await storage.updateUser(user.id, {
+        isEmailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      });
+
+      // Send welcome email
+      await sendWelcomeEmail(user.email, user.username);
+
+      // Success page
+      res.send(`
+        <html>
+          <head>
+            <title>Email Verified - QualityBytes</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <div style="max-width: 500px; margin: 0 auto;">
+              <h1 style="color: #16a34a;">✅ Email Verified Successfully!</h1>
+              <p style="font-size: 18px; margin: 20px 0;">
+                Welcome to QualityBytes, <strong>${user.fullName}</strong>!
+              </p>
+              <p style="color: #6b7280;">
+                Your email has been verified and your account is now active. You can now log in and start managing your test cases.
+              </p>
+              <div style="margin-top: 30px;">
+                <a href="/login" 
+                   style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); 
+                          color: white; 
+                          padding: 12px 30px; 
+                          text-decoration: none; 
+                          border-radius: 6px; 
+                          font-weight: bold;
+                          display: inline-block;">
+                  Login to QualityBytes
+                </a>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #dc2626;">Verification Failed</h1>
+            <p>An error occurred during email verification. Please try again later.</p>
+          </body>
+        </html>
+      `);
     }
   });
 
