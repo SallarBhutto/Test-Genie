@@ -693,6 +693,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         console.log('ℹ️ Azure DevOps not configured - skipping work item creation');
+        // Let's check what the settings actually are
+        try {
+          const debugSettings = await settingsService.getSettings();
+          console.log('🔍 Debug - Current settings:', {
+            enabled: debugSettings.azureDevOps.enabled,
+            org: debugSettings.azureDevOps.organization,
+            project: debugSettings.azureDevOps.project,
+            hasToken: !!debugSettings.azureDevOps.personalAccessToken
+          });
+        } catch (debugError) {
+          console.error('🔍 Debug - Error getting settings:', debugError);
+        }
       }
       
       res.status(201).json(defect);
