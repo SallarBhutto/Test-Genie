@@ -118,6 +118,8 @@ export const defects = pgTable("defects", {
   projectId: integer("project_id").references(() => projects.id).notNull(),
   reportedBy: integer("reported_by").references(() => users.id).notNull(),
   assignedTo: integer("assigned_to").references(() => users.id),
+  azureWorkItemId: integer("azure_work_item_id"), // Azure DevOps work item ID
+  azureWorkItemUrl: text("azure_work_item_url"), // Direct link to Azure DevOps work item
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

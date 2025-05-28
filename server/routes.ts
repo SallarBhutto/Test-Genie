@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
+import { azureDevOpsService } from "./azureDevOpsService";
 import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
@@ -672,9 +673,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/defects", async (req, res) => {
     try {
       const validatedData = insertDefectSchema.parse(req.body);
+      
+      // Create the defect in QualityBytes
       const defect = await storage.createDefect(validatedData);
+      
+      // Try to create corresponding Azure DevOps work item
+      if (azureDevOpsService.isConfigured()) {
+        try {
+          // Get user information for the reporter
+          const reporter = await storage.getUser(defect.reportedBy);
+          const reporterName = reporter ? reporter.fullName : 'QualityBytes User';
+          
+          // Get test case title if available
+          let testCaseTitle;
+          if (defect.testCaseId) {
+            const testCase = await storage.getTestCase(defect.testCaseId);
+            testCaseTitle = testCase?.title;
+          }
+          
+          // Create Azure DevOps work item
+          const azureResult = await azureDevOpsService.createBugWorkItem(
+            defect, 
+            reporterName, 
+            testCaseTitle
+          );
+          
+          if (azureResult.success && azureResult.workItemId) {
+            // Update defect with Azure DevOps information
+            const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(azureResult.workItemId);
+            await storage.updateDefect(defect.id, {
+              azureWorkItemId: azureResult.workItemId,
+              azureWorkItemUrl: azureWorkItemUrl
+            });
+            
+            console.log(`✅ Azure DevOps work item created: ${azureResult.workItemId} for defect ${defect.defectId}`);
+          } else {
+            console.warn(`⚠️ Failed to create Azure DevOps work item for defect ${defect.defectId}:`, azureResult.error);
+          }
+        } catch (azureError) {
+          console.error(`❌ Azure DevOps integration error for defect ${defect.defectId}:`, azureError);
+          // Don't fail the defect creation if Azure DevOps fails
+        }
+      } else {
+        console.log('ℹ️ Azure DevOps not configured - skipping work item creation');
+      }
+      
       res.status(201).json(defect);
     } catch (error) {
+      console.error('Error creating defect:', error);
       res.status(400).json({ message: "Invalid defect data" });
     }
   });
