@@ -59,8 +59,8 @@ export class SettingsService {
     
     try {
       // Test the connection by making a simple API call to get project info
-      const baseUrl = `https://dev.azure.com/${azureDevOps.organization}/${azureDevOps.project}/_apis`;
-      const apiUrl = `${baseUrl}/project?api-version=7.0`;
+      const baseUrl = `https://dev.azure.com/${azureDevOps.organization}/_apis`;
+      const apiUrl = `${baseUrl}/projects/${azureDevOps.project}?api-version=7.0`;
       const token = Buffer.from(`:${azureDevOps.personalAccessToken}`).toString('base64');
       
       console.log('🔍 Azure DevOps Test Connection Details:');
