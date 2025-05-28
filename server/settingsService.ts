@@ -21,12 +21,14 @@ export class SettingsService {
     const darkModeSetting = await storage.getSetting('darkMode');
 
     return {
-      azureDevOps: azureDevOpsSetting?.value || {
-        enabled: false,
-        organization: '',
-        project: '',
-        personalAccessToken: '',
-      },
+      azureDevOps: azureDevOpsSetting?.value ? 
+        (typeof azureDevOpsSetting.value === 'string' ? JSON.parse(azureDevOpsSetting.value) : azureDevOpsSetting.value) :
+        {
+          enabled: false,
+          organization: '',
+          project: '',
+          personalAccessToken: '',
+        },
       emailNotifications: emailNotificationsSetting?.value || true,
       darkMode: darkModeSetting?.value || false,
     };
