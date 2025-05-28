@@ -655,7 +655,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defect = await storage.createDefect(validatedData);
       
       // Try to create corresponding Azure DevOps work item
-      if (await azureDevOpsService.isConfigured()) {
+      console.log('🔍 About to check if Azure DevOps is configured...');
+      const isConfigured = await azureDevOpsService.isConfigured();
+      console.log('🔍 Azure DevOps configuration check result:', isConfigured);
+      
+      if (isConfigured) {
         try {
           // Get user information for the reporter
           const reporter = await storage.getUser(defect.reportedBy);
