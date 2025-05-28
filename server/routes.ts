@@ -45,8 +45,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Check if email is verified
-      if (!user.isEmailVerified) {
+      // Check if email is verified (bypass for admin users)
+      if (!user.isEmailVerified && user.role !== 'admin') {
         return res.status(403).json({ 
           message: "Please verify your email address before logging in. Check your inbox for the verification email.",
           emailVerificationRequired: true,
