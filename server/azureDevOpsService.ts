@@ -1,4 +1,5 @@
 import type { Defect } from "@shared/schema";
+import { settingsService } from "./settingsService";
 
 interface AzureDevOpsConfig {
   organization: string;
@@ -59,12 +60,22 @@ export class AzureDevOpsService {
 
   async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
     try {
-      if (!this.config.organization || !this.config.project || !this.config.personalAccessToken) {
+      // Get settings from database
+      const settings = await settingsService.getSettings();
+      const azureConfig = settings.azureDevOps;
+      
+      if (!azureConfig.enabled || !azureConfig.organization || !azureConfig.project || !azureConfig.personalAccessToken) {
         return {
           success: false,
-          error: 'Azure DevOps configuration missing. Please configure AZURE_DEVOPS_ORGANIZATION, AZURE_DEVOPS_PROJECT, and AZURE_DEVOPS_PAT environment variables.'
+          error: 'Azure DevOps integration not configured or disabled. Please check settings.'
         };
       }
+
+      // Update config with current settings
+      this.config.organization = azureConfig.organization;
+      this.config.project = azureConfig.project;
+      this.config.personalAccessToken = azureConfig.personalAccessToken;
+      this.baseUrl = `https://dev.azure.com/${this.config.organization}/${this.config.project}/_apis`;
 
       const workItemFields: WorkItem[] = [
         {
@@ -203,9 +214,17 @@ export class AzureDevOpsService {
     return `https://dev.azure.com/${this.config.organization}/${this.config.project}/_workitems/edit/${workItemId}`;
   }
 
-  isConfigured(): boolean {
-    // Check environment variables that are set when settings are saved
-    return !!(process.env.AZURE_DEVOPS_ORGANIZATION && process.env.AZURE_DEVOPS_PROJECT && process.env.AZURE_DEVOPS_PAT);
+  async isConfigured(): Promise<boolean> {
+    try {
+      const settings = await settingsService.getSettings();
+      return !!(settings.azureDevOps.enabled && 
+               settings.azureDevOps.organization && 
+               settings.azureDevOps.project && 
+               settings.azureDevOps.personalAccessToken);
+    } catch (error) {
+      console.error('Error checking Azure DevOps configuration:', error);
+      return false;
+    }
   }
 }
 
