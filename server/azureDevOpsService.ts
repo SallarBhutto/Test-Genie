@@ -217,19 +217,32 @@ export class AzureDevOpsService {
   async isConfigured(): Promise<boolean> {
     try {
       const settings = await settingsService.getSettings();
-      console.log('🔍 Checking Azure DevOps configuration:', {
-        enabled: settings.azureDevOps.enabled,
-        hasOrg: !!settings.azureDevOps.organization,
-        hasProject: !!settings.azureDevOps.project,
-        hasToken: !!settings.azureDevOps.personalAccessToken
+      console.log('🔍 Checking Azure DevOps configuration in defect creation:', {
+        enabled: settings.azureDevOps?.enabled,
+        hasOrg: !!settings.azureDevOps?.organization,
+        hasProject: !!settings.azureDevOps?.project,
+        hasToken: !!settings.azureDevOps?.personalAccessToken,
+        rawSettings: settings.azureDevOps
       });
       
-      const configured = !!(settings.azureDevOps.enabled && 
-               settings.azureDevOps.organization && 
-               settings.azureDevOps.project && 
-               settings.azureDevOps.personalAccessToken);
+      const configured = !!(settings.azureDevOps?.enabled && 
+               settings.azureDevOps?.organization && 
+               settings.azureDevOps?.project && 
+               settings.azureDevOps?.personalAccessToken);
       
-      console.log('🔍 Azure DevOps isConfigured result:', configured);
+      console.log('🔍 Azure DevOps isConfigured result in defect creation:', configured);
+      
+      // Update the local config if configured
+      if (configured) {
+        this.config = {
+          organization: settings.azureDevOps.organization,
+          project: settings.azureDevOps.project,
+          personalAccessToken: settings.azureDevOps.personalAccessToken,
+          apiVersion: '7.0'
+        };
+        console.log('🔍 Updated Azure DevOps config for defect creation');
+      }
+      
       return configured;
     } catch (error) {
       console.error('Error checking Azure DevOps configuration:', error);

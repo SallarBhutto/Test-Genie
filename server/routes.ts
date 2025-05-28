@@ -656,11 +656,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try to create corresponding Azure DevOps work item
       console.log('🔍 About to check if Azure DevOps is configured...');
-      const isConfigured = await azureDevOpsService.isConfigured();
-      console.log('🔍 Azure DevOps configuration check result:', isConfigured);
-      
-      if (isConfigured) {
-        try {
+      try {
+        const isConfigured = await azureDevOpsService.isConfigured();
+        console.log('🔍 Azure DevOps configuration check result:', isConfigured);
+        
+        if (isConfigured) {
+          try {
           // Get user information for the reporter
           const reporter = await storage.getUser(defect.reportedBy);
           const reporterName = reporter ? reporter.fullName : 'QualityBytes User';
@@ -709,6 +710,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (debugError) {
           console.error('🔍 Debug - Error getting settings:', debugError);
         }
+      } catch (configError) {
+        console.error('🔍 Error checking Azure DevOps configuration:', configError);
       }
       
       res.status(201).json(defect);
