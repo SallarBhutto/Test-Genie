@@ -11,10 +11,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, Filter } from "lucide-react";
 import CreateDefectModal from "@/components/modals/create-defect-modal";
+import EditDefectModal from "@/components/modals/edit-defect-modal";
 import { cn } from "@/lib/utils";
 
 export default function Defects() {
   const [showCreateDefect, setShowCreateDefect] = useState(false);
+  const [showEditDefect, setShowEditDefect] = useState(false);
+  const [editingDefectId, setEditingDefectId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
@@ -74,6 +77,11 @@ export default function Defects() {
       low: "priority-low",
     };
     return severityClasses[severity as keyof typeof severityClasses] || "priority-medium";
+  };
+
+  const handleEditDefect = (id: number) => {
+    setEditingDefectId(id);
+    setShowEditDefect(true);
   };
 
   const handleDeleteDefect = (id: number) => {
@@ -321,7 +329,11 @@ export default function Defects() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditDefect(defect.id)}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button 
@@ -346,6 +358,12 @@ export default function Defects() {
       <CreateDefectModal 
         open={showCreateDefect} 
         onOpenChange={setShowCreateDefect} 
+      />
+
+      <EditDefectModal 
+        open={showEditDefect} 
+        onOpenChange={setShowEditDefect} 
+        defectId={editingDefectId}
       />
     </div>
   );
