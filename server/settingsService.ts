@@ -20,15 +20,38 @@ export class SettingsService {
     const emailNotificationsSetting = await storage.getSetting('emailNotifications');
     const darkModeSetting = await storage.getSetting('darkMode');
 
+    // Parse Azure DevOps settings with debugging
+    let parsedAzureDevOps;
+    console.log('🔍 Raw azureDevOps setting:', azureDevOpsSetting);
+    
+    if (azureDevOpsSetting?.value) {
+      if (typeof azureDevOpsSetting.value === 'string') {
+        try {
+          parsedAzureDevOps = JSON.parse(azureDevOpsSetting.value);
+          console.log('🔍 Parsed Azure DevOps settings:', parsedAzureDevOps);
+        } catch (error) {
+          console.error('🔍 JSON parse error:', error);
+          parsedAzureDevOps = {
+            enabled: false,
+            organization: '',
+            project: '',
+            personalAccessToken: '',
+          };
+        }
+      } else {
+        parsedAzureDevOps = azureDevOpsSetting.value;
+      }
+    } else {
+      parsedAzureDevOps = {
+        enabled: false,
+        organization: '',
+        project: '',
+        personalAccessToken: '',
+      };
+    }
+
     return {
-      azureDevOps: azureDevOpsSetting?.value ? 
-        (typeof azureDevOpsSetting.value === 'string' ? JSON.parse(azureDevOpsSetting.value) : azureDevOpsSetting.value) :
-        {
-          enabled: false,
-          organization: '',
-          project: '',
-          personalAccessToken: '',
-        },
+      azureDevOps: parsedAzureDevOps,
       emailNotifications: emailNotificationsSetting?.value || true,
       darkMode: darkModeSetting?.value || false,
     };
