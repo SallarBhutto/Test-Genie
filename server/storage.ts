@@ -85,6 +85,10 @@ export interface IStorage {
   createRequirement(requirement: InsertRequirement): Promise<Requirement>;
   updateRequirement(id: number, requirement: Partial<Requirement>): Promise<Requirement | undefined>;
   deleteRequirement(id: number): Promise<boolean>;
+
+  // Settings
+  getSetting(key: string): Promise<Setting | undefined>;
+  setSetting(key: string, value: any): Promise<Setting>;
 }
 
 export class MemStorage implements IStorage {
