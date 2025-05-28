@@ -3,14 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Layers, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Layers, FileText, Filter } from "lucide-react";
 import { Link, useParams } from "wouter";
 import CreateComponentModal from "@/components/modals/create-component-modal";
-import type { Component, Module, TestCase } from "@shared/schema";
+import type { Component, Module, TestCase, Project } from "@shared/schema";
 
 export default function Components() {
   const { moduleId } = useParams();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
+  const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || "all");
   
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
@@ -28,10 +31,30 @@ export default function Components() {
     queryKey: ["/api/test-cases"],
   });
 
-  const currentModule = moduleId ? modules.find((m: Module) => m.id === parseInt(moduleId)) : null;
-  const moduleComponents = moduleId ? 
-    (components as Component[]).filter(comp => comp.moduleId === parseInt(moduleId)) :
-    (components as Component[]);
+  // Filter modules by selected project
+  const filteredModules = selectedProjectId === "all" ? 
+    (modules as Module[]) : 
+    (modules as Module[]).filter(module => module.projectId === parseInt(selectedProjectId));
+
+  // Filter components by selected project and module
+  const filteredComponents = (components as Component[]).filter(component => {
+    const componentModule = (modules as Module[]).find(m => m.id === component.moduleId);
+    
+    // Filter by project
+    if (selectedProjectId !== "all" && componentModule?.projectId !== parseInt(selectedProjectId)) {
+      return false;
+    }
+    
+    // Filter by module
+    if (selectedModuleId !== "all" && component.moduleId !== parseInt(selectedModuleId)) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const currentModule = selectedModuleId !== "all" ? 
+    (modules as Module[]).find((m: Module) => m.id === parseInt(selectedModuleId)) : null;
 
   if (projectsLoading || modulesLoading || componentsLoading || testCasesLoading) {
     return (
@@ -60,22 +83,12 @@ export default function Components() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-2">
-            <Link href="/modules">
-              <span className="hover:text-primary cursor-pointer">Modules</span>
-            </Link>
-            {currentModule && (
-              <>
-                <span>/</span>
-                <span className="text-neutral-900 dark:text-white font-medium">
-                  {currentModule.name}
-                </span>
-              </>
-            )}
-          </div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-            {currentModule ? `${currentModule.name} Components` : 'All Components'}
+            Components
           </h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+            Manage and organize your application components
+          </p>
         </div>
         <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -83,8 +96,52 @@ export default function Components() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-neutral-400" />
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Filter by:</span>
+            </div>
+            
+            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {(projects as Project[]).map((project) => (
+                  <SelectItem key={project.id} value={project.id.toString()}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select module" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Modules</SelectItem>
+                {filteredModules.map((module) => (
+                  <SelectItem key={module.id} value={module.id.toString()}>
+                    {module.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              {filteredComponents.length} component{filteredComponents.length !== 1 ? 's' : ''} found
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {moduleComponents.map((component) => {
+        {filteredComponents.map((component) => {
           const componentTestCases = (testCases as TestCase[]).filter(
             tc => tc.componentId === component.id
           );
@@ -128,7 +185,7 @@ export default function Components() {
           );
         })}
 
-        {moduleComponents.length === 0 && (
+        {filteredComponents.length === 0 && (
           <Card className="border-dashed border-2 border-neutral-300 dark:border-neutral-700">
             <CardContent className="flex flex-col items-center justify-center p-6 text-center">
               <Layers className="w-8 h-8 text-neutral-400 mb-2" />
