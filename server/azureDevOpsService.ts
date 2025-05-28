@@ -58,7 +58,7 @@ export class AzureDevOpsService {
     return severityMap[severity] || '3 - Medium';
   }
 
-  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
+  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, projectTeamName?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
     try {
       // Get settings from database
       const settings = await settingsService.getSettings();

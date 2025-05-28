@@ -185,6 +185,7 @@ export class MemStorage implements IStorage {
       id: this.currentId++,
       name: "E-Commerce Testing",
       description: "Comprehensive testing suite for the e-commerce platform",
+      teamName: "Frontend Team",
       status: "active",
       createdBy: user1.id,
       createdAt: new Date(),

@@ -30,6 +30,7 @@ export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  teamName: text("team_name"), // Used as Area Path in Azure DevOps
   status: text("status").notNull().default("active"), // active, inactive, archived
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
