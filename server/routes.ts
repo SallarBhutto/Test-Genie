@@ -516,6 +516,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/defects/:id", async (req, res) => {
+    try {
+      const defect = await storage.getDefect(parseInt(req.params.id));
+      if (!defect) {
+        return res.status(404).json({ message: "Defect not found" });
+      }
+      res.json(defect);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch defect" });
+    }
+  });
+
   app.post("/api/defects", async (req, res) => {
     try {
       const validatedData = insertDefectSchema.parse(req.body);
