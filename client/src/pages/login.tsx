@@ -52,7 +52,7 @@ export default function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>
-              Sign in to your TestGenie account
+              Sign in to your QualityBytes account
             </CardDescription>
           </CardHeader>
           <CardContent>

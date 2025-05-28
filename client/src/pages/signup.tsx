@@ -44,7 +44,7 @@ export default function Signup() {
               <Target className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TestGenie
+              QualityBytes
             </span>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function Signup() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Create Account</CardTitle>
             <CardDescription>
-              Join TestGenie and start managing your tests
+              Join QualityBytes and start managing your tests
             </CardDescription>
           </CardHeader>
           <CardContent>
