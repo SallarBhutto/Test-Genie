@@ -1010,6 +1010,27 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(sessions).where(eq(sessions.id, id));
     return (result.rowCount ?? 0) > 0;
   }
+
+  // Settings operations
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting;
+  }
+
+  async setSetting(key: string, value: any): Promise<Setting> {
+    const [setting] = await db
+      .insert(settings)
+      .values({ key, value })
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: {
+          value,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return setting;
+  }
 }
 
 export const storage = new DatabaseStorage();
