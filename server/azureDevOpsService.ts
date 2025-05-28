@@ -204,7 +204,8 @@ export class AzureDevOpsService {
   }
 
   isConfigured(): boolean {
-    return !!(this.config.organization && this.config.project && this.config.personalAccessToken);
+    // Check environment variables that are set when settings are saved
+    return !!(process.env.AZURE_DEVOPS_ORGANIZATION && process.env.AZURE_DEVOPS_PROJECT && process.env.AZURE_DEVOPS_PAT);
   }
 }
 

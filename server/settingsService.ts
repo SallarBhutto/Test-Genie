@@ -41,11 +41,17 @@ export class SettingsService {
       process.env.AZURE_DEVOPS_ORGANIZATION = settings.organization;
       process.env.AZURE_DEVOPS_PROJECT = settings.project;
       process.env.AZURE_DEVOPS_PAT = settings.personalAccessToken;
+      console.log('🔧 Environment variables updated:', {
+        org: process.env.AZURE_DEVOPS_ORGANIZATION,
+        project: process.env.AZURE_DEVOPS_PROJECT,
+        patLength: process.env.AZURE_DEVOPS_PAT?.length || 0
+      });
     } else {
       // Clear environment variables if disabled or incomplete
       delete process.env.AZURE_DEVOPS_ORGANIZATION;
       delete process.env.AZURE_DEVOPS_PROJECT;
       delete process.env.AZURE_DEVOPS_PAT;
+      console.log('🔧 Environment variables cleared');
     }
     
     return this.getSettings();
