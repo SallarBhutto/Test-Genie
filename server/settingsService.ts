@@ -68,6 +68,7 @@ export class SettingsService {
       console.log('Project:', azureDevOps.project);
       console.log('API URL:', apiUrl);
       console.log('Token length:', azureDevOps.personalAccessToken ? azureDevOps.personalAccessToken.length : 0);
+      console.log('Token preview:', azureDevOps.personalAccessToken ? azureDevOps.personalAccessToken.substring(0, 10) + '...' : 'No token');
       
       const response = await fetch(apiUrl, {
         headers: {
