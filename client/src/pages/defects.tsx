@@ -292,9 +292,25 @@ export default function Defects() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn("status-badge", getStatusBadge(defect.status))}>
-                          {defect.status.replace("_", " ")}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={cn("status-badge", getStatusBadge(defect.status))}>
+                            {defect.status.replace("_", " ")}
+                          </Badge>
+                          {defect.azureWorkItemId && (
+                            <a
+                              href={defect.azureWorkItemUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                              title={`Azure DevOps Work Item #${defect.azureWorkItemId}`}
+                            >
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 8.5L14.5 0L8.5 6L2.8 1.8L0 4.6L8.5 13L24 8.5Z"/>
+                              </svg>
+                              #{defect.azureWorkItemId}
+                            </a>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
