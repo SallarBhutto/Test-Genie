@@ -191,7 +191,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Related Test Case</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} value={field.value?.toString() || "none"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select test case (optional)" />
@@ -290,7 +290,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))} value={field.value?.toString() || "unassigned"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select assignee (optional)" />
