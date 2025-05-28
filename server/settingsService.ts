@@ -33,7 +33,8 @@ export class SettingsService {
   }
 
   async updateAzureDevOpsSettings(settings: AzureDevOpsSettings): Promise<SystemSettings> {
-    systemSettings.azureDevOps = settings;
+    // Save to database
+    await storage.setSetting('azureDevOps', settings);
     
     // Update environment variables for the Azure DevOps service
     if (settings.enabled && settings.organization && settings.project && settings.personalAccessToken) {
@@ -47,11 +48,12 @@ export class SettingsService {
       delete process.env.AZURE_DEVOPS_PAT;
     }
     
-    return systemSettings;
+    return this.getSettings();
   }
 
   async testAzureDevOpsConnection(): Promise<{ success: boolean; message: string }> {
-    const { azureDevOps } = systemSettings;
+    const settings = await this.getSettings();
+    const { azureDevOps } = settings;
     
     if (!azureDevOps.enabled) {
       return { success: false, message: 'Azure DevOps integration is disabled' };
