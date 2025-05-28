@@ -15,7 +15,7 @@ export default function Landing() {
               <Target className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TestGenie
+              QualityBytes
             </span>
           </div>
           <div className="flex items-center space-x-4">
@@ -39,7 +39,7 @@ export default function Landing() {
             Streamline Your <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Testing Workflow</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            TestGenie is a comprehensive test management platform that helps teams organize, execute, and track testing activities with precision and efficiency.
+            QualityBytes is a comprehensive test management platform that helps teams organize, execute, and track testing activities with precision and efficiency.
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/signup">
@@ -63,7 +63,7 @@ export default function Landing() {
             Everything You Need for Test Management
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            From test case creation to defect tracking, TestGenie provides all the tools your team needs to deliver quality software.
+            From test case creation to defect tracking, QualityBytes provides all the tools your team needs to deliver quality software.
           </p>
         </div>
 
