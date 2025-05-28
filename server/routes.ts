@@ -345,7 +345,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test-cases", async (req, res) => {
     try {
       const testSuiteId = req.query.testSuiteId ? parseInt(req.query.testSuiteId as string) : undefined;
-      const testCases = await storage.getTestCases(testSuiteId);
+      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      
+      let testCases = await storage.getTestCases(testSuiteId);
+      
+      // Filter by project if projectId is provided
+      if (projectId) {
+        testCases = testCases.filter(tc => tc.projectId === projectId);
+      }
       
       // Populate with user data
       const users = await storage.getUsers();

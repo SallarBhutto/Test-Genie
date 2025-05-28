@@ -17,6 +17,25 @@ export default function Projects() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
+  const { data: testCases = [] } = useQuery({
+    queryKey: ["/api/test-cases"],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
+  // Calculate project-specific statistics
+  const getProjectStats = (projectId: number) => {
+    const projectTestCases = testCases.filter((tc: any) => tc.projectId === projectId);
+    const projectMembers = users.filter((user: any) => user.role !== 'admin').length; // Basic member count
+    
+    return {
+      testCases: projectTestCases.length,
+      members: projectMembers
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -79,11 +98,11 @@ export default function Projects() {
               <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
                 <div className="flex items-center space-x-1">
                   <Users className="w-4 h-4" />
-                  <span>4 members</span>
+                  <span>{getProjectStats(project.id).members} members</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <FileText className="w-4 h-4" />
-                  <span>12 test cases</span>
+                  <span>{getProjectStats(project.id).testCases} test cases</span>
                 </div>
               </div>
             </CardContent>
