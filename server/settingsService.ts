@@ -11,21 +11,25 @@ interface SystemSettings {
   darkMode: boolean;
 }
 
-// In-memory settings storage (you can replace this with database storage later)
-let systemSettings: SystemSettings = {
-  azureDevOps: {
-    enabled: false,
-    organization: '',
-    project: '',
-    personalAccessToken: ''
-  },
-  emailNotifications: true,
-  darkMode: false
-};
+import { storage } from './storage';
 
 export class SettingsService {
   async getSettings(): Promise<SystemSettings> {
-    return systemSettings;
+    // Load from database or return defaults
+    const azureDevOpsSetting = await storage.getSetting('azureDevOps');
+    const emailNotificationsSetting = await storage.getSetting('emailNotifications');
+    const darkModeSetting = await storage.getSetting('darkMode');
+
+    return {
+      azureDevOps: azureDevOpsSetting?.value || {
+        enabled: false,
+        organization: '',
+        project: '',
+        personalAccessToken: '',
+      },
+      emailNotifications: emailNotificationsSetting?.value || true,
+      darkMode: darkModeSetting?.value || false,
+    };
   }
 
   async updateAzureDevOpsSettings(settings: AzureDevOpsSettings): Promise<SystemSettings> {
