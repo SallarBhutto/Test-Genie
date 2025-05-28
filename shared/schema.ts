@@ -138,6 +138,16 @@ export const requirements = pgTable("requirements", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: json("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -187,6 +197,12 @@ export const insertDefectSchema = createInsertSchema(defects).omit({
 });
 
 export const insertRequirementSchema = createInsertSchema(requirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSettingSchema = createInsertSchema(settings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -359,21 +375,7 @@ export type Defect = typeof defects.$inferSelect;
 export type InsertDefect = z.infer<typeof insertDefectSchema>;
 export type Requirement = typeof requirements.$inferSelect;
 export type InsertRequirement = z.infer<typeof insertRequirementSchema>;
-
-// Settings table for persistent configuration
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
-  key: text("key").notNull().unique(),
-  value: json("value").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const insertSettingSchema = createInsertSchema(settings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
+
