@@ -45,14 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Check if email is verified (bypass for admin users)
-      if (!user.isEmailVerified && user.role !== 'admin') {
-        return res.status(403).json({ 
-          message: "Please verify your email address before logging in. Check your inbox for the verification email.",
-          emailVerificationRequired: true,
-          email: user.email
-        });
-      }
+      // Email verification removed - all users can login directly
 
       // Create session
       const sessionId = crypto.randomUUID();
@@ -92,32 +85,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User with this email already exists" });
       }
 
-      // Generate verification token and expiry
-      const verificationToken = generateVerificationToken();
-      const verificationExpiry = generateVerificationExpiry();
-
-      // Create user with email verification fields
+      // Create user with email already verified (no verification needed)
       const user = await storage.createUser({
         ...validatedData,
-        isEmailVerified: false,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpiry,
+        isEmailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
       });
 
-      // Send verification email
-      const emailSent = await sendVerificationEmail(
-        user.email,
-        user.username,
-        verificationToken
-      );
-
-      if (!emailSent) {
-        console.error("Failed to send verification email to:", user.email);
-        // Still allow signup to proceed, user can request resend later
-      }
-
       res.status(201).json({
-        message: "Account created successfully! Please check your email to verify your account before logging in.",
+        message: "Account created successfully! You can now log in.",
         user: {
           id: user.id,
           username: user.username,
@@ -125,7 +102,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fullName: user.fullName,
           isEmailVerified: user.isEmailVerified,
         },
-        emailSent,
       });
     } catch (error) {
       console.error("Signup error:", error);
