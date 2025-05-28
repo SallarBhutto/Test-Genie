@@ -198,7 +198,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {testCases?.map((testCase: any) => (
                           <SelectItem key={testCase.id} value={testCase.id.toString()}>
                             {testCase.testCaseId} - {testCase.title}
@@ -297,7 +297,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {users?.map((user: any) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
                             {user.fullName}
