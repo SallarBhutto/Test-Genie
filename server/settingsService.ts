@@ -38,8 +38,18 @@ export class SettingsService {
             personalAccessToken: '',
           };
         }
-      } else {
+      } else if (typeof azureDevOpsSetting.value === 'object') {
+        // Already parsed as object
         parsedAzureDevOps = azureDevOpsSetting.value;
+        console.log('🔍 Using object Azure DevOps settings:', parsedAzureDevOps);
+      } else {
+        console.log('🔍 Unexpected Azure DevOps value type:', typeof azureDevOpsSetting.value);
+        parsedAzureDevOps = {
+          enabled: false,
+          organization: '',
+          project: '',
+          personalAccessToken: '',
+        };
       }
     } else {
       parsedAzureDevOps = {

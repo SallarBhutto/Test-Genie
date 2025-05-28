@@ -1016,6 +1016,17 @@ export class DatabaseStorage implements IStorage {
   async getSetting(key: string): Promise<Setting | undefined> {
     const [setting] = await db.select().from(settings).where(eq(settings.key, key));
     console.log(`🔍 getSetting(${key}):`, setting);
+    
+    // Parse JSON value if it's a string
+    if (setting && typeof setting.value === 'string') {
+      try {
+        setting.value = JSON.parse(setting.value);
+        console.log(`🔍 Parsed JSON for ${key}:`, setting.value);
+      } catch (error) {
+        console.error(`🔍 JSON parse error for ${key}:`, error);
+      }
+    }
+    
     return setting;
   }
 
