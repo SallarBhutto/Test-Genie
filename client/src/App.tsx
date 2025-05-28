@@ -19,6 +19,7 @@ import Defects from "@/pages/defects";
 import Requirements from "@/pages/requirements";
 import Reports from "@/pages/reports";
 import Team from "@/pages/team";
+import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
@@ -52,6 +53,7 @@ function AuthenticatedApp() {
             <Route path="/requirements" component={Requirements} />
             <Route path="/reports" component={Reports} />
             <Route path="/team" component={Team} />
+            <Route path="/settings" component={Settings} />
             <Route component={NotFound} />
           </Switch>
         </div>

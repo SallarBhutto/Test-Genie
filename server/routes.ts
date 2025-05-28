@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
 import { azureDevOpsService } from "./azureDevOpsService";
+import { settingsService } from "./settingsService";
 import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";

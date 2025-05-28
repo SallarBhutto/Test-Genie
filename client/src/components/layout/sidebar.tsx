@@ -11,7 +11,8 @@ import {
   Users,
   Package,
   Layers,
-  Target
+  Target,
+  Settings
 } from "lucide-react";
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Requirements", href: "/requirements", icon: FileCheck },
   { name: "Reports", href: "/reports", icon: TrendingUp },
   { name: "Team", href: "/team", icon: Users },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
