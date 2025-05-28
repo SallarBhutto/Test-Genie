@@ -77,12 +77,14 @@ export class SettingsService {
         };
       } else {
         const errorText = await response.text();
+        console.error(`Azure DevOps API Error: ${response.status} - ${errorText}`);
         return { 
           success: false, 
           message: `Connection failed: ${response.status} - ${errorText}` 
         };
       }
     } catch (error) {
+      console.error('Azure DevOps connection test error:', error);
       return { 
         success: false, 
         message: error instanceof Error ? error.message : 'Unknown connection error' 
