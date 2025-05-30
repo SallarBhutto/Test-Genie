@@ -902,7 +902,30 @@ export class DatabaseStorage implements IStorage {
 
   async getTestCases(testSuiteId?: number): Promise<TestCase[]> {
     if (testSuiteId) {
-      return await db.select().from(testCases).where(eq(testCases.testSuiteId, testSuiteId));
+      // Use the junction table to get test cases for a specific test suite
+      const result = await db
+        .select({
+          id: testCases.id,
+          testCaseId: testCases.testCaseId,
+          title: testCases.title,
+          description: testCases.description,
+          preconditions: testCases.preconditions,
+          steps: testCases.steps,
+          expectedResult: testCases.expectedResult,
+          priority: testCases.priority,
+          status: testCases.status,
+          projectId: testCases.projectId,
+          moduleId: testCases.moduleId,
+          componentId: testCases.componentId,
+          assignedTo: testCases.assignedTo,
+          createdBy: testCases.createdBy,
+          createdAt: testCases.createdAt,
+          updatedAt: testCases.updatedAt,
+        })
+        .from(testCases)
+        .innerJoin(testSuiteTestCases, eq(testCases.id, testSuiteTestCases.testCaseId))
+        .where(eq(testSuiteTestCases.testSuiteId, testSuiteId));
+      return result;
     }
     return await db.select().from(testCases);
   }
