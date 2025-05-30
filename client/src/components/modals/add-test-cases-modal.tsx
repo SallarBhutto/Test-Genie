@@ -51,7 +51,7 @@ export default function AddTestCasesModal({
   });
 
   const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases"],
+    queryKey: ["/api/test-cases", Date.now()], // Cache bust to ensure fresh data
   });
 
   const { data: projects } = useQuery({
