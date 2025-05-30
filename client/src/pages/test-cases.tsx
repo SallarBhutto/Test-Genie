@@ -443,7 +443,7 @@ export default function TestCases() {
         }}
         editingTestCase={editingTestCase}
       />
-      <CreateTestSuiteModal
+      <EnhancedTestSuiteModal
         open={showCreateTestSuite}
         onOpenChange={setShowCreateTestSuite}
       />
