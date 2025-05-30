@@ -277,7 +277,7 @@ export default function TestSuites() {
         </CardContent>
       </Card>
 
-      <EnhancedTestSuiteModal
+      <CreateTestSuiteModal
         open={showCreateTestSuite}
         onOpenChange={setShowCreateTestSuite}
       />
