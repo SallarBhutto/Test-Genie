@@ -1,21 +1,13 @@
-import { useState } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
 
 interface AddTestCasesModalProps {
   open: boolean;
@@ -31,25 +23,17 @@ export default function AddTestCasesModal({
   testSuiteName 
 }: AddTestCasesModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedModule, setSelectedModule] = useState("all");
-  const [selectedComponent, setSelectedComponent] = useState("all");
+  const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
+  const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
 
+  // Fetch test suite details
   const { data: testSuite } = useQuery({
-    queryKey: [`/api/test-suites/${testSuiteId}`],
+    queryKey: ["/api/test-suites", testSuiteId],
     enabled: open && !!testSuiteId,
   });
 
-  // Debug logging
-  console.log("Add Test Cases Modal Debug:", {
-    open,
-    testSuiteId,
-    testSuite,
-    testSuiteProjectId: testSuite?.projectId
-  });
-
+  // Fetch all test cases with fresh data
   const { data: testCases } = useQuery({
     queryKey: ["/api/test-cases"],
     queryFn: async () => {
@@ -63,10 +47,7 @@ export default function AddTestCasesModal({
     },
   });
 
-  const { data: projects } = useQuery({
-    queryKey: ["/api/projects"],
-  });
-
+  // Fetch modules and components
   const { data: modules } = useQuery({
     queryKey: ["/api/modules"],
   });
@@ -75,6 +56,7 @@ export default function AddTestCasesModal({
     queryKey: ["/api/components"],
   });
 
+  // Fetch existing test cases in this test suite
   const { data: existingTestCases } = useQuery({
     queryKey: ["/api/test-suites", testSuiteId, "test-cases"],
     queryFn: async () => {
@@ -98,6 +80,7 @@ export default function AddTestCasesModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites", testSuiteId, "test-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
       toast({
         title: "Test cases added",
         description: `${selectedTestCases.length} test cases have been added to the test suite.`,
@@ -105,8 +88,6 @@ export default function AddTestCasesModal({
       onOpenChange(false);
       setSelectedTestCases([]);
       setSearchQuery("");
-      setSelectedModule("all");
-      setSelectedComponent("all");
     },
     onError: () => {
       toast({
@@ -121,7 +102,6 @@ export default function AddTestCasesModal({
     ? existingTestCases.map((tc: any) => tc.id) 
     : [];
 
-  // Get the test suite's project ID to filter test cases
   const testSuiteProjectId = testSuite?.projectId;
 
   // Filter test cases to only show those from the same project as the test suite
@@ -132,62 +112,119 @@ export default function AddTestCasesModal({
       )
     : [];
 
-  // Debug filtering
-  console.log("Filtering Debug:", {
-    allTestCases: testCases,
-    existingTestCaseIds,
-    testSuiteProjectId,
-    projectTestCases
-  });
+  // Group test cases by module and component for hierarchical display
+  const hierarchicalData = React.useMemo(() => {
+    if (!projectTestCases || !modules || !components) return {};
+    
+    const grouped: { 
+      [moduleId: number]: { 
+        module: any, 
+        components: { 
+          [componentId: number]: { 
+            component: any, 
+            testCases: any[] 
+          } 
+        } 
+      } 
+    } = {};
+    
+    projectTestCases.forEach(testCase => {
+      const moduleId = testCase.moduleId;
+      const componentId = testCase.componentId;
+      
+      if (!moduleId || !componentId) return;
+      
+      if (!grouped[moduleId]) {
+        const module = modules.find((m: any) => m.id === moduleId);
+        grouped[moduleId] = { module, components: {} };
+      }
+      
+      if (!grouped[moduleId].components[componentId]) {
+        const component = components.find((c: any) => c.id === componentId);
+        grouped[moduleId].components[componentId] = { component, testCases: [] };
+      }
+      
+      grouped[moduleId].components[componentId].testCases.push(testCase);
+    });
+    
+    return grouped;
+  }, [projectTestCases, modules, components]);
 
-  // Get modules and components for the test suite's project
-  const projectModules = Array.isArray(modules) 
-    ? modules.filter((m: any) => m.projectId === testSuiteProjectId)
-    : [];
-
-  const projectComponents = Array.isArray(components) 
-    ? components.filter((c: any) => {
-        if (selectedModule === "all") {
-          // Show components from all modules in this project
-          const moduleIds = projectModules.map((m: any) => m.id);
-          return moduleIds.includes(c.moduleId);
-        } else {
-          // Show components only from selected module
-          return c.moduleId === parseInt(selectedModule);
+  // Filter by search query
+  const filteredHierarchicalData = React.useMemo(() => {
+    if (!searchQuery) return hierarchicalData;
+    
+    const filtered: typeof hierarchicalData = {};
+    
+    Object.entries(hierarchicalData).forEach(([moduleIdStr, moduleData]) => {
+      const moduleId = parseInt(moduleIdStr);
+      
+      Object.entries(moduleData.components).forEach(([componentIdStr, componentData]) => {
+        const componentId = parseInt(componentIdStr);
+        
+        const matchingTestCases = componentData.testCases.filter(tc => 
+          tc.testCaseId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          tc.title?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        
+        if (matchingTestCases.length > 0) {
+          if (!filtered[moduleId]) {
+            filtered[moduleId] = { module: moduleData.module, components: {} };
+          }
+          filtered[moduleId].components[componentId] = {
+            component: componentData.component,
+            testCases: matchingTestCases
+          };
         }
-      })
-    : [];
-
-  const filteredTestCases = projectTestCases.filter((testCase: any) => {
-    const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         testCase.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      });
+    });
     
-    const matchesModule = selectedModule === "all" || testCase.moduleId?.toString() === selectedModule;
-    
-    const matchesComponent = selectedComponent === "all" || testCase.componentId?.toString() === selectedComponent;
-    
-    return matchesSearch && matchesModule && matchesComponent;
-  });
-
-  const getProjectName = (projectId: number) => {
-    const project = Array.isArray(projects) ? projects.find((p: any) => p.id === projectId) : null;
-    return project?.name || "Unknown Project";
-  };
+    return filtered;
+  }, [hierarchicalData, searchQuery]);
 
   const handleTestCaseToggle = (testCaseId: number) => {
     setSelectedTestCases(prev => 
-      prev.includes(testCaseId)
+      prev.includes(testCaseId) 
         ? prev.filter(id => id !== testCaseId)
         : [...prev, testCaseId]
     );
   };
 
-  const handleSelectAll = () => {
-    if (selectedTestCases.length === filteredTestCases.length) {
-      setSelectedTestCases([]);
+  const handleModuleSelectAll = (moduleId: number) => {
+    const moduleTestCases = Object.values(filteredHierarchicalData[moduleId]?.components || {})
+      .flatMap(comp => comp.testCases.map(tc => tc.id));
+    
+    const allSelected = moduleTestCases.every(id => selectedTestCases.includes(id));
+    
+    if (allSelected) {
+      setSelectedTestCases(prev => prev.filter(id => !moduleTestCases.includes(id)));
     } else {
-      setSelectedTestCases(filteredTestCases.map((tc: any) => tc.id));
+      setSelectedTestCases(prev => [...new Set([...prev, ...moduleTestCases])]);
     }
+  };
+
+  const handleComponentSelectAll = (moduleId: number, componentId: number) => {
+    const componentTestCases = filteredHierarchicalData[moduleId]?.components[componentId]?.testCases.map(tc => tc.id) || [];
+    
+    const allSelected = componentTestCases.every(id => selectedTestCases.includes(id));
+    
+    if (allSelected) {
+      setSelectedTestCases(prev => prev.filter(id => !componentTestCases.includes(id)));
+    } else {
+      setSelectedTestCases(prev => [...new Set([...prev, ...componentTestCases])]);
+    }
+  };
+
+  const toggleModuleExpansion = (moduleId: number) => {
+    setExpandedModules(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
+    });
   };
 
   const handleAddTestCases = () => {
@@ -198,156 +235,133 @@ export default function AddTestCasesModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add Test Cases to "{testSuiteName}"</DialogTitle>
-          <DialogDescription>
-            Select test cases to add to this test suite. Only test cases not already in the suite are shown.
-          </DialogDescription>
+          <DialogTitle>Add Test Cases to {testSuiteName}</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Filters */}
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
-                <Input
-                  placeholder="Search test cases..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search test cases..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          {/* Hierarchical Test Cases List */}
+          <div className="flex-1 overflow-auto border rounded-lg p-4">
+            {Object.keys(filteredHierarchicalData).length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {projectTestCases.length === 0 
+                  ? "No test cases available for this project" 
+                  : "No test cases match your search"}
               </div>
-            </div>
-            <Select value={selectedModule} onValueChange={setSelectedModule}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by module" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Modules</SelectItem>
-                {projectModules.map((module: any) => (
-                  <SelectItem key={module.id} value={module.id.toString()}>
-                    {module.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedComponent} onValueChange={setSelectedComponent}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by component" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Components</SelectItem>
-                {projectComponents.map((component: any) => (
-                  <SelectItem key={component.id} value={component.id.toString()}>
-                    {component.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Select All */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="select-all"
-                checked={selectedTestCases.length === filteredTestCases.length && filteredTestCases.length > 0}
-                onCheckedChange={handleSelectAll}
-              />
-              <label htmlFor="select-all" className="text-sm font-medium">
-                Select all ({filteredTestCases.length} test cases)
-              </label>
-            </div>
-            <div className="text-sm text-neutral-600">
-              {selectedTestCases.length} selected
-            </div>
-          </div>
-
-          {/* Test Cases List */}
-          <ScrollArea className="h-96 border rounded-lg">
-            <div className="p-4 space-y-3">
-              {filteredTestCases.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500">
-                  <Plus className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
-                  <p className="font-medium">No available test cases</p>
-                  <p className="text-sm">
-                    {projectTestCases.length === 0 
-                      ? "All test cases are already in this test suite or no test cases exist for this project."
-                      : "No test cases match your current filters."
-                    }
-                  </p>
-                </div>
-              ) : (
-                filteredTestCases.map((testCase: any) => (
-                  <div 
-                    key={testCase.id}
-                    className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                  >
-                    <Checkbox
-                      id={`testcase-${testCase.id}`}
-                      checked={selectedTestCases.includes(testCase.id)}
-                      onCheckedChange={() => handleTestCaseToggle(testCase.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <label 
-                          htmlFor={`testcase-${testCase.id}`}
-                          className="font-medium text-sm cursor-pointer"
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(filteredHierarchicalData).map(([moduleIdStr, moduleData]) => {
+                  const moduleId = parseInt(moduleIdStr);
+                  const isExpanded = expandedModules.has(moduleId);
+                  const moduleTestCases = Object.values(moduleData.components)
+                    .flatMap(comp => comp.testCases.map(tc => tc.id));
+                  const allSelected = moduleTestCases.length > 0 && moduleTestCases.every(id => selectedTestCases.includes(id));
+                  const someSelected = moduleTestCases.some(id => selectedTestCases.includes(id));
+                  
+                  return (
+                    <div key={moduleId} className="border rounded-lg">
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 border-b">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleModuleExpansion(moduleId)}
+                          className="p-0 h-auto"
                         >
-                          {testCase.title}
-                        </label>
-                        <Badge variant="secondary" className="text-xs">
-                          {testCase.testCaseId}
-                        </Badge>
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                        <Checkbox
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someSelected && !allSelected;
+                          }}
+                          onCheckedChange={() => handleModuleSelectAll(moduleId)}
+                        />
+                        <span className="font-medium">{moduleData.module?.name || `Module ${moduleId}`}</span>
+                        <Badge variant="secondary">{moduleTestCases.length} test cases</Badge>
                       </div>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2">
-                        {testCase.description || "No description"}
-                      </p>
-                      <div className="flex gap-2">
-                        {testCase.projectId && (
-                          <Badge variant="outline" className="text-xs">
-                            {getProjectName(testCase.projectId)}
-                          </Badge>
-                        )}
-                        <Badge 
-                          variant={testCase.priority === "High" ? "destructive" : 
-                                  testCase.priority === "Medium" ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {testCase.priority}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {testCase.status}
-                        </Badge>
-                      </div>
+                      
+                      {isExpanded && (
+                        <div className="p-3 space-y-3">
+                          {Object.entries(moduleData.components).map(([componentIdStr, componentData]) => {
+                            const componentId = parseInt(componentIdStr);
+                            const componentTestCases = componentData.testCases.map(tc => tc.id);
+                            const allComponentSelected = componentTestCases.every(id => selectedTestCases.includes(id));
+                            const someComponentSelected = componentTestCases.some(id => selectedTestCases.includes(id));
+                            
+                            return (
+                              <div key={componentId} className="ml-6 border rounded">
+                                <div className="flex items-center gap-2 p-2 bg-blue-50 border-b">
+                                  <Checkbox
+                                    checked={allComponentSelected}
+                                    ref={(el) => {
+                                      if (el) el.indeterminate = someComponentSelected && !allComponentSelected;
+                                    }}
+                                    onCheckedChange={() => handleComponentSelectAll(moduleId, componentId)}
+                                  />
+                                  <span className="font-medium text-sm">{componentData.component?.name || `Component ${componentId}`}</span>
+                                  <Badge variant="outline" className="text-xs">{componentTestCases.length} test cases</Badge>
+                                </div>
+                                
+                                <div className="p-2 space-y-2">
+                                  {componentData.testCases.map((testCase) => (
+                                    <div key={testCase.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                                      <Checkbox
+                                        checked={selectedTestCases.includes(testCase.id)}
+                                        onCheckedChange={() => handleTestCaseToggle(testCase.id)}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-sm text-blue-600">{testCase.testCaseId}</span>
+                                          <Badge variant={testCase.priority === 'critical' ? 'destructive' : testCase.priority === 'high' ? 'default' : 'secondary'}>
+                                            {testCase.priority}
+                                          </Badge>
+                                          <Badge variant="outline">{testCase.status}</Badge>
+                                        </div>
+                                        <div className="text-sm text-gray-700 mt-1">{testCase.title}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
-              )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-gray-600">
+              {selectedTestCases.length} test case{selectedTestCases.length !== 1 ? 's' : ''} selected
             </div>
-          </ScrollArea>
-
-          {/* Actions */}
-          <div className="flex justify-end space-x-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddTestCases}
-              disabled={selectedTestCases.length === 0 || addTestCasesMutation.isPending}
-            >
-              {addTestCasesMutation.isPending 
-                ? "Adding..." 
-                : `Add ${selectedTestCases.length} Test Case${selectedTestCases.length === 1 ? '' : 's'}`
-              }
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddTestCases}
+                disabled={selectedTestCases.length === 0 || addTestCasesMutation.isPending}
+              >
+                {addTestCasesMutation.isPending ? "Adding..." : `Add ${selectedTestCases.length} Test Cases`}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
