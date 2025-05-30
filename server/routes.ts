@@ -443,6 +443,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/test-suites/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const testSuite = await storage.getTestSuite(id);
+      if (!testSuite) {
+        return res.status(404).json({ message: "Test suite not found" });
+      }
+      res.json(testSuite);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch test suite" });
+    }
+  });
+
   app.post("/api/test-suites", async (req, res) => {
     console.log("=== TEST SUITE CREATION START ===");
     console.log("Raw request body:", req.body);
