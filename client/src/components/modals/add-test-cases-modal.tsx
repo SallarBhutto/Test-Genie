@@ -67,8 +67,8 @@ export default function AddTestCasesModal({
   });
 
   const { data: existingTestCases } = useQuery({
-    queryKey: ["/api/test-suites", testSuiteId, "test-cases"],
-    enabled: open,
+    queryKey: ["/api/test-suites", testSuiteId, "test-cases", Date.now()],
+    enabled: open && !!testSuiteId,
   });
 
   const addTestCasesMutation = useMutation({
