@@ -80,7 +80,6 @@ export const testCases = pgTable("test_cases", {
   expectedResult: text("expected_result").notNull(),
   priority: text("priority").notNull().default("medium"), // low, medium, high, critical
   status: text("status").notNull().default("draft"), // draft, ready, passed, failed, blocked
-  testSuiteId: integer("test_suite_id").references(() => testSuites.id).notNull(),
   projectId: integer("project_id").references(() => projects.id),
   moduleId: integer("module_id").references(() => modules.id),
   componentId: integer("component_id").references(() => components.id),
@@ -294,10 +293,6 @@ export const testSuiteTestCasesRelations = relations(testSuiteTestCases, ({ one 
 }));
 
 export const testCasesRelations = relations(testCases, ({ one, many }) => ({
-  testSuite: one(testSuites, {
-    fields: [testCases.testSuiteId],
-    references: [testSuites.id],
-  }),
   createdBy: one(users, {
     fields: [testCases.createdBy],
     references: [users.id],
@@ -306,6 +301,19 @@ export const testCasesRelations = relations(testCases, ({ one, many }) => ({
     fields: [testCases.assignedTo],
     references: [users.id],
   }),
+  project: one(projects, {
+    fields: [testCases.projectId],
+    references: [projects.id],
+  }),
+  module: one(modules, {
+    fields: [testCases.moduleId],
+    references: [modules.id],
+  }),
+  component: one(components, {
+    fields: [testCases.componentId],
+    references: [components.id],
+  }),
+  testSuiteTestCases: many(testSuiteTestCases),
   testRunResults: many(testRunResults),
 }));
 
