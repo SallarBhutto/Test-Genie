@@ -59,10 +59,15 @@ export const testSuites = pgTable("test_suites", {
   name: text("name").notNull(),
   description: text("description"),
   projectId: integer("project_id").references(() => projects.id).notNull(),
-  moduleId: integer("module_id").references(() => modules.id),
-  componentId: integer("component_id").references(() => components.id),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const testSuiteTestCases = pgTable("test_suite_test_cases", {
+  id: serial("id").primaryKey(),
+  testSuiteId: integer("test_suite_id").references(() => testSuites.id).notNull(),
+  testCaseId: integer("test_case_id").references(() => testCases.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
 });
 
 export const testCases = pgTable("test_cases", {
@@ -175,6 +180,11 @@ export const insertTestSuiteSchema = createInsertSchema(testSuites).omit({
   createdAt: true,
 });
 
+export const insertTestSuiteTestCaseSchema = createInsertSchema(testSuiteTestCases).omit({
+  id: true,
+  addedAt: true,
+});
+
 export const insertTestCaseSchema = createInsertSchema(testCases).omit({
   id: true,
   createdAt: true,
@@ -265,19 +275,22 @@ export const testSuitesRelations = relations(testSuites, ({ one, many }) => ({
     fields: [testSuites.projectId],
     references: [projects.id],
   }),
-  module: one(modules, {
-    fields: [testSuites.moduleId],
-    references: [modules.id],
-  }),
-  component: one(components, {
-    fields: [testSuites.componentId],
-    references: [components.id],
-  }),
   createdBy: one(users, {
     fields: [testSuites.createdBy],
     references: [users.id],
   }),
-  testCases: many(testCases),
+  testSuiteTestCases: many(testSuiteTestCases),
+}));
+
+export const testSuiteTestCasesRelations = relations(testSuiteTestCases, ({ one }) => ({
+  testSuite: one(testSuites, {
+    fields: [testSuiteTestCases.testSuiteId],
+    references: [testSuites.id],
+  }),
+  testCase: one(testCases, {
+    fields: [testSuiteTestCases.testCaseId],
+    references: [testCases.id],
+  }),
 }));
 
 export const testCasesRelations = relations(testCases, ({ one, many }) => ({
@@ -366,6 +379,8 @@ export type Component = typeof components.$inferSelect;
 export type InsertComponent = z.infer<typeof insertComponentSchema>;
 export type TestSuite = typeof testSuites.$inferSelect;
 export type InsertTestSuite = z.infer<typeof insertTestSuiteSchema>;
+export type TestSuiteTestCase = typeof testSuiteTestCases.$inferSelect;
+export type InsertTestSuiteTestCase = z.infer<typeof insertTestSuiteTestCaseSchema>;
 export type TestCase = typeof testCases.$inferSelect;
 export type InsertTestCase = z.infer<typeof insertTestCaseSchema>;
 export type TestRun = typeof testRuns.$inferSelect;

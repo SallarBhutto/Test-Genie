@@ -53,6 +53,14 @@ export interface IStorage {
   createTestSuite(testSuite: InsertTestSuite): Promise<TestSuite>;
   updateTestSuite(id: number, testSuite: Partial<TestSuite>): Promise<TestSuite | undefined>;
   deleteTestSuite(id: number): Promise<boolean>;
+  
+  // Test Suite Test Cases
+  getTestSuiteTestCases(testSuiteId: number): Promise<TestCase[]>;
+  addTestCasesToSuite(testSuiteId: number, testCaseIds: number[]): Promise<void>;
+  removeTestCaseFromSuite(testSuiteId: number, testCaseId: number): Promise<boolean>;
+  getTestCasesForProject(projectId: number): Promise<TestCase[]>;
+  getTestCasesForModule(moduleId: number): Promise<TestCase[]>;
+  getTestCasesForComponent(componentId: number): Promise<TestCase[]>;
 
   // Test Cases
   getTestCases(testSuiteId?: number): Promise<TestCase[]>;
