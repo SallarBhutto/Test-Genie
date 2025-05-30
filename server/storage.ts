@@ -860,9 +860,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addTestCasesToSuite(testSuiteId: number, testCaseIds: number[]): Promise<void> {
-    // Check existing relationships to avoid duplicates
+    // Check existing relationships to avoid duplicates - select only existing columns
     const existingRelations = await db
-      .select()
+      .select({
+        testSuiteId: testSuiteTestCases.testSuiteId,
+        testCaseId: testSuiteTestCases.testCaseId,
+      })
       .from(testSuiteTestCases)
       .where(eq(testSuiteTestCases.testSuiteId, testSuiteId));
     
