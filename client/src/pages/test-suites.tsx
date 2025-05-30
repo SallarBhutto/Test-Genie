@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, TestTube, Eye, Users } from "lucide-react";
-import EnhancedTestSuiteModal from "@/components/modals/enhanced-test-suite-modal";
+import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
