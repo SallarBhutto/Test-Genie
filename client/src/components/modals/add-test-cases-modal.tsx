@@ -38,7 +38,7 @@ export default function AddTestCasesModal({
   const [selectedComponent, setSelectedComponent] = useState("all");
 
   const { data: testSuite } = useQuery({
-    queryKey: ["/api/test-suites", testSuiteId],
+    queryKey: [`/api/test-suites/${testSuiteId}`],
     enabled: open && !!testSuiteId,
   });
 
