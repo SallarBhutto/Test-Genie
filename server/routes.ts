@@ -444,12 +444,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/test-suites", async (req, res) => {
+    console.log("=== TEST SUITE CREATION START ===");
+    console.log("Raw request body:", req.body);
+    
     try {
-      const validatedData = insertTestSuiteSchema.parse(req.body);
+      const { testCaseIds, ...testSuiteData } = req.body;
+      const validatedData = insertTestSuiteSchema.parse(testSuiteData);
+      
+      // Create the test suite
       const testSuite = await storage.createTestSuite(validatedData);
+      console.log("Test suite created:", testSuite);
+      
+      // Add test cases to the suite if provided
+      if (testCaseIds && testCaseIds.length > 0) {
+        await storage.addTestCasesToSuite(testSuite.id, testCaseIds);
+        console.log(`Added ${testCaseIds.length} test cases to test suite ${testSuite.id}`);
+      }
+      
       res.status(201).json(testSuite);
     } catch (error) {
+      console.error("Test suite creation error:", error);
       res.status(400).json({ message: "Invalid test suite data" });
+    }
+  });
+
+  // Test Suite Test Cases endpoints
+  app.get("/api/test-suites/:id/test-cases", async (req, res) => {
+    try {
+      const testSuiteId = parseInt(req.params.id);
+      const testCases = await storage.getTestSuiteTestCases(testSuiteId);
+      res.json(testCases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch test suite test cases" });
+    }
+  });
+
+  app.post("/api/test-suites/:id/test-cases", async (req, res) => {
+    try {
+      const testSuiteId = parseInt(req.params.id);
+      const { testCaseIds } = req.body;
+      
+      await storage.addTestCasesToSuite(testSuiteId, testCaseIds);
+      res.status(200).json({ message: "Test cases added successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add test cases to suite" });
+    }
+  });
+
+  app.delete("/api/test-suites/:id/test-cases/:testCaseId", async (req, res) => {
+    try {
+      const testSuiteId = parseInt(req.params.id);
+      const testCaseId = parseInt(req.params.testCaseId);
+      
+      const removed = await storage.removeTestCaseFromSuite(testSuiteId, testCaseId);
+      if (removed) {
+        res.status(200).json({ message: "Test case removed successfully" });
+      } else {
+        res.status(404).json({ message: "Test case not found in suite" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove test case from suite" });
+    }
+  });
+
+  // Helper endpoints for test case filtering
+  app.get("/api/projects/:id/test-cases", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const testCases = await storage.getTestCasesForProject(projectId);
+      res.json(testCases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch project test cases" });
+    }
+  });
+
+  app.get("/api/modules/:id/test-cases", async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.id);
+      const testCases = await storage.getTestCasesForModule(moduleId);
+      res.json(testCases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch module test cases" });
+    }
+  });
+
+  app.get("/api/components/:id/test-cases", async (req, res) => {
+    try {
+      const componentId = parseInt(req.params.id);
+      const testCases = await storage.getTestCasesForComponent(componentId);
+      res.json(testCases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch component test cases" });
     }
   });
 

@@ -831,6 +831,74 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  // Test Suite Test Cases
+  async getTestSuiteTestCases(testSuiteId: number): Promise<TestCase[]> {
+    const result = await db
+      .select({
+        id: testCases.id,
+        testCaseId: testCases.testCaseId,
+        title: testCases.title,
+        description: testCases.description,
+        preconditions: testCases.preconditions,
+        steps: testCases.steps,
+        expectedResult: testCases.expectedResult,
+        priority: testCases.priority,
+        status: testCases.status,
+        testSuiteId: testCases.testSuiteId,
+        moduleId: testCases.moduleId,
+        componentId: testCases.componentId,
+        assignedTo: testCases.assignedTo,
+        createdBy: testCases.createdBy,
+        createdAt: testCases.createdAt,
+        updatedAt: testCases.updatedAt,
+      })
+      .from(testCases)
+      .innerJoin(testSuiteTestCases, eq(testCases.id, testSuiteTestCases.testCaseId))
+      .where(eq(testSuiteTestCases.testSuiteId, testSuiteId));
+    return result;
+  }
+
+  async addTestCasesToSuite(testSuiteId: number, testCaseIds: number[]): Promise<void> {
+    const values = testCaseIds.map(testCaseId => ({
+      testSuiteId,
+      testCaseId,
+    }));
+    
+    if (values.length > 0) {
+      await db.insert(testSuiteTestCases).values(values);
+    }
+  }
+
+  async removeTestCaseFromSuite(testSuiteId: number, testCaseId: number): Promise<boolean> {
+    const result = await db
+      .delete(testSuiteTestCases)
+      .where(
+        and(
+          eq(testSuiteTestCases.testSuiteId, testSuiteId),
+          eq(testSuiteTestCases.testCaseId, testCaseId)
+        )
+      );
+    return result.rowCount > 0;
+  }
+
+  async getTestCasesForProject(projectId: number): Promise<TestCase[]> {
+    return await db
+      .select()
+      .from(testCases)
+      .innerJoin(modules, eq(testCases.moduleId, modules.id))
+      .innerJoin(projects, eq(modules.projectId, projects.id))
+      .where(eq(projects.id, projectId))
+      .then(results => results.map(result => result.test_cases));
+  }
+
+  async getTestCasesForModule(moduleId: number): Promise<TestCase[]> {
+    return await db.select().from(testCases).where(eq(testCases.moduleId, moduleId));
+  }
+
+  async getTestCasesForComponent(componentId: number): Promise<TestCase[]> {
+    return await db.select().from(testCases).where(eq(testCases.componentId, componentId));
+  }
+
   async getTestCases(testSuiteId?: number): Promise<TestCase[]> {
     if (testSuiteId) {
       return await db.select().from(testCases).where(eq(testCases.testSuiteId, testSuiteId));

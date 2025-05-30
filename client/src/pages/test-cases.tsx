@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
-import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
+import EnhancedTestSuiteModal from "@/components/modals/enhanced-test-suite-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
