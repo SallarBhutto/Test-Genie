@@ -105,12 +105,12 @@ export default function AddTestCasesModal({
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites", testSuiteId, "test-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
       toast({
         title: "Test cases added",
-        description: `${selectedTestCases.length} test cases have been added to the test suite.`,
+        description: `${variables.length} test cases have been added to the test suite.`,
       });
       onOpenChange(false);
       setSelectedTestCases([]);
@@ -131,12 +131,9 @@ export default function AddTestCasesModal({
 
   const testSuiteProjectId = (testSuite as any)?.projectId;
 
-  // Filter test cases to only show those from the same project as the test suite
+  // Show all test cases from the same project as the test suite
   const projectTestCases = Array.isArray(testCases) 
-    ? testCases.filter((tc: any) => 
-        !existingTestCaseIds.includes(tc.id) && 
-        tc.projectId === testSuiteProjectId
-      )
+    ? testCases.filter((tc: any) => tc.projectId === testSuiteProjectId)
     : [];
 
   // Debug logging
@@ -220,6 +217,16 @@ export default function AddTestCasesModal({
     return filtered;
   }, [hierarchicalData, searchQuery]);
 
+  // Initialize selected test cases with existing ones when modal opens
+  React.useEffect(() => {
+    if (open && existingTestCases && Array.isArray(existingTestCases)) {
+      setSelectedTestCases(existingTestCases.map((tc: any) => tc.id));
+    } else if (!open) {
+      // Reset selections when modal closes
+      setSelectedTestCases([]);
+    }
+  }, [open, existingTestCases]);
+
   const handleTestCaseToggle = (testCaseId: number) => {
     setSelectedTestCases(prev => 
       prev.includes(testCaseId) 
@@ -266,8 +273,16 @@ export default function AddTestCasesModal({
   };
 
   const handleAddTestCases = () => {
-    if (selectedTestCases.length > 0) {
-      addTestCasesMutation.mutate(selectedTestCases);
+    // Only send newly selected test cases (not the existing ones)
+    const newlySelectedTestCases = selectedTestCases.filter(id => !existingTestCaseIds.includes(id));
+    
+    if (newlySelectedTestCases.length > 0) {
+      addTestCasesMutation.mutate(newlySelectedTestCases);
+    } else {
+      toast({
+        title: "No new test cases",
+        description: "All selected test cases are already in this test suite.",
+      });
     }
   };
 
@@ -397,7 +412,14 @@ export default function AddTestCasesModal({
                 onClick={handleAddTestCases}
                 disabled={selectedTestCases.length === 0 || addTestCasesMutation.isPending}
               >
-                {addTestCasesMutation.isPending ? "Adding..." : `Add ${selectedTestCases.length} Test Cases`}
+                {addTestCasesMutation.isPending ? "Adding..." : 
+                  (() => {
+                    const newlySelectedCount = selectedTestCases.filter(id => !existingTestCaseIds.includes(id)).length;
+                    return newlySelectedCount > 0 
+                      ? `Add ${newlySelectedCount} New Test Cases`
+                      : "No New Test Cases to Add";
+                  })()
+                }
               </Button>
             </div>
           </div>
