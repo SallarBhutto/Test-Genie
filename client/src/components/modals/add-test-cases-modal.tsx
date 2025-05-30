@@ -39,7 +39,15 @@ export default function AddTestCasesModal({
 
   const { data: testSuite } = useQuery({
     queryKey: ["/api/test-suites", testSuiteId],
-    enabled: open,
+    enabled: open && !!testSuiteId,
+  });
+
+  // Debug logging
+  console.log("Add Test Cases Modal Debug:", {
+    open,
+    testSuiteId,
+    testSuite,
+    testSuiteProjectId: testSuite?.projectId
   });
 
   const { data: testCases } = useQuery({
