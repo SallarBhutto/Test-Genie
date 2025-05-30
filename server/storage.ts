@@ -9,7 +9,7 @@ import {
   type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -860,13 +860,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addTestCasesToSuite(testSuiteId: number, testCaseIds: number[]): Promise<void> {
-    const values = testCaseIds.map(testCaseId => ({
-      testSuiteId,
-      testCaseId,
-    }));
+    // Check existing relationships to avoid duplicates
+    const existingRelations = await db
+      .select()
+      .from(testSuiteTestCases)
+      .where(eq(testSuiteTestCases.testSuiteId, testSuiteId));
     
-    if (values.length > 0) {
-      await db.insert(testSuiteTestCases).values(values);
+    const existingTestCaseIds = new Set(existingRelations.map(rel => rel.testCaseId));
+    
+    // Filter out test cases that are already in the suite
+    const newTestCaseIds = testCaseIds.filter(id => !existingTestCaseIds.has(id));
+    
+    // Insert new relationships using only the columns that exist in the table
+    if (newTestCaseIds.length > 0) {
+      const values = newTestCaseIds.map(testCaseId => ({
+        testSuiteId,
+        testCaseId,
+      }));
+      
+      try {
+        await db.insert(testSuiteTestCases).values(values);
+      } catch (error) {
+        console.error('Error adding test cases to suite:', error);
+        throw error;
+      }
     }
   }
 
