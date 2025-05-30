@@ -508,10 +508,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const testSuiteId = parseInt(req.params.id);
       const { testCaseIds } = req.body;
       
+      console.log("=== ADD TEST CASES TO SUITE START ===");
+      console.log("Test Suite ID:", testSuiteId);
+      console.log("Test Case IDs:", testCaseIds);
+      
       await storage.addTestCasesToSuite(testSuiteId, testCaseIds);
+      console.log("Test cases added successfully");
+      
       res.status(200).json({ message: "Test cases added successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Failed to add test cases to suite" });
+      console.error("=== ADD TEST CASES TO SUITE ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+      
+      res.status(500).json({ 
+        message: "Failed to add test cases to suite",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
