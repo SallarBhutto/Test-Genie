@@ -240,8 +240,8 @@ export default function AddTestCasesModal({
                   <Plus className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
                   <p className="font-medium">No available test cases</p>
                   <p className="text-sm">
-                    {availableTestCases.length === 0 
-                      ? "All test cases are already in this test suite or no test cases exist."
+                    {projectTestCases.length === 0 
+                      ? "All test cases are already in this test suite or no test cases exist for this project."
                       : "No test cases match your current filters."
                     }
                   </p>
