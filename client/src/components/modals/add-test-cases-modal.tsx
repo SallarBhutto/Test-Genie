@@ -51,7 +51,16 @@ export default function AddTestCasesModal({
   });
 
   const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases", Date.now()], // Cache bust to ensure fresh data
+    queryKey: ["/api/test-cases"],
+    queryFn: async () => {
+      const response = await fetch("/api/test-cases", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      return response.json();
+    },
   });
 
   const { data: projects } = useQuery({
@@ -67,7 +76,16 @@ export default function AddTestCasesModal({
   });
 
   const { data: existingTestCases } = useQuery({
-    queryKey: ["/api/test-suites", testSuiteId, "test-cases", Date.now()],
+    queryKey: ["/api/test-suites", testSuiteId, "test-cases"],
+    queryFn: async () => {
+      const response = await fetch(`/api/test-suites/${testSuiteId}/test-cases`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      return response.json();
+    },
     enabled: open && !!testSuiteId,
   });
 

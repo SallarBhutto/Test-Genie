@@ -845,7 +845,7 @@ export class DatabaseStorage implements IStorage {
         expectedResult: testCases.expectedResult,
         priority: testCases.priority,
         status: testCases.status,
-        testSuiteId: testCases.testSuiteId,
+        projectId: testCases.projectId,
         moduleId: testCases.moduleId,
         componentId: testCases.componentId,
         assignedTo: testCases.assignedTo,
