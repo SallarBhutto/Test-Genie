@@ -212,7 +212,11 @@ export default function EnhancedTestSuiteModal({ open, onOpenChange }: EnhancedT
                       <Textarea 
                         placeholder="Describe the test suite" 
                         className="min-h-10"
-                        {...field} 
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />

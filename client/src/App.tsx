@@ -12,6 +12,7 @@ import ModuleDetail from "@/pages/module-detail";
 import Components from "@/pages/components";
 import ComponentDetail from "@/pages/component-detail";
 import TestCases from "@/pages/test-cases";
+import TestSuites from "@/pages/test-suites";
 import TestRunsFixed from "@/pages/test-runs-fixed";
 import TestRunExecute from "@/pages/test-run-execute";
 import TestRunResults from "@/pages/test-run-results";
@@ -46,6 +47,7 @@ function AuthenticatedApp() {
             <Route path="/components/:id" component={ComponentDetail} />
             <Route path="/components/:componentId/test-cases" component={TestCases} />
             <Route path="/test-cases" component={TestCases} />
+            <Route path="/test-suites" component={TestSuites} />
             <Route path="/test-runs" component={TestRunsFixed} />
             <Route path="/test-runs/:id/execute" component={TestRunExecute} />
             <Route path="/test-runs/:id/results" component={TestRunResults} />

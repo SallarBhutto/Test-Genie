@@ -12,7 +12,8 @@ import {
   Package,
   Layers,
   Target,
-  Settings
+  Settings,
+  TestTube
 } from "lucide-react";
 
 const navigation = [
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Modules", href: "/modules", icon: Package },
   { name: "Components", href: "/components", icon: Layers },
   { name: "Test Cases", href: "/test-cases", icon: FileText },
+  { name: "Test Suites", href: "/test-suites", icon: TestTube },
   { name: "Test Runs", href: "/test-runs", icon: Play },
   { name: "Defects", href: "/defects", icon: Bug },
   { name: "Requirements", href: "/requirements", icon: FileCheck },

@@ -1,14 +1,15 @@
 import {
-  users, sessions, projects, modules, components, testSuites, testCases, testRuns, testRunResults, defects, requirements, settings,
+  users, sessions, projects, modules, components, testSuites, testSuiteTestCases, testCases, testRuns, testRunResults, defects, requirements, settings,
   type User, type InsertUser, type Project, type InsertProject,
   type Module, type InsertModule, type Component, type InsertComponent,
-  type TestSuite, type InsertTestSuite, type TestCase, type InsertTestCase,
+  type TestSuite, type InsertTestSuite, type TestSuiteTestCase, type InsertTestSuiteTestCase,
+  type TestCase, type InsertTestCase,
   type TestRun, type InsertTestRun, type TestRunResult, type InsertTestRunResult,
   type Defect, type InsertDefect, type Requirement, type InsertRequirement,
   type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
