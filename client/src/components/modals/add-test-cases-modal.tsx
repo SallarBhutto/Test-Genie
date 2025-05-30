@@ -34,7 +34,13 @@ export default function AddTestCasesModal({
   const queryClient = useQueryClient();
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProject, setSelectedProject] = useState("all");
+  const [selectedModule, setSelectedModule] = useState("all");
+  const [selectedComponent, setSelectedComponent] = useState("all");
+
+  const { data: testSuite } = useQuery({
+    queryKey: ["/api/test-suites", testSuiteId],
+    enabled: open,
+  });
 
   const { data: testCases } = useQuery({
     queryKey: ["/api/test-cases"],
@@ -42,6 +48,14 @@ export default function AddTestCasesModal({
 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
+  });
+
+  const { data: modules } = useQuery({
+    queryKey: ["/api/modules"],
+  });
+
+  const { data: components } = useQuery({
+    queryKey: ["/api/components"],
   });
 
   const { data: existingTestCases } = useQuery({
@@ -65,7 +79,8 @@ export default function AddTestCasesModal({
       onOpenChange(false);
       setSelectedTestCases([]);
       setSearchQuery("");
-      setSelectedProject("all");
+      setSelectedModule("all");
+      setSelectedComponent("all");
     },
     onError: () => {
       toast({
@@ -80,16 +95,44 @@ export default function AddTestCasesModal({
     ? existingTestCases.map((tc: any) => tc.id) 
     : [];
 
-  const availableTestCases = Array.isArray(testCases) 
-    ? testCases.filter((tc: any) => !existingTestCaseIds.includes(tc.id))
+  // Get the test suite's project ID to filter test cases
+  const testSuiteProjectId = testSuite?.projectId;
+
+  // Filter test cases to only show those from the same project as the test suite
+  const projectTestCases = Array.isArray(testCases) 
+    ? testCases.filter((tc: any) => 
+        !existingTestCaseIds.includes(tc.id) && 
+        tc.projectId === testSuiteProjectId
+      )
     : [];
 
-  const filteredTestCases = availableTestCases.filter((testCase: any) => {
+  // Get modules and components for the test suite's project
+  const projectModules = Array.isArray(modules) 
+    ? modules.filter((m: any) => m.projectId === testSuiteProjectId)
+    : [];
+
+  const projectComponents = Array.isArray(components) 
+    ? components.filter((c: any) => {
+        if (selectedModule === "all") {
+          // Show components from all modules in this project
+          const moduleIds = projectModules.map((m: any) => m.id);
+          return moduleIds.includes(c.moduleId);
+        } else {
+          // Show components only from selected module
+          return c.moduleId === parseInt(selectedModule);
+        }
+      })
+    : [];
+
+  const filteredTestCases = projectTestCases.filter((testCase: any) => {
     const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          testCase.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesProject = selectedProject === "all" || 
-                          testCase.projectId?.toString() === selectedProject;
-    return matchesSearch && matchesProject;
+    
+    const matchesModule = selectedModule === "all" || testCase.moduleId?.toString() === selectedModule;
+    
+    const matchesComponent = selectedComponent === "all" || testCase.componentId?.toString() === selectedComponent;
+    
+    return matchesSearch && matchesModule && matchesComponent;
   });
 
   const getProjectName = (projectId: number) => {
@@ -143,15 +186,29 @@ export default function AddTestCasesModal({
                 />
               </div>
             </div>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <Select value={selectedModule} onValueChange={setSelectedModule}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by project" />
+                <SelectValue placeholder="Filter by module" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {Array.isArray(projects) && projects.map((project: any) => (
-                  <SelectItem key={project.id} value={project.id.toString()}>
-                    {project.name}
+                <SelectItem value="all">All Modules</SelectItem>
+                {projectModules.map((module: any) => (
+                  <SelectItem key={module.id} value={module.id.toString()}>
+                    {module.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedComponent} onValueChange={setSelectedComponent}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by component" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Components</SelectItem>
+                {projectComponents.map((component: any) => (
+                  <SelectItem key={component.id} value={component.id.toString()}>
+                    {component.name}
                   </SelectItem>
                 ))}
               </SelectContent>
