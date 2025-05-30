@@ -8,12 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, TestTube, Eye, Users } from "lucide-react";
 import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
+import AddTestCasesModal from "@/components/modals/add-test-cases-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
 export default function TestSuites() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
+  const [showAddTestCases, setShowAddTestCases] = useState(false);
+  const [selectedTestSuite, setSelectedTestSuite] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState("all");
   const { toast } = useToast();
@@ -237,6 +240,17 @@ export default function TestSuites() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => {
+                            setSelectedTestSuite(suite);
+                            setShowAddTestCases(true);
+                          }}
+                          title="Add Test Cases"
+                        >
+                          <TestTube className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
                             // TODO: Navigate to test suite detail page
                             toast({
                               title: "View Test Suite",
@@ -281,6 +295,15 @@ export default function TestSuites() {
         open={showCreateTestSuite}
         onOpenChange={setShowCreateTestSuite}
       />
+
+      {selectedTestSuite && (
+        <AddTestCasesModal
+          open={showAddTestCases}
+          onOpenChange={setShowAddTestCases}
+          testSuiteId={selectedTestSuite.id}
+          testSuiteName={selectedTestSuite.name}
+        />
+      )}
     </div>
   );
 }
