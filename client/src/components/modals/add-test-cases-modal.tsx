@@ -114,6 +114,14 @@ export default function AddTestCasesModal({
       )
     : [];
 
+  // Debug filtering
+  console.log("Filtering Debug:", {
+    allTestCases: testCases,
+    existingTestCaseIds,
+    testSuiteProjectId,
+    projectTestCases
+  });
+
   // Get modules and components for the test suite's project
   const projectModules = Array.isArray(modules) 
     ? modules.filter((m: any) => m.projectId === testSuiteProjectId)
