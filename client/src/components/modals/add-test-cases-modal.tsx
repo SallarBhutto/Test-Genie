@@ -29,7 +29,16 @@ export default function AddTestCasesModal({
 
   // Fetch test suite details
   const { data: testSuite } = useQuery({
-    queryKey: ["/api/test-suites", testSuiteId],
+    queryKey: ["/api/test-suites", testSuiteId, "details"],
+    queryFn: async () => {
+      const response = await fetch(`/api/test-suites/${testSuiteId}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      return response.json();
+    },
     enabled: open && !!testSuiteId,
   });
 
@@ -47,13 +56,31 @@ export default function AddTestCasesModal({
     },
   });
 
-  // Fetch modules and components
+  // Fetch modules and components with fresh data
   const { data: modules } = useQuery({
     queryKey: ["/api/modules"],
+    queryFn: async () => {
+      const response = await fetch("/api/modules", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      return response.json();
+    },
   });
 
   const { data: components } = useQuery({
     queryKey: ["/api/components"],
+    queryFn: async () => {
+      const response = await fetch("/api/components", {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      return response.json();
+    },
   });
 
   // Fetch existing test cases in this test suite
@@ -102,7 +129,7 @@ export default function AddTestCasesModal({
     ? existingTestCases.map((tc: any) => tc.id) 
     : [];
 
-  const testSuiteProjectId = testSuite?.projectId;
+  const testSuiteProjectId = (testSuite as any)?.projectId;
 
   // Filter test cases to only show those from the same project as the test suite
   const projectTestCases = Array.isArray(testCases) 
@@ -111,6 +138,17 @@ export default function AddTestCasesModal({
         tc.projectId === testSuiteProjectId
       )
     : [];
+
+  // Debug logging
+  console.log("Debug Info:", {
+    testSuite,
+    testSuiteProjectId,
+    allTestCases: testCases,
+    projectTestCases,
+    modules,
+    components,
+    existingTestCaseIds
+  });
 
   // Group test cases by module and component for hierarchical display
   const hierarchicalData = React.useMemo(() => {
@@ -135,12 +173,12 @@ export default function AddTestCasesModal({
       if (!moduleId || !componentId) return;
       
       if (!grouped[moduleId]) {
-        const module = modules.find((m: any) => m.id === moduleId);
+        const module = Array.isArray(modules) ? modules.find((m: any) => m.id === moduleId) : null;
         grouped[moduleId] = { module, components: {} };
       }
       
       if (!grouped[moduleId].components[componentId]) {
-        const component = components.find((c: any) => c.id === componentId);
+        const component = Array.isArray(components) ? components.find((c: any) => c.id === componentId) : null;
         grouped[moduleId].components[componentId] = { component, testCases: [] };
       }
       
