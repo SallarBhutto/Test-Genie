@@ -108,18 +108,29 @@ export default function AddTestCasesModal({
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites", testSuiteId, "test-cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
-      toast({
-        title: "Test cases added",
-        description: `${variables.length} test cases have been added to the test suite.`,
-      });
-      onOpenChange(false);
-      setSelectedTestCases([]);
-      setSearchQuery("");
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to add test cases. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeTestCaseMutation = useMutation({
+    mutationFn: async (testCaseId: number) => {
+      const response = await apiRequest("DELETE", `/api/test-suites/${testSuiteId}/test-cases/${testCaseId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites", testSuiteId, "test-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove test case. Please try again.",
         variant: "destructive",
       });
     },
@@ -272,17 +283,51 @@ export default function AddTestCasesModal({
     });
   };
 
-  const handleAddTestCases = () => {
-    // Only send newly selected test cases (not the existing ones)
-    const newlySelectedTestCases = selectedTestCases.filter(id => !existingTestCaseIds.includes(id));
-    
-    if (newlySelectedTestCases.length > 0) {
-      addTestCasesMutation.mutate(newlySelectedTestCases);
-    } else {
-      toast({
-        title: "No new test cases",
-        description: "All selected test cases are already in this test suite.",
-      });
+  const handleAddTestCases = async () => {
+    try {
+      // Find test cases to add (newly selected)
+      const testCasesToAdd = selectedTestCases.filter(id => !existingTestCaseIds.includes(id));
+      
+      // Find test cases to remove (previously selected but now deselected)
+      const testCasesToRemove = existingTestCaseIds.filter(id => !selectedTestCases.includes(id));
+      
+      let addedCount = 0;
+      let removedCount = 0;
+      
+      // Remove deselected test cases
+      for (const testCaseId of testCasesToRemove) {
+        await removeTestCaseMutation.mutateAsync(testCaseId);
+        removedCount++;
+      }
+      
+      // Add newly selected test cases
+      if (testCasesToAdd.length > 0) {
+        await addTestCasesMutation.mutateAsync(testCasesToAdd);
+        addedCount = testCasesToAdd.length;
+      }
+      
+      // Show success message
+      if (addedCount > 0 || removedCount > 0) {
+        const messages = [];
+        if (addedCount > 0) messages.push(`${addedCount} test cases added`);
+        if (removedCount > 0) messages.push(`${removedCount} test cases removed`);
+        
+        toast({
+          title: "Test suite updated",
+          description: messages.join(", ") + ".",
+        });
+        
+        onOpenChange(false);
+        setSelectedTestCases([]);
+        setSearchQuery("");
+      } else {
+        toast({
+          title: "No changes",
+          description: "No changes were made to the test suite.",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating test suite:", error);
     }
   };
 
@@ -410,14 +455,29 @@ export default function AddTestCasesModal({
               </Button>
               <Button 
                 onClick={handleAddTestCases}
-                disabled={selectedTestCases.length === 0 || addTestCasesMutation.isPending}
-              >
-                {addTestCasesMutation.isPending ? "Adding..." : 
+                disabled={
+                  (addTestCasesMutation.isPending || removeTestCaseMutation.isPending) ||
                   (() => {
-                    const newlySelectedCount = selectedTestCases.filter(id => !existingTestCaseIds.includes(id)).length;
-                    return newlySelectedCount > 0 
-                      ? `Add ${newlySelectedCount} New Test Cases`
-                      : "No New Test Cases to Add";
+                    const testCasesToAdd = selectedTestCases.filter(id => !existingTestCaseIds.includes(id));
+                    const testCasesToRemove = existingTestCaseIds.filter(id => !selectedTestCases.includes(id));
+                    return testCasesToAdd.length === 0 && testCasesToRemove.length === 0;
+                  })()
+                }
+              >
+                {(addTestCasesMutation.isPending || removeTestCaseMutation.isPending) ? "Updating..." : 
+                  (() => {
+                    const testCasesToAdd = selectedTestCases.filter(id => !existingTestCaseIds.includes(id));
+                    const testCasesToRemove = existingTestCaseIds.filter(id => !selectedTestCases.includes(id));
+                    
+                    if (testCasesToAdd.length === 0 && testCasesToRemove.length === 0) {
+                      return "No Changes";
+                    }
+                    
+                    const actions = [];
+                    if (testCasesToAdd.length > 0) actions.push(`Add ${testCasesToAdd.length}`);
+                    if (testCasesToRemove.length > 0) actions.push(`Remove ${testCasesToRemove.length}`);
+                    
+                    return actions.join(" & ");
                   })()
                 }
               </Button>
