@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,8 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
+  const [selectedTestSuites, setSelectedTestSuites] = useState<number[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
@@ -60,6 +63,51 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   const { data: testCases } = useQuery({
     queryKey: ["/api/test-cases"],
   });
+
+  const { data: testSuites } = useQuery({
+    queryKey: ["/api/test-suites"],
+  });
+
+  // Get test cases for selected test suites
+  const { data: testSuiteTestCases } = useQuery({
+    queryKey: ["/api/test-suites/test-cases", selectedTestSuites],
+    queryFn: async () => {
+      if (selectedTestSuites.length === 0) return [];
+      
+      const allTestCases = [];
+      for (const suiteId of selectedTestSuites) {
+        const response = await fetch(`/api/test-suites/${suiteId}/test-cases`);
+        const suiteTestCases = await response.json();
+        allTestCases.push(...suiteTestCases);
+      }
+      return allTestCases;
+    },
+    enabled: selectedTestSuites.length > 0,
+  });
+
+  // Filter test suites by selected project
+  const projectTestSuites = (testSuites as any[])?.filter(
+    suite => selectedProjectId ? suite.projectId === selectedProjectId : false
+  ) || [];
+
+  // Filter test cases by selected project
+  const projectTestCases = (testCases as any[])?.filter(
+    testCase => selectedProjectId ? testCase.projectId === selectedProjectId : false
+  ) || [];
+
+  // Combine test cases from test suites and manually selected ones, avoiding duplicates
+  const allSelectedTestCases = (() => {
+    const suiteTestCaseIds = (testSuiteTestCases as any[])?.map(tc => tc.id) || [];
+    const combined = [...suiteTestCaseIds, ...selectedTestCases];
+    const unique = combined.filter((id, index) => combined.indexOf(id) === index);
+    return unique;
+  })();
+
+  // Reset selections when project changes
+  useEffect(() => {
+    setSelectedTestSuites([]);
+    setSelectedTestCases([]);
+  }, [selectedProjectId]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -118,7 +166,11 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                 <FormItem>
                   <FormLabel>Project</FormLabel>
                   <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
+                    onValueChange={(value) => {
+                      const projectId = Number(value);
+                      field.onChange(projectId);
+                      setSelectedProjectId(projectId);
+                    }}
                     value={field.value ? field.value.toString() : ""}
                   >
                     <FormControl>
@@ -196,69 +248,177 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
               )}
             />
 
-            {/* Test Case Selection Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <FormLabel>Select Test Cases</FormLabel>
-                <Badge variant="secondary">
-                  {selectedTestCases.length} selected
-                </Badge>
-              </div>
-              <ScrollArea className="h-48 border rounded-md p-3">
-                {(testCases as any[])?.length > 0 ? (
-                  <div className="space-y-2">
-                    {(testCases as any[]).map((testCase) => (
-                      <div key={testCase.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`testcase-${testCase.id}`}
-                          checked={selectedTestCases.includes(testCase.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedTestCases([...selectedTestCases, testCase.id]);
-                            } else {
-                              setSelectedTestCases(selectedTestCases.filter(id => id !== testCase.id));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={`testcase-${testCase.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span>{testCase.testCaseId}: {testCase.title}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {testCase.priority}
-                            </Badge>
-                          </div>
-                        </label>
-                      </div>
-                    ))}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedTestCases((testCases as any[])?.map(tc => tc.id) || [])}
-                      >
-                        Select All
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedTestCases([])}
-                      >
-                        Clear All
-                      </Button>
+            {/* Test Suite and Test Case Selection */}
+            {selectedProjectId && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Select Test Content</FormLabel>
+                  <Badge variant="secondary">
+                    {allSelectedTestCases.length} test cases selected
+                  </Badge>
+                </div>
+                
+                <Tabs defaultValue="suites" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="suites">Test Suites</TabsTrigger>
+                    <TabsTrigger value="cases">Individual Test Cases</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="suites" className="space-y-3">
+                    <div className="text-sm text-gray-600">
+                      Select test suites to automatically include all their test cases
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-neutral-500 text-center py-4">
-                    No test cases available. Create test cases first.
-                  </p>
-                )}
-              </ScrollArea>
-            </div>
+                    <ScrollArea className="h-48 border rounded-md p-3">
+                      {projectTestSuites.length > 0 ? (
+                        <div className="space-y-2">
+                          {projectTestSuites.map((testSuite) => (
+                            <div key={testSuite.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`testsuite-${testSuite.id}`}
+                                checked={selectedTestSuites.includes(testSuite.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedTestSuites([...selectedTestSuites, testSuite.id]);
+                                  } else {
+                                    setSelectedTestSuites(selectedTestSuites.filter(id => id !== testSuite.id));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`testsuite-${testSuite.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium">{testSuite.name}</div>
+                                    {testSuite.description && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {testSuite.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    Suite
+                                  </Badge>
+                                </div>
+                              </label>
+                            </div>
+                          ))}
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedTestSuites(projectTestSuites.map(ts => ts.id))}
+                            >
+                              Select All Suites
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedTestSuites([])}
+                            >
+                              Clear Suites
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-neutral-500 text-center py-4">
+                          No test suites available for this project.
+                        </p>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                  
+                  <TabsContent value="cases" className="space-y-3">
+                    <div className="text-sm text-gray-600">
+                      Manually select individual test cases (in addition to those from selected test suites)
+                    </div>
+                    <ScrollArea className="h-48 border rounded-md p-3">
+                      {projectTestCases.length > 0 ? (
+                        <div className="space-y-2">
+                          {projectTestCases.map((testCase) => {
+                            const isFromSuite = (testSuiteTestCases as any[])?.some(tc => tc.id === testCase.id);
+                            const isManuallySelected = selectedTestCases.includes(testCase.id);
+                            const isSelected = isFromSuite || isManuallySelected;
+                            
+                            return (
+                              <div key={testCase.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`testcase-${testCase.id}`}
+                                  checked={isSelected}
+                                  disabled={isFromSuite}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTestCases([...selectedTestCases, testCase.id]);
+                                    } else {
+                                      setSelectedTestCases(selectedTestCases.filter(id => id !== testCase.id));
+                                    }
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`testcase-${testCase.id}`}
+                                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 ${
+                                    isFromSuite ? 'opacity-70' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <span>{testCase.testCaseId}: {testCase.title}</span>
+                                      {isFromSuite && (
+                                        <span className="text-xs text-blue-600 ml-2">(from test suite)</span>
+                                      )}
+                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      {testCase.priority}
+                                    </Badge>
+                                  </div>
+                                </label>
+                              </div>
+                            );
+                          })}
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const availableIds = projectTestCases
+                                  .filter(tc => !(testSuiteTestCases as any[])?.some(stc => stc.id === tc.id))
+                                  .map(tc => tc.id);
+                                const uniqueIds = availableIds.filter(id => !selectedTestCases.includes(id));
+                                setSelectedTestCases([...selectedTestCases, ...uniqueIds]);
+                              }}
+                            >
+                              Select All Available
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedTestCases([])}
+                            >
+                              Clear Manual Selection
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-neutral-500 text-center py-4">
+                          No test cases available for this project.
+                        </p>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
+
+            {!selectedProjectId && (
+              <div className="text-sm text-neutral-500 text-center py-8 border rounded-md border-dashed">
+                Please select a project first to choose test suites and test cases
+              </div>
+            )}
 
             <DialogFooter>
               <Button 
