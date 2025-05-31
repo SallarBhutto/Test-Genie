@@ -678,10 +678,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/test-runs", async (req, res) => {
     try {
-      const validatedData = insertTestRunSchema.parse(req.body);
+      const { testCaseIds, ...testRunData } = req.body;
+      const validatedData = insertTestRunSchema.parse(testRunData);
+      
+      // Create the test run first
       const testRun = await storage.createTestRun(validatedData);
+      
+      // Create test run results for all selected test cases
+      if (testCaseIds && Array.isArray(testCaseIds) && testCaseIds.length > 0) {
+        for (const testCaseId of testCaseIds) {
+          await storage.createTestRunResult({
+            testRunId: testRun.id,
+            testCaseId: testCaseId,
+            status: "not_executed",
+            notes: "",
+            executedBy: testRunData.createdBy,
+          });
+        }
+      }
+      
       res.status(201).json(testRun);
     } catch (error) {
+      console.error("Error creating test run:", error);
       res.status(400).json({ message: "Invalid test run data" });
     }
   });

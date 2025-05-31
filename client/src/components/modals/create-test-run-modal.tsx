@@ -121,7 +121,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   });
 
   const createTestRunMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: any) => {
       const response = await apiRequest("POST", "/api/test-runs", data);
       return response;
     },
@@ -131,7 +131,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
         description: "Test run created successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/test-runs"] });
-      form.reset();
+      resetForm();
       onOpenChange(false);
     },
     onError: () => {
@@ -143,8 +143,28 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     },
   });
 
+  const resetForm = () => {
+    form.reset();
+    setSelectedTestCases([]);
+    setSelectedTestSuites([]);
+    setSelectedProjectId(null);
+  };
+
   const onSubmit = (data: FormData) => {
-    createTestRunMutation.mutate(data);
+    if (allSelectedTestCases.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one test case or test suite.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const submissionData = {
+      ...data,
+      testCaseIds: allSelectedTestCases,
+    };
+    createTestRunMutation.mutate(submissionData);
   };
 
   return (
@@ -424,12 +444,18 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  resetForm();
+                  onOpenChange(false);
+                }}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createTestRunMutation.isPending}>
-                {createTestRunMutation.isPending ? "Creating..." : "Create Test Run"}
+              <Button 
+                type="submit" 
+                disabled={createTestRunMutation.isPending || allSelectedTestCases.length === 0}
+              >
+                {createTestRunMutation.isPending ? "Creating..." : `Create Test Run (${allSelectedTestCases.length} test cases)`}
               </Button>
             </DialogFooter>
           </form>
