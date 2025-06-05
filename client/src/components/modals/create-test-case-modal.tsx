@@ -245,12 +245,20 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     console.log("Form submitted with data:", data);
     console.log("Is editing?", !!editingTestCase);
     console.log("Steps:", steps);
+    console.log("Form errors:", form.formState.errors);
     
     createTestCaseMutation.mutate({
       ...data,
       steps: steps.filter(step => step.trim() !== ""),
     });
   };
+
+  // Add debugging for form state
+  console.log("Form state:", {
+    isValid: form.formState.isValid,
+    errors: form.formState.errors,
+    isSubmitting: form.formState.isSubmitting
+  });
 
   console.log("Modal render - open:", open, "editingTestCase:", editingTestCase);
   
