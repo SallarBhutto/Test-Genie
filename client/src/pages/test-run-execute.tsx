@@ -85,20 +85,22 @@ export default function TestRunExecute() {
       return;
     }
 
-    // Save test results and update status
+    // Update test results by patching existing ones
     try {
       for (const [testCaseId, result] of Object.entries(results)) {
-        await apiRequest('POST', '/api/test-run-results', {
-          testRunId: testRunId,
-          testCaseId: parseInt(testCaseId),
-          status: result.status,
-          notes: result.notes || '',
-          executedBy: 1,
-          executedAt: new Date().toISOString()
-        });
+        // Find the corresponding test run result ID
+        const testRunResult = (testRunResults as any[])?.find(tr => tr.testCaseId === parseInt(testCaseId));
+        if (testRunResult) {
+          await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
+            status: result.status,
+            notes: result.notes || '',
+            executedBy: 1,
+            executedAt: new Date().toISOString()
+          });
+        }
       }
 
-      // Simple status update without problematic fields
+      // Update test run status to completed
       updateTestRunMutation.mutate({ status: 'completed' });
     } catch (error) {
       console.error('Failed to complete test execution:', error);
@@ -220,8 +222,8 @@ export default function TestRunExecute() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      variant={results[testCase.id]?.status === "passed" ? "default" : "outline"}
-                      onClick={() => handleStatusChange(testCase.id, "passed")}
+                      variant={results[testCaseResult.testCaseId]?.status === "passed" ? "default" : "outline"}
+                      onClick={() => handleStatusChange(testCaseResult.testCaseId, "passed")}
                       className="text-xs"
                     >
                       <CheckCircle className="w-3 h-3 mr-1" />
@@ -229,8 +231,8 @@ export default function TestRunExecute() {
                     </Button>
                     <Button
                       size="sm"
-                      variant={results[testCase.id]?.status === "failed" ? "destructive" : "outline"}
-                      onClick={() => handleStatusChange(testCase.id, "failed")}
+                      variant={results[testCaseResult.testCaseId]?.status === "failed" ? "destructive" : "outline"}
+                      onClick={() => handleStatusChange(testCaseResult.testCaseId, "failed")}
                       className="text-xs"
                     >
                       <XCircle className="w-3 h-3 mr-1" />
@@ -238,8 +240,8 @@ export default function TestRunExecute() {
                     </Button>
                     <Button
                       size="sm"
-                      variant={results[testCase.id]?.status === "blocked" ? "secondary" : "outline"}
-                      onClick={() => handleStatusChange(testCase.id, "blocked")}
+                      variant={results[testCaseResult.testCaseId]?.status === "blocked" ? "secondary" : "outline"}
+                      onClick={() => handleStatusChange(testCaseResult.testCaseId, "blocked")}
                       className="text-xs"
                     >
                       <Clock className="w-3 h-3 mr-1" />
@@ -252,8 +254,8 @@ export default function TestRunExecute() {
                   <p className="text-sm font-medium mb-2">Notes</p>
                   <Textarea
                     placeholder="Add execution notes..."
-                    value={results[testCase.id]?.notes || ''}
-                    onChange={(e) => handleNotesChange(testCase.id, e.target.value)}
+                    value={results[testCaseResult.testCaseId]?.notes || ''}
+                    onChange={(e) => handleNotesChange(testCaseResult.testCaseId, e.target.value)}
                     rows={2}
                   />
                 </div>
