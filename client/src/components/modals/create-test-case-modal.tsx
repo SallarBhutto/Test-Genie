@@ -539,30 +539,6 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="testSuiteId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Test Suite</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select test suite" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {(testSuites as any[])?.map((suite) => (
-                          <SelectItem key={suite.id} value={suite.id.toString()}>
-                            {suite.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <DialogFooter>
