@@ -684,15 +684,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the test run first
       const testRun = await storage.createTestRun(validatedData);
       
-      // Create test run results for all selected test cases
+      // Create test run results for all selected test cases with execution order
       if (testCaseIds && Array.isArray(testCaseIds) && testCaseIds.length > 0) {
-        for (const testCaseId of testCaseIds) {
+        for (let i = 0; i < testCaseIds.length; i++) {
           await storage.createTestRunResult({
             testRunId: testRun.id,
-            testCaseId: testCaseId,
+            testCaseId: testCaseIds[i],
             status: "not_executed",
             notes: "",
             executedBy: testRunData.createdBy,
+            executionOrder: i + 1, // 1-based ordering
           });
         }
       }
