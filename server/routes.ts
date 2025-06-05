@@ -603,6 +603,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-generate test case ID (must be before :id route)
+  app.get("/api/test-cases/generate-id", async (req, res) => {
+    try {
+      console.log("=== GENERATING TEST CASE ID ===");
+      const testCases = await storage.getTestCases();
+      console.log("Fetched test cases count:", testCases.length);
+      
+      const maxId = testCases.reduce((max, tc) => {
+        const match = tc.testCaseId?.match(/TC-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          console.log("Found test case ID:", tc.testCaseId, "Extracted number:", num);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      console.log("Max ID found:", maxId);
+      const nextId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
+      console.log("Generated next ID:", nextId);
+      
+      res.json({ testCaseId: nextId });
+    } catch (error) {
+      console.error("Error generating test case ID:", error);
+      res.status(500).json({ message: "Failed to generate test case ID", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   app.get("/api/test-cases/:id", async (req, res) => {
     try {
       const testCase = await storage.getTestCase(parseInt(req.params.id));
@@ -612,26 +640,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(testCase);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch test case" });
-    }
-  });
-
-  // Auto-generate test case ID
-  app.get("/api/test-cases/generate-id", async (req, res) => {
-    try {
-      const testCases = await storage.getTestCases();
-      const maxId = testCases.reduce((max, tc) => {
-        const match = tc.testCaseId?.match(/TC-(\d+)/);
-        if (match) {
-          const num = parseInt(match[1]);
-          return num > max ? num : max;
-        }
-        return max;
-      }, 0);
-      
-      const nextId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
-      res.json({ testCaseId: nextId });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to generate test case ID" });
     }
   });
 
