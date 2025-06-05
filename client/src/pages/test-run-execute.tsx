@@ -216,26 +216,26 @@ export default function TestRunExecute() {
               <div>
                 <p className="text-sm font-medium">Progress</p>
                 <p className="text-2xl font-bold">
-                  {testRunResults ? testRunResults.filter((r: any) => r.status !== 'not_executed').length : 0} / {displayTestCases.length}
+                  {testRunResults && Array.isArray(testRunResults) ? testRunResults.filter((r: any) => r.status !== 'not_executed').length : 0} / {displayTestCases.length}
                 </p>
                 <p className="text-xs text-gray-500">Tests executed</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-lg font-bold text-green-600">
-                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'passed').length : 0}
+                    {testRunResults && Array.isArray(testRunResults) ? testRunResults.filter((r: any) => r.status === 'passed').length : 0}
                   </p>
                   <p className="text-xs">Passed</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-red-600">
-                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'failed').length : 0}
+                    {testRunResults && Array.isArray(testRunResults) ? testRunResults.filter((r: any) => r.status === 'failed').length : 0}
                   </p>
                   <p className="text-xs">Failed</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-yellow-600">
-                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'blocked').length : 0}
+                    {testRunResults && Array.isArray(testRunResults) ? testRunResults.filter((r: any) => r.status === 'blocked').length : 0}
                   </p>
                   <p className="text-xs">Blocked</p>
                 </div>

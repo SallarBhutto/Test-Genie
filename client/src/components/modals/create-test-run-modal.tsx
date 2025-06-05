@@ -54,6 +54,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   const queryClient = useQueryClient();
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedTestSuites, setSelectedTestSuites] = useState<number[]>([]);
+  const [selectionOrder, setSelectionOrder] = useState<Array<{type: 'suite' | 'case', id: number}>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const { data: projects } = useQuery({
@@ -68,19 +69,19 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     queryKey: ["/api/test-suites"],
   });
 
-  // Get test cases for selected test suites
+  // Get test cases for selected test suites, maintaining order
   const { data: testSuiteTestCases } = useQuery({
     queryKey: ["/api/test-suites/test-cases", selectedTestSuites],
     queryFn: async () => {
       if (selectedTestSuites.length === 0) return [];
       
-      const allTestCases = [];
+      const orderedTestCases = [];
       for (const suiteId of selectedTestSuites) {
         const response = await fetch(`/api/test-suites/${suiteId}/test-cases`);
         const suiteTestCases = await response.json();
-        allTestCases.push(...suiteTestCases);
+        orderedTestCases.push(...suiteTestCases);
       }
-      return allTestCases;
+      return orderedTestCases;
     },
     enabled: selectedTestSuites.length > 0,
   });
@@ -95,18 +96,49 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     testCase => selectedProjectId ? testCase.projectId === selectedProjectId : false
   ) || [];
 
-  // Combine test cases from test suites and manually selected ones, avoiding duplicates
+  // Combine test cases maintaining selection order
   const allSelectedTestCases = (() => {
-    const suiteTestCaseIds = (testSuiteTestCases as any[])?.map(tc => tc.id) || [];
-    const combined = [...suiteTestCaseIds, ...selectedTestCases];
-    const unique = combined.filter((id, index) => combined.indexOf(id) === index);
-    return unique;
+    const orderedTestCaseIds: number[] = [];
+    const seenIds = new Set<number>();
+    
+    // Process selections in order
+    for (const selection of selectionOrder) {
+      if (selection.type === 'suite') {
+        // Add test cases from this suite in the order they appear in the suite
+        const suiteTestCases = (testSuiteTestCases as any[])?.filter(tc => 
+          selectedTestSuites.includes(selection.id)
+        ) || [];
+        for (const testCase of suiteTestCases) {
+          if (!seenIds.has(testCase.id)) {
+            orderedTestCaseIds.push(testCase.id);
+            seenIds.add(testCase.id);
+          }
+        }
+      } else if (selection.type === 'case') {
+        // Add individual test case
+        if (!seenIds.has(selection.id)) {
+          orderedTestCaseIds.push(selection.id);
+          seenIds.add(selection.id);
+        }
+      }
+    }
+    
+    // Add any remaining selected test cases not in selection order (fallback)
+    for (const testCaseId of selectedTestCases) {
+      if (!seenIds.has(testCaseId)) {
+        orderedTestCaseIds.push(testCaseId);
+        seenIds.add(testCaseId);
+      }
+    }
+    
+    return orderedTestCaseIds;
   })();
 
   // Reset selections when project changes
   useEffect(() => {
     setSelectedTestSuites([]);
     setSelectedTestCases([]);
+    setSelectionOrder([]);
   }, [selectedProjectId]);
 
   const form = useForm<FormData>({
@@ -147,7 +179,30 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     form.reset();
     setSelectedTestCases([]);
     setSelectedTestSuites([]);
+    setSelectionOrder([]);
     setSelectedProjectId(null);
+  };
+
+  // Handler for test suite selection that tracks order
+  const handleTestSuiteSelection = (suiteId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedTestSuites(prev => [...prev, suiteId]);
+      setSelectionOrder(prev => [...prev, { type: 'suite', id: suiteId }]);
+    } else {
+      setSelectedTestSuites(prev => prev.filter(id => id !== suiteId));
+      setSelectionOrder(prev => prev.filter(item => !(item.type === 'suite' && item.id === suiteId)));
+    }
+  };
+
+  // Handler for individual test case selection that tracks order
+  const handleTestCaseSelection = (testCaseId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedTestCases(prev => [...prev, testCaseId]);
+      setSelectionOrder(prev => [...prev, { type: 'case', id: testCaseId }]);
+    } else {
+      setSelectedTestCases(prev => prev.filter(id => id !== testCaseId));
+      setSelectionOrder(prev => prev.filter(item => !(item.type === 'case' && item.id === testCaseId)));
+    }
   };
 
   const onSubmit = (data: FormData) => {
