@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,9 +37,10 @@ interface CreateComponentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   modules: Module[];
+  selectedModuleId?: number;
 }
 
-export default function CreateComponentModal({ open, onOpenChange, modules }: CreateComponentModalProps) {
+export default function CreateComponentModal({ open, onOpenChange, modules, selectedModuleId }: CreateComponentModalProps) {
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -47,9 +48,20 @@ export default function CreateComponentModal({ open, onOpenChange, modules }: Cr
     defaultValues: {
       name: "",
       description: "",
-      moduleId: modules[0]?.id || 0,
+      moduleId: selectedModuleId || modules[0]?.id || 0,
     },
   });
+
+  // Reset form with selected module when modal opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        description: "",
+        moduleId: selectedModuleId || modules[0]?.id || 0,
+      });
+    }
+  }, [open, selectedModuleId, modules, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {

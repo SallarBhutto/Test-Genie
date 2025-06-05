@@ -216,6 +216,7 @@ export default function Components() {
         open={createModalOpen} 
         onOpenChange={setCreateModalOpen}
         modules={filteredModules}
+        selectedModuleId={selectedModuleId !== "all" ? parseInt(selectedModuleId) : undefined}
       />
     </div>
   );
