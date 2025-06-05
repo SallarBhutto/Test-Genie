@@ -314,9 +314,9 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
 
               <TabsContent value="testcases" className="flex-1 flex flex-col min-h-0">
                 {selectedProjectId > 0 ? (
-                  <div className="flex flex-col gap-4 flex-1 min-h-0">
+                  <div className="flex flex-col gap-4 h-full">
                     {/* Search */}
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         placeholder="Search test cases..."
@@ -328,21 +328,22 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
                     
                     {/* Selected count */}
                     {selectedTestCases.length > 0 && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 flex-shrink-0">
                         {selectedTestCases.length} test case{selectedTestCases.length === 1 ? '' : 's'} selected
                       </div>
                     )}
                     
                     {/* Hierarchical Test Cases List */}
-                    <div className="flex-1 overflow-y-auto border rounded-lg p-4 max-h-96">
-                      {Object.keys(filteredHierarchicalData).length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          {projectTestCases.length === 0 
-                            ? "No test cases available for this project" 
-                            : "No test cases match your search"}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
+                    <div className="border rounded-lg overflow-hidden flex-1 min-h-0">
+                      <div className="h-full overflow-y-auto p-4">
+                        {Object.keys(filteredHierarchicalData).length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            {projectTestCases.length === 0 
+                              ? "No test cases available for this project" 
+                              : "No test cases match your search"}
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
                           {Object.entries(filteredHierarchicalData).map(([moduleIdStr, moduleData]) => {
                             const moduleId = parseInt(moduleIdStr);
                             const isExpanded = expandedModules.has(moduleId);
@@ -426,8 +427,9 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
                               </div>
                             );
                           })}
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
