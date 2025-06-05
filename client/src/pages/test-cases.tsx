@@ -32,7 +32,7 @@ export default function TestCases() {
   // Update project filter when header project changes
   useEffect(() => {
     if (selectedProject) {
-      setFilters(prev => ({ ...prev, project: selectedProject.name, module: "all", component: "all" }));
+      setFilters(prev => ({ ...prev, project: selectedProject.id.toString(), module: "all", component: "all" }));
     } else {
       setFilters(prev => ({ ...prev, project: "all", module: "all", component: "all" }));
     }
@@ -43,9 +43,8 @@ export default function TestCases() {
     if (!filters.project || filters.project === "all") {
       return Array.isArray(modules) ? modules : [];
     }
-    const selectedProject = Array.isArray(projects) ? projects.find((p: any) => p.name === filters.project) : null;
-    if (!selectedProject) return [];
-    return Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
+    const projectId = parseInt(filters.project);
+    return Array.isArray(modules) ? modules.filter((m: any) => m.projectId === projectId) : [];
   };
 
   // Get filtered components based on selected module
@@ -55,15 +54,13 @@ export default function TestCases() {
         return Array.isArray(components) ? components : [];
       }
       // Show components from selected project
-      const selectedProject = Array.isArray(projects) ? projects.find((p: any) => p.name === filters.project) : null;
-      if (!selectedProject) return [];
-      const projectModules = Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
+      const projectId = parseInt(filters.project);
+      const projectModules = Array.isArray(modules) ? modules.filter((m: any) => m.projectId === projectId) : [];
       const moduleIds = projectModules.map((m: any) => m.id);
       return Array.isArray(components) ? components.filter((c: any) => moduleIds.includes(c.moduleId)) : [];
     }
-    const selectedModule = Array.isArray(modules) ? modules.find((m: any) => m.name === filters.module) : null;
-    if (!selectedModule) return [];
-    return Array.isArray(components) ? components.filter((c: any) => c.moduleId === selectedModule.id) : [];
+    const moduleId = parseInt(filters.module);
+    return Array.isArray(components) ? components.filter((c: any) => c.moduleId === moduleId) : [];
   };
 
   // Handle project filter change - reset dependent filters
@@ -171,9 +168,9 @@ export default function TestCases() {
     const module = Array.isArray(modules) ? modules.find((m: any) => m.id === testCase.moduleId) : null;
     const component = Array.isArray(components) ? components.find((c: any) => c.id === testCase.componentId) : null;
     
-    const matchesProject = !filters.project || filters.project === "all" || (project && project.name === filters.project);
-    const matchesModule = !filters.module || filters.module === "all" || (module && module.name === filters.module);
-    const matchesComponent = !filters.component || filters.component === "all" || (component && component.name === filters.component);
+    const matchesProject = !filters.project || filters.project === "all" || (project && project.id.toString() === filters.project);
+    const matchesModule = !filters.module || filters.module === "all" || (module && module.id.toString() === filters.module);
+    const matchesComponent = !filters.component || filters.component === "all" || (component && component.id.toString() === filters.component);
     const matchesPriority = !filters.priority || filters.priority === "all" || testCase.priority === filters.priority;
     const matchesStatus = !filters.status || filters.status === "all" || testCase.status === filters.status;
     
@@ -250,7 +247,7 @@ export default function TestCases() {
                 <SelectContent>
                   <SelectItem value="all">All Projects</SelectItem>
                   {Array.isArray(projects) && projects.map((project: any) => (
-                    <SelectItem key={project.id} value={project.name}>{project.name}</SelectItem>
+                    <SelectItem key={project.id} value={project.id.toString()}>{project.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -262,7 +259,7 @@ export default function TestCases() {
                 <SelectContent>
                   <SelectItem value="all">All Modules</SelectItem>
                   {getAvailableModules().map((module: any) => (
-                    <SelectItem key={module.id} value={module.name}>{module.name}</SelectItem>
+                    <SelectItem key={module.id} value={module.id.toString()}>{module.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -274,7 +271,7 @@ export default function TestCases() {
                 <SelectContent>
                   <SelectItem value="all">All Components</SelectItem>
                   {getAvailableComponents().map((component: any) => (
-                    <SelectItem key={component.id} value={component.name}>{component.name}</SelectItem>
+                    <SelectItem key={component.id} value={component.id.toString()}>{component.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
