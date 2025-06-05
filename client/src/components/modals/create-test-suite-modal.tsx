@@ -334,7 +334,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
                     )}
                     
                     {/* Hierarchical Test Cases List */}
-                    <div className="flex-1 overflow-auto border rounded-lg p-4">
+                    <div className="flex-1 overflow-y-auto border rounded-lg p-4 max-h-96">
                       {Object.keys(filteredHierarchicalData).length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           {projectTestCases.length === 0 

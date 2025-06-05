@@ -262,19 +262,7 @@ export default function TestSuites() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            // TODO: Implement edit functionality
-                            toast({
-                              title: "Edit Test Suite",
-                              description: "Edit functionality coming soon.",
-                            });
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+
                         <Button 
                           variant="ghost" 
                           size="sm"
