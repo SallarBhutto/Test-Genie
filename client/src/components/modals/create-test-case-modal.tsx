@@ -242,6 +242,10 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
   };
 
   const onSubmit = (data: FormData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Is editing?", !!editingTestCase);
+    console.log("Steps:", steps);
+    
     createTestCaseMutation.mutate({
       ...data,
       steps: steps.filter(step => step.trim() !== ""),
