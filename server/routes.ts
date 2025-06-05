@@ -615,6 +615,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-generate test case ID
+  app.get("/api/test-cases/generate-id", async (req, res) => {
+    try {
+      const testCases = await storage.getTestCases();
+      const maxId = testCases.reduce((max, tc) => {
+        const match = tc.testCaseId?.match(/TC-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      const nextId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
+      res.json({ testCaseId: nextId });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate test case ID" });
+    }
+  });
+
   app.post("/api/test-cases", async (req, res) => {
     console.log("=== TEST CASE CREATION START ===");
     console.log("Raw request body:", req.body);

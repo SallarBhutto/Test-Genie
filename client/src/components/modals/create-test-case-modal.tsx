@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useProject } from "@/contexts/ProjectContext";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +41,7 @@ const formSchema = insertTestCaseSchema.extend({
   projectId: z.number().min(1, "Project is required"),
   moduleId: z.number().optional(),
   componentId: z.number().optional(),
-});
+}).omit({ testSuiteId: true });
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -56,6 +57,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { selectedProject } = useProject();
 
   const { data: users } = useQuery({
     queryKey: ["/api/users"],
@@ -77,6 +79,12 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
 
   const { data: testSuites } = useQuery({
     queryKey: ["/api/test-suites"],
+  });
+
+  // Auto-generate test case ID
+  const { data: generatedId } = useQuery({
+    queryKey: ["/api/test-cases/generate-id"],
+    enabled: open && !editingTestCase,
   });
 
   // Filter modules by selected project
@@ -108,6 +116,22 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       componentId: undefined,
     },
   });
+
+  // Effect to auto-select header project and set generated ID
+  useEffect(() => {
+    if (open && !editingTestCase) {
+      // Auto-select header project
+      if (selectedProject) {
+        setSelectedProjectId(selectedProject.id);
+        form.setValue("projectId", selectedProject.id);
+      }
+      
+      // Set auto-generated test case ID
+      if (generatedId?.testCaseId) {
+        form.setValue("testCaseId", generatedId.testCaseId);
+      }
+    }
+  }, [open, selectedProject, generatedId, editingTestCase, form]);
 
   // Effect to populate form when editing
   useEffect(() => {
