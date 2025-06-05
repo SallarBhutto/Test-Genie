@@ -18,7 +18,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,16 +31,24 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTestCaseSchema } from "@shared/schema";
 import { z } from "zod";
 import { Plus, X } from "lucide-react";
 
-const formSchema = insertTestCaseSchema.extend({
+const formSchema = z.object({
+  testCaseId: z.string().min(1, "Test case ID is required"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  preconditions: z.string().optional(),
   steps: z.array(z.string()).min(1, "At least one test step is required"),
+  expectedResult: z.string().min(1, "Expected result is required"),
+  priority: z.enum(["low", "medium", "high", "critical"]),
+  status: z.enum(["draft", "active"]),
   projectId: z.number().min(1, "Project is required"),
   moduleId: z.number().optional(),
   componentId: z.number().optional(),
-}).omit({ testSuiteId: true });
+  assignedTo: z.number().optional(),
+  createdBy: z.number(),
+});
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -108,7 +115,6 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       expectedResult: "",
       priority: "medium",
       status: "draft",
-      testSuiteId: 0,
       assignedTo: undefined,
       createdBy: 1,
       projectId: 0,
