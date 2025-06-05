@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Layers, FileText, Filter } from "lucide-react";
 import { Link, useParams } from "wouter";
 import CreateComponentModal from "@/components/modals/create-component-modal";
+import { useProject } from "@/contexts/ProjectContext";
 import type { Component, Module, TestCase, Project } from "@shared/schema";
 
 export default function Components() {
   const { moduleId } = useParams();
+  const { selectedProject } = useProject();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || "all");
+
+  // Update local project filter when header project changes
+  useEffect(() => {
+    if (selectedProject) {
+      setSelectedProjectId(selectedProject.id.toString());
+    } else {
+      setSelectedProjectId("all");
+    }
+  }, [selectedProject]);
   
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
