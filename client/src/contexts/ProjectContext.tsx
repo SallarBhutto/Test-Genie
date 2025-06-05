@@ -18,12 +18,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/projects'],
   });
 
-  // Set first project as default when projects load
-  useEffect(() => {
-    if (projects.length > 0 && !selectedProject) {
-      setSelectedProject(projects[0]);
-    }
-  }, [projects, selectedProject]);
+  // Start with "All Projects" (null) as default
+  // Users can then select specific projects if needed
 
   return (
     <ProjectContext.Provider value={{
