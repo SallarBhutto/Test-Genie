@@ -14,8 +14,6 @@ export default function TestRunExecute() {
   const [, setLocation] = useLocation();
   const testRunId = params?.id ? parseInt(params.id) : null;
   
-  const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});
-
   const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
     queryKey: [`/api/test-runs/${testRunId}`],
     enabled: !!testRunId
@@ -25,6 +23,24 @@ export default function TestRunExecute() {
     queryKey: [`/api/test-run-results/${testRunId}`],
     enabled: !!testRunId
   });
+
+  const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});
+
+  // Initialize results state with existing data from database
+  useEffect(() => {
+    if (testRunResults && Array.isArray(testRunResults)) {
+      const initialResults: Record<number, { status: string; notes: string }> = {};
+      testRunResults.forEach((result: any) => {
+        if (result.status !== 'not_executed') {
+          initialResults[result.testCaseId] = {
+            status: result.status,
+            notes: result.notes || ''
+          };
+        }
+      });
+      setResults(initialResults);
+    }
+  }, [testRunResults]);
 
   const updateTestRunMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -48,18 +64,56 @@ export default function TestRunExecute() {
     }
   });
 
-  const handleStatusChange = (testCaseId: number, status: string) => {
+  const handleStatusChange = async (testCaseId: number, status: string) => {
+    // Update local state immediately for UI responsiveness
     setResults(prev => ({
       ...prev,
       [testCaseId]: { ...prev[testCaseId], status }
     }));
+
+    // Save to database immediately
+    try {
+      const testRunResult = (testRunResults as any[])?.find(tr => tr.testCaseId === testCaseId);
+      if (testRunResult) {
+        await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
+          status: status,
+          notes: results[testCaseId]?.notes || '',
+          executedBy: 1,
+          executedAt: new Date().toISOString()
+        });
+        // Invalidate cache to refresh data
+        queryClient.invalidateQueries({ queryKey: [`/api/test-run-results/${testRunId}`] });
+        console.log(`Auto-saved status change for test case ${testCaseId}: ${status}`);
+      }
+    } catch (error) {
+      console.error('Failed to auto-save status change:', error);
+    }
   };
 
-  const handleNotesChange = (testCaseId: number, notes: string) => {
+  const handleNotesChange = async (testCaseId: number, notes: string) => {
+    // Update local state immediately for UI responsiveness
     setResults(prev => ({
       ...prev,
       [testCaseId]: { ...prev[testCaseId], notes }
     }));
+
+    // Save to database immediately
+    try {
+      const testRunResult = (testRunResults as any[])?.find(tr => tr.testCaseId === testCaseId);
+      if (testRunResult) {
+        await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
+          status: results[testCaseId]?.status || testRunResult.status,
+          notes: notes,
+          executedBy: 1,
+          executedAt: new Date().toISOString()
+        });
+        // Invalidate cache to refresh data
+        queryClient.invalidateQueries({ queryKey: [`/api/test-run-results/${testRunId}`] });
+        console.log(`Auto-saved notes change for test case ${testCaseId}`);
+      }
+    } catch (error) {
+      console.error('Failed to auto-save notes change:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
