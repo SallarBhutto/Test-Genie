@@ -71,15 +71,18 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
 
   // Get test cases for selected test suites, maintaining order
   const { data: testSuiteTestCases } = useQuery({
-    queryKey: ["/api/test-suites/test-cases", selectedTestSuites],
+    queryKey: ["/api/test-suites/test-cases", selectedTestSuites, selectionOrder],
     queryFn: async () => {
       if (selectedTestSuites.length === 0) return [];
       
       const orderedTestCases = [];
-      for (const suiteId of selectedTestSuites) {
-        const response = await fetch(`/api/test-suites/${suiteId}/test-cases`);
-        const suiteTestCases = await response.json();
-        orderedTestCases.push(...suiteTestCases);
+      // Process test suites in selection order
+      for (const selection of selectionOrder) {
+        if (selection.type === 'suite' && selectedTestSuites.includes(selection.id)) {
+          const response = await fetch(`/api/test-suites/${selection.id}/test-cases`);
+          const suiteTestCases = await response.json();
+          orderedTestCases.push(...suiteTestCases.map((tc: any) => ({ ...tc, fromSuiteId: selection.id })));
+        }
       }
       return orderedTestCases;
     },
@@ -104,9 +107,9 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     // Process selections in order
     for (const selection of selectionOrder) {
       if (selection.type === 'suite') {
-        // Add test cases from this suite in the order they appear in the suite
+        // Add test cases from this specific suite
         const suiteTestCases = (testSuiteTestCases as any[])?.filter(tc => 
-          selectedTestSuites.includes(selection.id)
+          tc.fromSuiteId === selection.id
         ) || [];
         for (const testCase of suiteTestCases) {
           if (!seenIds.has(testCase.id)) {
@@ -352,11 +355,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                                 id={`testsuite-${testSuite.id}`}
                                 checked={selectedTestSuites.includes(testSuite.id)}
                                 onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedTestSuites([...selectedTestSuites, testSuite.id]);
-                                  } else {
-                                    setSelectedTestSuites(selectedTestSuites.filter(id => id !== testSuite.id));
-                                  }
+                                  handleTestSuiteSelection(testSuite.id, !!checked);
                                 }}
                               />
                               <label
@@ -384,7 +383,14 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedTestSuites(projectTestSuites.map(ts => ts.id))}
+                              onClick={() => {
+                                const newSuiteIds = projectTestSuites.map(ts => ts.id).filter(id => !selectedTestSuites.includes(id));
+                                setSelectedTestSuites([...selectedTestSuites, ...newSuiteIds]);
+                                setSelectionOrder(prev => [
+                                  ...prev,
+                                  ...newSuiteIds.map(id => ({ type: 'suite' as const, id }))
+                                ]);
+                              }}
                             >
                               Select All Suites
                             </Button>
@@ -392,7 +398,10 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedTestSuites([])}
+                              onClick={() => {
+                                setSelectedTestSuites([]);
+                                setSelectionOrder(prev => prev.filter(item => item.type !== 'suite'));
+                              }}
                             >
                               Clear Suites
                             </Button>
@@ -425,10 +434,8 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                                   checked={isSelected}
                                   disabled={isFromSuite}
                                   onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTestCases([...selectedTestCases, testCase.id]);
-                                    } else {
-                                      setSelectedTestCases(selectedTestCases.filter(id => id !== testCase.id));
+                                    if (!isFromSuite) {
+                                      handleTestCaseSelection(testCase.id, !!checked);
                                     }
                                   }}
                                 />
@@ -464,6 +471,10 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                                   .map(tc => tc.id);
                                 const uniqueIds = availableIds.filter(id => !selectedTestCases.includes(id));
                                 setSelectedTestCases([...selectedTestCases, ...uniqueIds]);
+                                setSelectionOrder(prev => [
+                                  ...prev,
+                                  ...uniqueIds.map(id => ({ type: 'case' as const, id }))
+                                ]);
                               }}
                             >
                               Select All Available
@@ -472,7 +483,10 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedTestCases([])}
+                              onClick={() => {
+                                setSelectedTestCases([]);
+                                setSelectionOrder(prev => prev.filter(item => item.type !== 'case'));
+                              }}
                             >
                               Clear Manual Selection
                             </Button>
