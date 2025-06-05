@@ -376,7 +376,12 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   <FormItem>
                     <FormLabel>Test Case ID</FormLabel>
                     <FormControl>
-                      <Input placeholder="TC-004" {...field} />
+                      <Input 
+                        placeholder="Auto-generated" 
+                        {...field} 
+                        readOnly 
+                        className="bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
