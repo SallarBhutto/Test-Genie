@@ -203,7 +203,7 @@ export default function Components() {
               <p className="text-neutral-500 dark:text-neutral-400">
                 {currentModule ? `No components in ${currentModule.name} yet` : 'No components yet'}
               </p>
-              <Button variant="outline" size="sm" className="mt-2">
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => setCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Component
               </Button>
