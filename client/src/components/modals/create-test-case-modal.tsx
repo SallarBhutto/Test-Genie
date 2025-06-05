@@ -47,7 +47,7 @@ const formSchema = z.object({
   projectId: z.number().min(1, "Project is required"),
   moduleId: z.number().min(1, "Module is required"),
   componentId: z.number().min(1, "Component is required"),
-  assignedTo: z.number().optional(),
+  assignedTo: z.number().nullable().optional(),
   createdBy: z.number(),
 });
 
