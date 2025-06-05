@@ -195,6 +195,7 @@ export default function Modules() {
         open={createModalOpen} 
         onOpenChange={setCreateModalOpen}
         projects={projects as Project[]}
+        selectedProjectId={selectedProject?.id}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,9 +37,10 @@ interface CreateModuleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projects: Project[];
+  selectedProjectId?: number;
 }
 
-export default function CreateModuleModal({ open, onOpenChange, projects }: CreateModuleModalProps) {
+export default function CreateModuleModal({ open, onOpenChange, projects, selectedProjectId }: CreateModuleModalProps) {
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -47,9 +48,20 @@ export default function CreateModuleModal({ open, onOpenChange, projects }: Crea
     defaultValues: {
       name: "",
       description: "",
-      projectId: projects[0]?.id || 0,
+      projectId: selectedProjectId || projects[0]?.id || 0,
     },
   });
+
+  // Reset form with selected project when modal opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        description: "",
+        projectId: selectedProjectId || projects[0]?.id || 0,
+      });
+    }
+  }, [open, selectedProjectId, projects, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
