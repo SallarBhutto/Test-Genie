@@ -215,7 +215,7 @@ export default function Components() {
       <CreateComponentModal 
         open={createModalOpen} 
         onOpenChange={setCreateModalOpen}
-        modules={modules as Module[]}
+        modules={filteredModules}
       />
     </div>
   );
