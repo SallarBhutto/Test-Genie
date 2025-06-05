@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,15 @@ export default function TestCases() {
     priority: "all",
     status: "all",
   });
+
+  // Update project filter when header project changes
+  useEffect(() => {
+    if (selectedProject) {
+      setFilters(prev => ({ ...prev, project: selectedProject.name, module: "all", component: "all" }));
+    } else {
+      setFilters(prev => ({ ...prev, project: "all", module: "all", component: "all" }));
+    }
+  }, [selectedProject]);
 
   // Get filtered modules based on selected project
   const getAvailableModules = () => {
