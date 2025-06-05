@@ -129,8 +129,10 @@ export default function TestCases() {
 
   // Handler functions
   const handleEditTestCase = (testCase: any) => {
+    console.log("Edit button clicked for test case:", testCase);
     setEditingTestCase(testCase);
     setShowCreateTestCase(true);
+    console.log("Modal should open now");
   };
 
   const handleDeleteTestCase = (id: number) => {
