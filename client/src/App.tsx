@@ -31,37 +31,39 @@ import TopBar from "@/components/layout/top-bar";
 
 function AuthenticatedApp() {
   return (
-    <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
-      <Sidebar />
-      <main className="flex-1 ml-64">
-        <TopBar />
-        <div className="p-6">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/projects" component={Projects} />
-            <Route path="/projects/:id" component={ProjectDetail} />
-            <Route path="/modules" component={Modules} />
-            <Route path="/modules/:id" component={ModuleDetail} />
-            <Route path="/modules/:moduleId/components" component={Components} />
-            <Route path="/components" component={Components} />
-            <Route path="/components/:id" component={ComponentDetail} />
-            <Route path="/components/:componentId/test-cases" component={TestCases} />
-            <Route path="/test-cases" component={TestCases} />
-            <Route path="/test-suites" component={TestSuites} />
-            <Route path="/test-runs" component={TestRunsFixed} />
-            <Route path="/test-runs/:id/execute" component={TestRunExecute} />
-            <Route path="/test-runs/:id/results" component={TestRunResults} />
-            <Route path="/defects" component={Defects} />
-            <Route path="/requirements" component={Requirements} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/team" component={Team} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
-        </div>
-      </main>
-    </div>
+    <ProjectProvider>
+      <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
+        <Sidebar />
+        <main className="flex-1 ml-64">
+          <TopBar />
+          <div className="p-6">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/projects" component={Projects} />
+              <Route path="/projects/:id" component={ProjectDetail} />
+              <Route path="/modules" component={Modules} />
+              <Route path="/modules/:id" component={ModuleDetail} />
+              <Route path="/modules/:moduleId/components" component={Components} />
+              <Route path="/components" component={Components} />
+              <Route path="/components/:id" component={ComponentDetail} />
+              <Route path="/components/:componentId/test-cases" component={TestCases} />
+              <Route path="/test-cases" component={TestCases} />
+              <Route path="/test-suites" component={TestSuites} />
+              <Route path="/test-runs" component={TestRunsFixed} />
+              <Route path="/test-runs/:id/execute" component={TestRunExecute} />
+              <Route path="/test-runs/:id/results" component={TestRunResults} />
+              <Route path="/defects" component={Defects} />
+              <Route path="/requirements" component={Requirements} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/team" component={Team} />
+              <Route path="/settings" component={Settings} />
+              <Route component={NotFound} />
+            </Switch>
+          </div>
+        </main>
+      </div>
+    </ProjectProvider>
   );
 }
 
