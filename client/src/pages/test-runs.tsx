@@ -7,14 +7,16 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 import SimpleExecuteModal from "@/components/modals/simple-execute-modal";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showExecuteModal, setShowExecuteModal] = useState(false);
   const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
+  const { selectedProject } = useProject();
 
   const { data: testRuns, isLoading } = useQuery({
-    queryKey: ['/api/test-runs']
+    queryKey: ['/api/test-runs', selectedProject?.id]
   });
 
   const getStatusIcon = (status: string) => {
