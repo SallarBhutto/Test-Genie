@@ -39,7 +39,7 @@ export default function TopBar() {
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-neutral-500" />
             <Select
-              value={selectedProject?.id.toString() || "all"}
+              value={selectedProject ? selectedProject.id.toString() : "all"}
               onValueChange={(value) => {
                 if (value === "all") {
                   setSelectedProject(null);

@@ -32,7 +32,8 @@ export const getQueryFn: <T>(options: {
     let url = queryKey[0] as string;
     
     // Handle project filtering for endpoints that support it
-    if (queryKey.length > 1 && queryKey[1] !== undefined) {
+    // Only add projectId parameter if it's explicitly provided and not null/undefined
+    if (queryKey.length > 1 && queryKey[1] !== undefined && queryKey[1] !== null) {
       const projectId = queryKey[1];
       const separator = url.includes('?') ? '&' : '?';
       url = `${url}${separator}projectId=${projectId}`;
