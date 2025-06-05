@@ -21,8 +21,9 @@ export default function TestRunExecute() {
     enabled: !!testRunId
   });
 
-  const { data: testCases, isLoading: testCasesLoading } = useQuery<TestCase[]>({
-    queryKey: ['/api/test-cases']
+  const { data: testRunResults, isLoading: testRunResultsLoading } = useQuery({
+    queryKey: ['/api/test-run-results', testRunId],
+    enabled: !!testRunId
   });
 
   const updateTestRunMutation = useMutation({
@@ -105,7 +106,7 @@ export default function TestRunExecute() {
     }
   };
 
-  if (testRunLoading || testCasesLoading) {
+  if (testRunLoading || testRunResultsLoading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -128,7 +129,7 @@ export default function TestRunExecute() {
     );
   }
 
-  const displayTestCases = Array.isArray(testCases) ? testCases : [];
+  const displayTestCases = Array.isArray(testRunResults) ? testRunResults : [];
 
   return (
     <div className="space-y-6">
@@ -195,20 +196,20 @@ export default function TestRunExecute() {
         </div>
 
         <div className="lg:col-span-3 space-y-4">
-          {displayTestCases.map((testCase: any) => (
-            <Card key={testCase.id} className="relative">
+          {displayTestCases.map((testCaseResult: any) => (
+            <Card key={testCaseResult.testCaseId} className="relative">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {getStatusIcon(results[testCase.id]?.status)}
+                    {getStatusIcon(results[testCaseResult.testCaseId]?.status || testCaseResult.status)}
                     <div>
-                      <CardTitle className="text-lg">{testCase.testCaseId}</CardTitle>
-                      <p className="text-sm text-gray-600">{testCase.title}</p>
+                      <CardTitle className="text-lg">{testCaseResult.testCaseIdRef}</CardTitle>
+                      <p className="text-sm text-gray-600">{testCaseResult.title}</p>
                     </div>
                   </div>
-                  {results[testCase.id]?.status && (
-                    <Badge className={getStatusColor(results[testCase.id].status)}>
-                      {results[testCase.id].status}
+                  {(results[testCaseResult.testCaseId]?.status || testCaseResult.status) && (
+                    <Badge className={getStatusColor(results[testCaseResult.testCaseId]?.status || testCaseResult.status)}>
+                      {results[testCaseResult.testCaseId]?.status || testCaseResult.status}
                     </Badge>
                   )}
                 </div>

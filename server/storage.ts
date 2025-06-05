@@ -1025,8 +1025,26 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  async getTestRunResults(testRunId: number): Promise<TestRunResult[]> {
-    return await db.select().from(testRunResults).where(eq(testRunResults.testRunId, testRunId));
+  async getTestRunResults(testRunId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: testRunResults.id,
+        testRunId: testRunResults.testRunId,
+        testCaseId: testRunResults.testCaseId,
+        status: testRunResults.status,
+        notes: testRunResults.notes,
+        executedBy: testRunResults.executedBy,
+        executedAt: testRunResults.executedAt,
+        // Include test case details
+        testCaseIdRef: testCases.testCaseId,
+        title: testCases.title,
+        description: testCases.description,
+        priority: testCases.priority,
+        projectId: testCases.projectId,
+      })
+      .from(testRunResults)
+      .innerJoin(testCases, eq(testRunResults.testCaseId, testCases.id))
+      .where(eq(testRunResults.testRunId, testRunId));
   }
 
   async createTestRunResult(insertResult: InsertTestRunResult): Promise<TestRunResult> {
