@@ -546,13 +546,17 @@ export class MemStorage implements IStorage {
   async getTestRunResults(testRunId: number): Promise<TestRunResult[]> {
     return Array.from(this.testRunResults.values())
       .filter(result => result.testRunId === testRunId)
-      .sort((a, b) => (a.executionOrder || 0) - (b.executionOrder || 0));
+      .sort((a, b) => a.id - b.id);
   }
 
   async createTestRunResult(insertResult: InsertTestRunResult): Promise<TestRunResult> {
     const result: TestRunResult = {
-      ...insertResult,
       id: this.currentId++,
+      testRunId: insertResult.testRunId,
+      testCaseId: insertResult.testCaseId,
+      status: insertResult.status,
+      executedBy: insertResult.executedBy ?? null,
+      notes: insertResult.notes ?? null,
       executedAt: new Date(),
     };
     this.testRunResults.set(result.id, result);
@@ -1036,7 +1040,6 @@ export class DatabaseStorage implements IStorage {
         status: testRunResults.status,
         notes: testRunResults.notes,
         executedBy: testRunResults.executedBy,
-        executionOrder: testRunResults.executionOrder,
         executedAt: testRunResults.executedAt,
         // Include test case details
         testCaseIdRef: testCases.testCaseId,
@@ -1048,7 +1051,7 @@ export class DatabaseStorage implements IStorage {
       .from(testRunResults)
       .innerJoin(testCases, eq(testRunResults.testCaseId, testCases.id))
       .where(eq(testRunResults.testRunId, testRunId))
-      .orderBy(testRunResults.executionOrder);
+      .orderBy(testRunResults.id);
   }
 
   async createTestRunResult(insertResult: InsertTestRunResult): Promise<TestRunResult> {

@@ -106,7 +106,6 @@ export const testRunResults = pgTable("test_run_results", {
   status: text("status").notNull(), // passed, failed, blocked, skipped
   executedBy: integer("executed_by").references(() => users.id),
   notes: text("notes"),
-  executionOrder: integer("execution_order").notNull().default(0),
   executedAt: timestamp("executed_at").defaultNow().notNull(),
 });
 
