@@ -1056,12 +1056,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTestRunResult(id: number, resultUpdate: Partial<TestRunResult>): Promise<TestRunResult | undefined> {
-    const [result] = await db
-      .update(testRunResults)
-      .set(resultUpdate)
-      .where(eq(testRunResults.id, id))
-      .returning();
-    return result || undefined;
+    try {
+      console.log("Database updateTestRunResult called with:", { id, resultUpdate });
+      
+      // Convert ISO string to Date object if executedAt is provided
+      if (resultUpdate.executedAt && typeof resultUpdate.executedAt === 'string') {
+        resultUpdate.executedAt = new Date(resultUpdate.executedAt);
+      }
+      
+      const [result] = await db
+        .update(testRunResults)
+        .set(resultUpdate)
+        .where(eq(testRunResults.id, id))
+        .returning();
+      
+      console.log("Database updateTestRunResult result:", result);
+      return result || undefined;
+    } catch (error) {
+      console.error("Database updateTestRunResult error:", error);
+      throw error;
+    }
   }
 
   async getDefects(projectId?: number): Promise<Defect[]> {

@@ -95,7 +95,7 @@ export default function TestRunExecute() {
             status: result.status,
             notes: result.notes || '',
             executedBy: 1,
-            executedAt: new Date()
+            executedAt: new Date().toISOString()
           });
         }
       }
