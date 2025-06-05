@@ -22,7 +22,7 @@ export default function TestRunExecute() {
   });
 
   const { data: testRunResults, isLoading: testRunResultsLoading } = useQuery({
-    queryKey: ['/api/test-run-results', testRunId],
+    queryKey: [`/api/test-run-results/${testRunId}`],
     enabled: !!testRunId
   });
 
@@ -108,6 +108,12 @@ export default function TestRunExecute() {
     }
   };
 
+  // Debug logging
+  console.log('Test Run Loading:', testRunLoading);
+  console.log('Test Run Results Loading:', testRunResultsLoading);
+  console.log('Test Run Data:', testRun);
+  console.log('Test Run Results Data:', testRunResults);
+
   if (testRunLoading || testRunResultsLoading) {
     return (
       <div className="space-y-6">
@@ -115,6 +121,10 @@ export default function TestRunExecute() {
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
         </div>
+        <p className="text-sm text-gray-500">
+          Loading test run: {testRunLoading ? 'Yes' : 'No'}, 
+          Loading results: {testRunResultsLoading ? 'Yes' : 'No'}
+        </p>
       </div>
     );
   }
