@@ -54,68 +54,127 @@ export default function Modules() {
         </Button>
       </div>
 
-      {projects.map((project: Project) => {
-        const projectModules = (modules as Module[]).filter(
-          module => module.projectId === project.id
-        );
+      {selectedProject ? (
+        // Show only selected project's modules
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+            <Package className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+              {selectedProject.name}
+            </h2>
+            <Badge variant="secondary">{modules.length} modules</Badge>
+          </div>
 
-        return (
-          <div key={project.id} className="space-y-4">
-            <div className="flex items-center space-x-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
-              <Package className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
-                {project.name}
-              </h2>
-              <Badge variant="secondary">{projectModules.length} modules</Badge>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projectModules.map((module) => (
-                <Link key={module.id} href={`/modules/${module.id}/components`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                            <Component className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg">{module.name}</CardTitle>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                              {module.description || "No description"}
-                            </p>
-                          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {modules.map((module: Module) => (
+              <Link key={module.id} href={`/modules/${module.id}/components`}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                          <Component className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{module.name}</CardTitle>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                            {module.description || "No description"}
+                          </p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-neutral-500 dark:text-neutral-400">
-                          Created {new Date(module.createdAt).toLocaleDateString()}
-                        </span>
-                        <Badge variant="outline">Module</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-
-              {projectModules.length === 0 && (
-                <Card className="border-dashed border-2 border-neutral-300 dark:border-neutral-700">
-                  <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                    <Component className="w-8 h-8 text-neutral-400 mb-2" />
-                    <p className="text-neutral-500 dark:text-neutral-400">No modules yet</p>
-                    <Button variant="outline" size="sm" className="mt-2">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Module
-                    </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        Created {new Date(module.createdAt).toLocaleDateString()}
+                      </span>
+                      <Badge variant="outline">Module</Badge>
+                    </div>
                   </CardContent>
                 </Card>
-              )}
-            </div>
+              </Link>
+            ))}
+
+            {modules.length === 0 && (
+              <Card className="border-dashed border-2 border-neutral-300 dark:border-neutral-700">
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                  <Component className="w-8 h-8 text-neutral-400 mb-2" />
+                  <p className="text-neutral-500 dark:text-neutral-400">No modules yet</p>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setCreateModalOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Module
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        );
-      })}
+        </div>
+      ) : (
+        // Show all projects with their modules when "All Projects" is selected
+        projects.map((project: Project) => {
+          const projectModules = (modules as Module[]).filter(
+            module => module.projectId === project.id
+          );
+
+          return (
+            <div key={project.id} className="space-y-4">
+              <div className="flex items-center space-x-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+                <Package className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+                  {project.name}
+                </h2>
+                <Badge variant="secondary">{projectModules.length} modules</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {projectModules.map((module) => (
+                  <Link key={module.id} href={`/modules/${module.id}/components`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                              <Component className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{module.name}</CardTitle>
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                                {module.description || "No description"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            Created {new Date(module.createdAt).toLocaleDateString()}
+                          </span>
+                          <Badge variant="outline">Module</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+
+                {projectModules.length === 0 && (
+                  <Card className="border-dashed border-2 border-neutral-300 dark:border-neutral-700">
+                    <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+                      <Component className="w-8 h-8 text-neutral-400 mb-2" />
+                      <p className="text-neutral-500 dark:text-neutral-400">No modules yet</p>
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => setCreateModalOpen(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Module
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          );
+        })
+      )}
 
       {projects.length === 0 && (
         <div className="text-center py-12">
