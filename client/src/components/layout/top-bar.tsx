@@ -1,4 +1,4 @@
-import { Bell, LogOut, ChevronDown } from "lucide-react";
+import { Bell, LogOut, ChevronDown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -9,10 +9,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function TopBar() {
   const { user, logout, isLogoutPending } = useAuth();
+  const { selectedProject, setSelectedProject, projects, isLoading } = useProject();
 
   const handleLogout = () => {
     logout({}, {
@@ -27,9 +36,28 @@ export default function TopBar() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Dashboard</h2>
-          <Badge variant="secondary" className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
-            Project: E-Commerce Testing
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Building2 className="w-4 h-4 text-neutral-500" />
+            <Select
+              value={selectedProject?.id.toString() || ""}
+              onValueChange={(value) => {
+                const project = projects.find(p => p.id.toString() === value);
+                setSelectedProject(project || null);
+              }}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-48 h-8 text-sm">
+                <SelectValue placeholder="Select Project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id.toString()}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" className="relative">
