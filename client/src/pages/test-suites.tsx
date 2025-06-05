@@ -12,6 +12,7 @@ import AddTestCasesModal from "@/components/modals/add-test-cases-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function TestSuites() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
@@ -19,10 +20,11 @@ export default function TestSuites() {
   const [selectedTestSuite, setSelectedTestSuite] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState("all");
+  const { selectedProject: contextProject } = useProject();
   const { toast } = useToast();
 
   const { data: testSuites, isLoading: loadingTestSuites } = useQuery({
-    queryKey: ["/api/test-suites"],
+    queryKey: ["/api/test-suites", contextProject?.id],
   });
 
   const { data: projects } = useQuery({

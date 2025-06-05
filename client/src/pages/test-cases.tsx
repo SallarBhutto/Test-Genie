@@ -13,12 +13,14 @@ import EnhancedTestSuiteModal from "@/components/modals/enhanced-test-suite-moda
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function TestCases() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTestCase, setEditingTestCase] = useState(null);
+  const { selectedProject } = useProject();
   const [filters, setFilters] = useState({
     project: "all",
     module: "all",
@@ -80,7 +82,7 @@ export default function TestCases() {
   });
 
   const { data: modules = [] } = useQuery({
-    queryKey: ["/api/modules"],
+    queryKey: ["/api/modules", selectedProject?.id],
   });
 
   const { data: components = [] } = useQuery({
@@ -88,7 +90,7 @@ export default function TestCases() {
   });
 
   const { data: testCases, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases"],
+    queryKey: ["/api/test-cases", selectedProject?.id],
   });
 
   // Delete mutation

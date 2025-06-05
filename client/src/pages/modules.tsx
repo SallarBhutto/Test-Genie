@@ -6,17 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Component } from "lucide-react";
 import { Link } from "wouter";
 import CreateModuleModal from "@/components/modals/create-module-modal";
+import { useProject } from "@/contexts/ProjectContext";
 import type { Module, Project } from "@shared/schema";
 
 export default function Modules() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const { selectedProject } = useProject();
   
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ["/api/projects"],
   });
 
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
-    queryKey: ["/api/modules"],
+    queryKey: ["/api/modules", selectedProject?.id],
   });
 
   if (projectsLoading || modulesLoading) {

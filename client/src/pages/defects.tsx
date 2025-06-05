@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Edit, Trash2, Filter } from "lucide-react";
 import CreateDefectModal from "@/components/modals/create-defect-modal";
 import EditDefectModal from "@/components/modals/edit-defect-modal";
+import { useProject } from "@/contexts/ProjectContext";
 import { cn } from "@/lib/utils";
 
 export default function Defects() {
@@ -21,11 +22,12 @@ export default function Defects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const { selectedProject } = useProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: defects, isLoading } = useQuery({
-    queryKey: ["/api/defects"],
+    queryKey: ["/api/defects", selectedProject?.id],
   });
 
   const deleteDefectMutation = useMutation({
