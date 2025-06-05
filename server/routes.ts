@@ -668,15 +668,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/test-cases/:id", async (req, res) => {
+    console.log("=== TEST CASE UPDATE START ===");
+    console.log("Test case ID:", req.params.id);
+    console.log("Raw request body:", req.body);
+    
     try {
       const id = parseInt(req.params.id);
-      const testCase = await storage.updateTestCase(id, req.body);
+      const validatedData = insertTestCaseSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
+      
+      const testCase = await storage.updateTestCase(id, validatedData);
       if (!testCase) {
         return res.status(404).json({ message: "Test case not found" });
       }
+      
+      console.log("Test case updated successfully:", testCase);
       res.json(testCase);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update test case" });
+      console.error("=== TEST CASE UPDATE ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      
+      res.status(400).json({ 
+        message: "Failed to update test case", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 

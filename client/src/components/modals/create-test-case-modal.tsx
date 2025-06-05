@@ -193,11 +193,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       
       if (editingTestCase) {
         // Update existing test case
-        const response = await fetch(`/api/test-cases/${editingTestCase.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        const response = await apiRequest("PUT", `/api/test-cases/${editingTestCase.id}`, payload);
         return response.json();
       } else {
         // Create new test case
