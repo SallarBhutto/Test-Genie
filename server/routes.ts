@@ -940,6 +940,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!result) {
         return res.status(404).json({ error: "Test run result not found" });
       }
+      
+      // If status is being updated (not just notes), change test run status to "in progress"
+      if (req.body.status && req.body.status !== "not_executed") {
+        const testRun = await storage.getTestRun(result.testRunId);
+        if (testRun && testRun.status !== "in progress") {
+          await storage.updateTestRun(result.testRunId, { 
+            status: "in progress",
+            startedAt: new Date()
+          });
+          console.log(`Auto-updated test run ${result.testRunId} status to "in progress"`);
+        }
+      }
+      
       res.json(result);
     } catch (error) {
       console.error("Error updating test run result:", error);
