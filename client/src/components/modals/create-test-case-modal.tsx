@@ -152,16 +152,16 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         expectedResult: editingTestCase.expectedResult || "",
         priority: editingTestCase.priority || "medium",
         status: editingTestCase.status || "draft",
-        testSuiteId: editingTestCase.testSuiteId || 0,
+        testSuiteId: editingTestCase.testSuiteId || undefined,
         assignedTo: editingTestCase.assignedTo,
         createdBy: editingTestCase.createdBy || 1,
-        projectId: 5, // Default project
-        moduleId: 6, // Default module
-        componentId: 7, // Default component
+        projectId: editingTestCase.projectId || 0,
+        moduleId: editingTestCase.moduleId || undefined,
+        componentId: editingTestCase.componentId || undefined,
       });
       setSteps(editingTestCase.steps || [""]);
-      setSelectedProjectId(5);
-      setSelectedModuleId(6);
+      setSelectedProjectId(editingTestCase.projectId || null);
+      setSelectedModuleId(editingTestCase.moduleId || null);
     } else if (!editingTestCase && open) {
       // Reset form for new test case
       form.reset({
