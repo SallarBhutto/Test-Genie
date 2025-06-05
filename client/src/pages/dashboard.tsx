@@ -25,22 +25,24 @@ import TestExecutionChart from "@/components/charts/test-execution-chart";
 import DefectStatusChart from "@/components/charts/defect-status-chart";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function Dashboard() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
   const [showCreateDefect, setShowCreateDefect] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { selectedProject } = useProject();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", selectedProject?.id],
   });
 
   const { data: testCases, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases"],
+    queryKey: ["/api/test-cases", selectedProject?.id],
   });
 
   const { data: defects } = useQuery({
-    queryKey: ["/api/defects"],
+    queryKey: ["/api/defects", selectedProject?.id],
   });
 
   const filteredTestCases = testCases?.filter((testCase: any) =>

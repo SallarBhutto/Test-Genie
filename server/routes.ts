@@ -963,9 +963,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Statistics
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
-      const testCases = await storage.getTestCases();
-      const testRuns = await storage.getTestRuns();
-      const defects = await storage.getDefects();
+      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      
+      let testCases = await storage.getTestCases();
+      let testRuns = await storage.getTestRuns();
+      let defects = await storage.getDefects();
+      
+      // Filter by project if projectId is provided
+      if (projectId) {
+        testCases = testCases.filter(tc => tc.projectId === projectId);
+        testRuns = testRuns.filter(tr => tr.projectId === projectId);
+        defects = defects.filter(d => d.projectId === projectId);
+      }
       
       const totalTestCases = testCases.length;
       const passedTestCases = testCases.filter(tc => tc.status === "passed").length;

@@ -39,10 +39,14 @@ export default function TopBar() {
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-neutral-500" />
             <Select
-              value={selectedProject?.id.toString() || ""}
+              value={selectedProject?.id.toString() || "all"}
               onValueChange={(value) => {
-                const project = projects.find(p => p.id.toString() === value);
-                setSelectedProject(project || null);
+                if (value === "all") {
+                  setSelectedProject(null);
+                } else {
+                  const project = projects.find(p => p.id.toString() === value);
+                  setSelectedProject(project || null);
+                }
               }}
               disabled={isLoading}
             >
@@ -50,6 +54,7 @@ export default function TopBar() {
                 <SelectValue placeholder="Select Project" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id.toString()}>
                     {project.name}
