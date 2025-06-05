@@ -45,8 +45,8 @@ const formSchema = z.object({
   priority: z.enum(["low", "medium", "high", "critical"]),
   status: z.enum(["draft", "active"]),
   projectId: z.number().min(1, "Project is required"),
-  moduleId: z.number().optional(),
-  componentId: z.number().optional(),
+  moduleId: z.number().min(1, "Module is required"),
+  componentId: z.number().min(1, "Component is required"),
   assignedTo: z.number().optional(),
   createdBy: z.number(),
 });
@@ -119,8 +119,8 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       assignedTo: undefined,
       createdBy: 1,
       projectId: 0,
-      moduleId: undefined,
-      componentId: undefined,
+      moduleId: 0,
+      componentId: 0,
     },
   });
 
@@ -152,12 +152,11 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         expectedResult: editingTestCase.expectedResult || "",
         priority: editingTestCase.priority || "medium",
         status: editingTestCase.status || "draft",
-        testSuiteId: editingTestCase.testSuiteId || undefined,
         assignedTo: editingTestCase.assignedTo,
         createdBy: editingTestCase.createdBy || 1,
         projectId: editingTestCase.projectId || 0,
-        moduleId: editingTestCase.moduleId || undefined,
-        componentId: editingTestCase.componentId || undefined,
+        moduleId: editingTestCase.moduleId || 0,
+        componentId: editingTestCase.componentId || 0,
       });
       setSteps(editingTestCase.steps || [""]);
       setSelectedProjectId(editingTestCase.projectId || null);
@@ -173,12 +172,11 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         expectedResult: "",
         priority: "medium",
         status: "draft",
-        testSuiteId: 0,
         assignedTo: undefined,
         createdBy: 1,
         projectId: 0,
-        moduleId: undefined,
-        componentId: undefined,
+        moduleId: 0,
+        componentId: 0,
       });
       setSteps([""]);
       setSelectedProjectId(null);
@@ -281,8 +279,8 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                           field.onChange(Number(value));
                           setSelectedProjectId(Number(value));
                           setSelectedModuleId(null);
-                          form.setValue("moduleId", undefined);
-                          form.setValue("componentId", undefined);
+                          form.setValue("moduleId", 0);
+                          form.setValue("componentId", 0);
                         }}
                         value={field.value ? field.value.toString() : ""}
                       >
@@ -309,12 +307,12 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   name="moduleId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Module (Optional)</FormLabel>
+                      <FormLabel>Module *</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           field.onChange(Number(value));
                           setSelectedModuleId(Number(value));
-                          form.setValue("componentId", undefined);
+                          form.setValue("componentId", 0);
                         }}
                         value={field.value ? field.value.toString() : ""}
                         disabled={!selectedProjectId}
@@ -342,7 +340,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   name="componentId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Component (Optional)</FormLabel>
+                      <FormLabel>Component *</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(Number(value))}
                         value={field.value ? field.value.toString() : ""}
