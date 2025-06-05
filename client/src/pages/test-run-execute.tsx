@@ -134,28 +134,21 @@ export default function TestRunExecute() {
   };
 
   const handleCompleteExecution = async () => {
-    if (Object.keys(results).length === 0) {
+    // Check if any test cases have been executed
+    const hasExecutedTests = testRunResults && Array.isArray(testRunResults) && 
+      testRunResults.some((result: any) => result.status !== 'not_executed');
+    
+    if (!hasExecutedTests) {
       alert('Please execute at least one test case before completing.');
       return;
     }
 
-    // Update test results by patching existing ones
+    // Since results are auto-saved, we only need to update the test run status
     try {
-      for (const [testCaseId, result] of Object.entries(results)) {
-        // Find the corresponding test run result ID
-        const testRunResult = (testRunResults as any[])?.find(tr => tr.testCaseId === parseInt(testCaseId));
-        if (testRunResult) {
-          await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
-            status: result.status,
-            notes: result.notes || '',
-            executedBy: 1,
-            executedAt: new Date().toISOString()
-          });
-        }
-      }
-
-      // Update test run status to completed
-      updateTestRunMutation.mutate({ status: 'completed' });
+      updateTestRunMutation.mutate({ 
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Failed to complete test execution:', error);
       alert('Failed to complete test execution. Please try again.');
@@ -223,26 +216,26 @@ export default function TestRunExecute() {
               <div>
                 <p className="text-sm font-medium">Progress</p>
                 <p className="text-2xl font-bold">
-                  {Object.keys(results).length} / {displayTestCases.length}
+                  {testRunResults ? testRunResults.filter((r: any) => r.status !== 'not_executed').length : 0} / {displayTestCases.length}
                 </p>
                 <p className="text-xs text-gray-500">Tests executed</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-lg font-bold text-green-600">
-                    {Object.values(results).filter(r => r.status === 'passed').length}
+                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'passed').length : 0}
                   </p>
                   <p className="text-xs">Passed</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-red-600">
-                    {Object.values(results).filter(r => r.status === 'failed').length}
+                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'failed').length : 0}
                   </p>
                   <p className="text-xs">Failed</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-yellow-600">
-                    {Object.values(results).filter(r => r.status === 'blocked').length}
+                    {testRunResults ? testRunResults.filter((r: any) => r.status === 'blocked').length : 0}
                   </p>
                   <p className="text-xs">Blocked</p>
                 </div>
