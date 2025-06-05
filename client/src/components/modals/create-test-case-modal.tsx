@@ -248,6 +248,8 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     });
   };
 
+  console.log("Modal render - open:", open, "editingTestCase:", editingTestCase);
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
