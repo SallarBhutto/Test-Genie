@@ -17,7 +17,7 @@ export default function TestRunExecute() {
   const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});
 
   const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
-    queryKey: ['/api/test-runs', testRunId],
+    queryKey: [`/api/test-runs/${testRunId}`],
     enabled: !!testRunId
   });
 
@@ -95,7 +95,7 @@ export default function TestRunExecute() {
             status: result.status,
             notes: result.notes || '',
             executedBy: 1,
-            executedAt: new Date().toISOString()
+            executedAt: new Date()
           });
         }
       }
@@ -108,12 +108,6 @@ export default function TestRunExecute() {
     }
   };
 
-  // Debug logging
-  console.log('Test Run Loading:', testRunLoading);
-  console.log('Test Run Results Loading:', testRunResultsLoading);
-  console.log('Test Run Data:', testRun);
-  console.log('Test Run Results Data:', testRunResults);
-
   if (testRunLoading || testRunResultsLoading) {
     return (
       <div className="space-y-6">
@@ -121,10 +115,6 @@ export default function TestRunExecute() {
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
         </div>
-        <p className="text-sm text-gray-500">
-          Loading test run: {testRunLoading ? 'Yes' : 'No'}, 
-          Loading results: {testRunResultsLoading ? 'Yes' : 'No'}
-        </p>
       </div>
     );
   }
