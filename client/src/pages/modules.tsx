@@ -24,6 +24,8 @@ export default function Modules() {
     queryKey: ["/api/modules", selectedProject?.id],
   });
 
+  const { sortedData: sortedModules, sortConfig, requestSort } = useSorting(modules, "createdAt");
+
   if (projectsLoading || modulesLoading) {
     return (
       <div className="space-y-6">
@@ -65,11 +67,11 @@ export default function Modules() {
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
               {selectedProject.name}
             </h2>
-            <Badge variant="secondary">{modules.length} modules</Badge>
+            <Badge variant="secondary">{sortedModules.length} modules</Badge>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {modules.map((module: Module) => (
+            {sortedModules.map((module: Module) => (
               <Link key={module.id} href={`/modules/${module.id}/components`}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>

@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 import SimpleExecuteModal from "@/components/modals/simple-execute-modal";

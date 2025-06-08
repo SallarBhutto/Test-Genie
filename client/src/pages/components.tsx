@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Plus, Layers, FileText, Filter } from "lucide-react";
 import { Link, useParams } from "wouter";
 import CreateComponentModal from "@/components/modals/create-component-modal";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 import type { Component, Module, TestCase, Project } from "@shared/schema";
 
 export default function Components() {
@@ -66,6 +69,8 @@ export default function Components() {
 
   const currentModule = selectedModuleId !== "all" ? 
     (modules as Module[]).find((m: Module) => m.id === parseInt(selectedModuleId)) : null;
+
+  const { sortedData: sortedComponents, sortConfig, requestSort } = useSorting(filteredComponents, "createdAt");
 
   if (projectsLoading || modulesLoading || componentsLoading || testCasesLoading) {
     return (
@@ -152,7 +157,7 @@ export default function Components() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredComponents.map((component) => {
+        {sortedComponents.map((component) => {
           const componentTestCases = (testCases as TestCase[]).filter(
             tc => tc.componentId === component.id
           );
