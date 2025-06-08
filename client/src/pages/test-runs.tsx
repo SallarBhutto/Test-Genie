@@ -10,6 +10,7 @@ import { Plus, Play, Clock, CheckCircle, XCircle } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
 import SimpleExecuteModal from "@/components/modals/simple-execute-modal";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -17,9 +18,11 @@ export default function TestRuns() {
   const [selectedTestRunId, setSelectedTestRunId] = useState<number | null>(null);
   const { selectedProject } = useProject();
 
-  const { data: testRuns, isLoading } = useQuery({
+  const { data: testRuns = [], isLoading } = useQuery({
     queryKey: ['/api/test-runs', selectedProject?.id]
   });
+
+  const { sortedData: sortedTestRuns, sortConfig, requestSort } = useSorting(testRuns, "createdAt");
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -95,8 +98,8 @@ export default function TestRuns() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {(testRuns as any[])?.length > 0 ? (
-          (testRuns as any[]).map((testRun) => (
+        {sortedTestRuns?.length > 0 ? (
+          sortedTestRuns.map((testRun) => (
             <Card key={testRun.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
