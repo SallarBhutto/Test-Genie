@@ -18,7 +18,7 @@ import TestRunsFixed from "@/pages/test-runs-fixed";
 import TestRunExecute from "@/pages/test-run-execute";
 import TestRunResults from "@/pages/test-run-results";
 import Defects from "@/pages/defects";
-import Requirements from "@/pages/requirements";
+
 import Reports from "@/pages/reports";
 import Team from "@/pages/team";
 import Settings from "@/pages/settings";
@@ -54,7 +54,7 @@ function AuthenticatedApp() {
               <Route path="/test-runs/:id/execute" component={TestRunExecute} />
               <Route path="/test-runs/:id/results" component={TestRunResults} />
               <Route path="/defects" component={Defects} />
-              <Route path="/requirements" component={Requirements} />
+
               <Route path="/reports" component={Reports} />
               <Route path="/team" component={Team} />
               <Route path="/settings" component={Settings} />

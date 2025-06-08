@@ -127,19 +127,7 @@ export const defects = pgTable("defects", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const requirements = pgTable("requirements", {
-  id: serial("id").primaryKey(),
-  requirementId: text("requirement_id").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  type: text("type").notNull().default("functional"), // functional, non_functional, technical
-  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
-  status: text("status").notNull().default("draft"), // draft, approved, implemented, tested
-  projectId: integer("project_id").references(() => projects.id).notNull(),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+
 
 export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
@@ -204,11 +192,7 @@ export const insertDefectSchema = createInsertSchema(defects).omit({
   updatedAt: true,
 });
 
-export const insertRequirementSchema = createInsertSchema(requirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 export const insertSettingSchema = createInsertSchema(settings).omit({
   id: true,

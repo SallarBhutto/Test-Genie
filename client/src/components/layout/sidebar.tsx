@@ -25,7 +25,7 @@ const navigation = [
   { name: "Test Suites", href: "/test-suites", icon: TestTube },
   { name: "Test Runs", href: "/test-runs", icon: Play },
   { name: "Defects", href: "/defects", icon: Bug },
-  { name: "Requirements", href: "/requirements", icon: FileCheck },
+
   { name: "Reports", href: "/reports", icon: TrendingUp },
   { name: "Team", href: "/team", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },

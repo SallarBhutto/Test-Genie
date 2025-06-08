@@ -940,16 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Requirements
-  app.get("/api/requirements", async (req, res) => {
-    try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
-      const requirements = await storage.getRequirements(projectId);
-      res.json(requirements);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch requirements" });
-    }
-  });
+
 
   // Test Run Results
   app.get("/api/test-run-results/:testRunId", async (req, res) => {
