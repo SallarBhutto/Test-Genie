@@ -66,6 +66,8 @@ export default function TestSuites() {
     return matchesSearch && matchesProject;
   });
 
+  const { sortedData: sortedTestSuites, sortConfig, requestSort } = useSorting(filteredTestSuites, "name");
+
   const getProjectName = (projectId: number) => {
     const project = (projects || []).find((p: any) => p.id === projectId);
     return project?.name || "Unknown Project";
@@ -201,16 +203,51 @@ export default function TestSuites() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Created</TableHead>
+                  <SortableTableHead
+                    sortKey="name"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Name
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="description"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Description
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="projectId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Project
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="createdBy"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Created By
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="createdAt"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Created
+                  </SortableTableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTestSuites.map((suite: any) => (
+                {sortedTestSuites.map((suite: any) => (
                   <TableRow key={suite.id}>
                     <TableCell>
                       <div className="flex items-center space-x-2">
