@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Plus, Package, Component } from "lucide-react";
 import { Link } from "wouter";
 import CreateModuleModal from "@/components/modals/create-module-modal";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 import type { Module, Project } from "@shared/schema";
 
 export default function Modules() {

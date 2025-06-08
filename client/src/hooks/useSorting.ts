@@ -10,7 +10,7 @@ export interface SortConfig {
 export function useSorting<T>(data: T[], initialSortKey?: string) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: initialSortKey || "",
-    direction: null,
+    direction: initialSortKey === "createdAt" ? "desc" : null,
   });
 
   const sortedData = useMemo(() => {
