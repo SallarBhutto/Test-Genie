@@ -211,7 +211,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   testRuns: many(testRuns),
   defectsReported: many(defects, { relationName: "reporter" }),
   defectsAssigned: many(defects, { relationName: "assignee" }),
-  requirements: many(requirements),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -223,7 +222,6 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   testSuites: many(testSuites),
   testRuns: many(testRuns),
   defects: many(defects),
-  requirements: many(requirements),
 }));
 
 export const modulesRelations = relations(modules, ({ one, many }) => ({
@@ -347,16 +345,7 @@ export const defectsRelations = relations(defects, ({ one }) => ({
   }),
 }));
 
-export const requirementsRelations = relations(requirements, ({ one }) => ({
-  project: one(projects, {
-    fields: [requirements.projectId],
-    references: [projects.id],
-  }),
-  createdBy: one(users, {
-    fields: [requirements.createdBy],
-    references: [users.id],
-  }),
-}));
+
 
 // Types
 export type User = typeof users.$inferSelect;

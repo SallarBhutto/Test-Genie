@@ -89,12 +89,7 @@ export interface IStorage {
   updateDefect(id: number, defect: Partial<Defect>): Promise<Defect | undefined>;
   deleteDefect(id: number): Promise<boolean>;
 
-  // Requirements
-  getRequirements(projectId?: number): Promise<Requirement[]>;
-  getRequirement(id: number): Promise<Requirement | undefined>;
-  createRequirement(requirement: InsertRequirement): Promise<Requirement>;
-  updateRequirement(id: number, requirement: Partial<Requirement>): Promise<Requirement | undefined>;
-  deleteRequirement(id: number): Promise<boolean>;
+
 
   // Settings
   getSetting(key: string): Promise<Setting | undefined>;
@@ -111,7 +106,7 @@ export class MemStorage implements IStorage {
   private testRuns: Map<number, TestRun> = new Map();
   private testRunResults: Map<number, TestRunResult> = new Map();
   private defects: Map<number, Defect> = new Map();
-  private requirements: Map<number, Requirement> = new Map();
+
   private currentId = 1;
 
   constructor() {
@@ -610,43 +605,7 @@ export class MemStorage implements IStorage {
     return this.defects.delete(id);
   }
 
-  // Requirements
-  async getRequirements(projectId?: number): Promise<Requirement[]> {
-    const requirements = Array.from(this.requirements.values());
-    return projectId ? requirements.filter(req => req.projectId === projectId) : requirements;
-  }
 
-  async getRequirement(id: number): Promise<Requirement | undefined> {
-    return this.requirements.get(id);
-  }
-
-  async createRequirement(insertRequirement: InsertRequirement): Promise<Requirement> {
-    const requirement: Requirement = {
-      ...insertRequirement,
-      id: this.currentId++,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.requirements.set(requirement.id, requirement);
-    return requirement;
-  }
-
-  async updateRequirement(id: number, requirementUpdate: Partial<Requirement>): Promise<Requirement | undefined> {
-    const requirement = this.requirements.get(id);
-    if (!requirement) return undefined;
-    
-    const updatedRequirement = { 
-      ...requirement, 
-      ...requirementUpdate, 
-      updatedAt: new Date() 
-    };
-    this.requirements.set(id, updatedRequirement);
-    return updatedRequirement;
-  }
-
-  async deleteRequirement(id: number): Promise<boolean> {
-    return this.requirements.delete(id);
-  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1119,39 +1078,7 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  async getRequirements(projectId?: number): Promise<Requirement[]> {
-    if (projectId) {
-      return await db.select().from(requirements).where(eq(requirements.projectId, projectId));
-    }
-    return await db.select().from(requirements);
-  }
 
-  async getRequirement(id: number): Promise<Requirement | undefined> {
-    const [requirement] = await db.select().from(requirements).where(eq(requirements.id, id));
-    return requirement || undefined;
-  }
-
-  async createRequirement(insertRequirement: InsertRequirement): Promise<Requirement> {
-    const [requirement] = await db
-      .insert(requirements)
-      .values(insertRequirement)
-      .returning();
-    return requirement;
-  }
-
-  async updateRequirement(id: number, requirementUpdate: Partial<Requirement>): Promise<Requirement | undefined> {
-    const [requirement] = await db
-      .update(requirements)
-      .set(requirementUpdate)
-      .where(eq(requirements.id, id))
-      .returning();
-    return requirement || undefined;
-  }
-
-  async deleteRequirement(id: number): Promise<boolean> {
-    const result = await db.delete(requirements).where(eq(requirements.id, id));
-    return result.rowCount > 0;
-  }
 
   // Sessions
   async createSession(sessionData: { id: string; userId: number; expiresAt: Date }): Promise<{ id: string; userId: number; expiresAt: Date; createdAt: Date }> {
