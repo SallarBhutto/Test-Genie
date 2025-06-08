@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, TestTube, Eye, Users } from "lucide-react";
 import CreateTestSuiteModal from "@/components/modals/create-test-suite-modal";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 
 export default function TestSuites() {
   const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 
 export default function TestCases() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
@@ -164,6 +165,8 @@ export default function TestCases() {
     return matchesSearch && matchesProject && matchesModule && matchesComponent && matchesPriority && matchesStatus;
   }) : [];
 
+  const { sortedData: sortedTestCases, sortConfig, requestSort } = useSorting(filteredTestCases, "testCaseId");
+
   const getStatusBadge = (status: string) => {
     const statusClasses = {
       passed: "status-passed",
@@ -298,20 +301,83 @@ export default function TestCases() {
                   <TableHead className="w-12">
                     <Checkbox />
                   </TableHead>
-                  <TableHead>Test Case ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Module</TableHead>
-                  <TableHead>Component</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                  <SortableTableHead
+                    sortKey="testCaseId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Test Case ID
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="title"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Title
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="projectId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Project
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="moduleId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Module
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="componentId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Component
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="priority"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Priority
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="status"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Status
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="createdBy"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Created By
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="updatedAt"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Last Updated
+                  </SortableTableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTestCases.map((testCase: any) => {
+                {sortedTestCases.map((testCase: any) => {
                   // Get hierarchy information from the loaded data using actual test case IDs
                   const project = projects.find((p: any) => p.id === testCase.projectId);
                   const module = modules.find((m: any) => m.id === testCase.moduleId);  
