@@ -23,11 +23,6 @@ export default function TestRuns() {
   });
 
   const { sortedData: sortedTestRuns, sortConfig, requestSort } = useSorting(testRuns, "createdAt");
-  
-  // Debug logging
-  console.log('Test runs data:', testRuns);
-  console.log('Sorted test runs:', sortedTestRuns);
-  console.log('Sort config:', sortConfig);
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
