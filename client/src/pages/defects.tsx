@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, Filter } from "lucide-react";
 import CreateDefectModal from "@/components/modals/create-defect-modal";
 import EditDefectModal from "@/components/modals/edit-defect-modal";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 import { cn } from "@/lib/utils";
 
 export default function Defects() {
@@ -65,6 +67,8 @@ export default function Defects() {
     
     return matchesSearch && matchesStatus && matchesSeverity && matchesProject;
   }) || [];
+
+  const { sortedData: sortedDefects, sortConfig, requestSort } = useSorting(filteredDefects, "defectId");
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -295,19 +299,75 @@ export default function Defects() {
                     <TableHead className="w-12">
                       <Checkbox />
                     </TableHead>
-                    <TableHead>Defect ID</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead>Reported By</TableHead>
-                    <TableHead>Created</TableHead>
+                    <SortableTableHead
+                      sortKey="defectId"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Defect ID
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="title"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Title
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="severity"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Severity
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="priority"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Priority
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="status"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Status
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="assignedTo"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Assigned To
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="reportedBy"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Reported By
+                    </SortableTableHead>
+                    <SortableTableHead
+                      sortKey="createdAt"
+                      currentSortKey={sortConfig.key}
+                      sortDirection={sortConfig.direction}
+                      onSort={requestSort}
+                    >
+                      Created
+                    </SortableTableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDefects.map((defect: any) => (
+                  {sortedDefects.map((defect: any) => (
                     <TableRow key={defect.id}>
                       <TableCell>
                         <Checkbox />
