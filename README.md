@@ -1,8 +1,10 @@
-# TestGenie - Test Management Platform
+# QualityBytes - Self-Hosted Test Management Platform
 
-A comprehensive QA management App with advanced test management capabilities, featuring a hierarchical project structure and enterprise-grade UI for efficient software testing workflows.
+A comprehensive QA management application developed by **Samosa Labs** with advanced test management capabilities, featuring a hierarchical project structure and enterprise-grade UI for efficient software testing workflows.
 
-![TestGenie Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![QualityBytes Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![Self-Hosted](https://img.shields.io/badge/Deployment-Self--Hosted-green)
 
 ## 🚀 Features
 
@@ -148,22 +150,32 @@ Users
 └── package.json         # Dependencies and scripts
 ```
 
-## 🚀 Deployment
+## 🚀 Deployment (Self-Hosted)
 
-### Using Replit (Recommended)
-1. Import this repository to Replit
-2. Set up PostgreSQL database
-3. Configure environment variables
-4. Deploy with one click
+### Docker Deployment (Recommended)
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd qualitybytes
+   ```
+2. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials
+   ```
+3. Start with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
 
-### Manual Deployment
+### Manual Self-Hosted Deployment
 1. Build the application:
    ```bash
    npm run build
    ```
 2. Set up PostgreSQL database
 3. Configure production environment variables
-4. Deploy to your preferred hosting platform
+4. Deploy to your self-hosted infrastructure
 
 ## 🧪 Testing Features
 
@@ -221,4 +233,6 @@ Built with modern design principles:
 
 ---
 
-**TestGenie** - Professional test management made simple and efficient.
+**QualityBytes** by **Samosa Labs** - Professional self-hosted test management made simple and efficient.
+
+© 2025 Samosa Labs. All rights reserved.

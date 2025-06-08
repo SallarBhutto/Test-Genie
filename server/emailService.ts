@@ -33,7 +33,7 @@ export async function sendVerificationEmail(
 ): Promise<boolean> {
   try {
     const verificationUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/verify-email?token=${verificationToken}`;
-    
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
@@ -44,7 +44,7 @@ export async function sendVerificationEmail(
             <h1 style="color: white; margin: 0;">QualityBytes</h1>
             <p style="color: white; margin: 5px 0;">Test Management Platform</p>
           </div>
-          
+
           <div style="padding: 30px; background: #f9fafb;">
             <h2 style="color: #1f2937; margin-bottom: 20px;">Welcome to QualityBytes!</h2>
             <p style="color: #4b5563; line-height: 1.6;">
@@ -53,7 +53,7 @@ export async function sendVerificationEmail(
             <p style="color: #4b5563; line-height: 1.6;">
               Thank you for signing up for QualityBytes! To complete your registration and start managing your test cases, please verify your email address by clicking the button below.
             </p>
-            
+
             <div style="text-align: center; margin: 30px 0;">
               <a href="${verificationUrl}" 
                  style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); 
@@ -66,21 +66,22 @@ export async function sendVerificationEmail(
                 Verify Email Address
               </a>
             </div>
-            
+
             <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
               If you can't click the button, copy and paste this link into your browser:
               <br>
               <a href="${verificationUrl}" style="color: #2563eb; word-break: break-all;">${verificationUrl}</a>
             </p>
-            
+
             <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
               This verification link will expire in 24 hours. If you didn't create an account with QualityBytes, please ignore this email.
             </p>
           </div>
-          
+
           <div style="background: #e5e7eb; padding: 20px; text-align: center;">
             <p style="color: #6b7280; font-size: 12px; margin: 0;">
-              © 2025 QualityBytes. All rights reserved.
+              © 2025 Samosa Labs. All rights reserved.<br>
+              QualityBytes - Self-Hosted Test Management Platform
             </p>
           </div>
         </div>
@@ -108,7 +109,7 @@ export async function sendWelcomeEmail(email: string, username: string): Promise
             <h1 style="color: white; margin: 0;">QualityBytes</h1>
             <p style="color: white; margin: 5px 0;">Test Management Platform</p>
           </div>
-          
+
           <div style="padding: 30px; background: #f9fafb;">
             <h2 style="color: #1f2937; margin-bottom: 20px;">Account Verified Successfully! 🎉</h2>
             <p style="color: #4b5563; line-height: 1.6;">
@@ -117,7 +118,7 @@ export async function sendWelcomeEmail(email: string, username: string): Promise
             <p style="color: #4b5563; line-height: 1.6;">
               Congratulations! Your email has been verified and your QualityBytes account is now active. You can start managing your test cases, tracking defects, and collaborating with your team.
             </p>
-            
+
             <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
               <h3 style="color: #1f2937; margin-top: 0;">What you can do now:</h3>
               <ul style="color: #4b5563; line-height: 1.8;">
@@ -128,7 +129,7 @@ export async function sendWelcomeEmail(email: string, username: string): Promise
                 <li>Collaborate with team members</li>
               </ul>
             </div>
-            
+
             <div style="text-align: center; margin: 30px 0;">
               <a href="${process.env.BASE_URL || 'http://localhost:5000'}/login" 
                  style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); 
@@ -142,10 +143,11 @@ export async function sendWelcomeEmail(email: string, username: string): Promise
               </a>
             </div>
           </div>
-          
+
           <div style="background: #e5e7eb; padding: 20px; text-align: center;">
             <p style="color: #6b7280; font-size: 12px; margin: 0;">
-              © 2025 QualityBytes. All rights reserved.
+              © 2025 Samosa Labs. All rights reserved.<br>
+              QualityBytes - Self-Hosted Test Management Platform
             </p>
           </div>
         </div>
