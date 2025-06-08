@@ -1,0 +1,45 @@
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: qualitybytes_db_dev
+    environment:
+      POSTGRES_DB: qualitybytes_db
+      POSTGRES_USER: qualitybytes_user
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qualitybytes_user -d qualitybytes_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # QualityBytes Application (Development)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: qualitybytes_app_dev
+    environment:
+      DATABASE_URL: postgresql://qualitybytes_user:your_password@postgres:5432/qualitybytes_db
+      NODE_ENV: development
+      PORT: 5000
+      SESSION_SECRET: dev-session-secret
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
