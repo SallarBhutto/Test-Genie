@@ -368,8 +368,7 @@ export type TestRunResult = typeof testRunResults.$inferSelect;
 export type InsertTestRunResult = z.infer<typeof insertTestRunResultSchema>;
 export type Defect = typeof defects.$inferSelect;
 export type InsertDefect = z.infer<typeof insertDefectSchema>;
-export type Requirement = typeof requirements.$inferSelect;
-export type InsertRequirement = z.infer<typeof insertRequirementSchema>;
+
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 

@@ -6,7 +6,7 @@ import {
   FileText, 
   Play, 
   Bug, 
-  FileCheck, 
+ 
   TrendingUp, 
   Users,
   Package,
