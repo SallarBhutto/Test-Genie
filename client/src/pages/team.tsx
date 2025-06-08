@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX, Trash2 } from "lucide-react";
 import { useState } from "react";
 import CreateUserModal from "@/components/modals/create-user-modal";

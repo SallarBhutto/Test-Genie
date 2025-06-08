@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Plus, Package, Component } from "lucide-react";
 import { Link } from "wouter";
 import CreateModuleModal from "@/components/modals/create-module-modal";
 import { useProject } from "@/contexts/ProjectContext";
+import { useSorting } from "@/hooks/useSorting";
 import type { Module, Project } from "@shared/schema";
 
 export default function Modules() {
@@ -19,6 +22,19 @@ export default function Modules() {
 
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
     queryKey: ["/api/modules", selectedProject?.id],
+  });
+
+  const { sortConfig, requestSort } = useSorting();
+  
+  const sortedModules = [...(modules as Module[])].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    const aValue = a[sortConfig.key as keyof Module];
+    const bValue = b[sortConfig.key as keyof Module];
+    
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
   });
 
   if (projectsLoading || modulesLoading) {
