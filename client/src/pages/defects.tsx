@@ -22,12 +22,17 @@ export default function Defects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState("all");
   const { selectedProject } = useProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: defects, isLoading } = useQuery({
     queryKey: ["/api/defects", selectedProject?.id],
+  });
+
+  const { data: projects } = useQuery({
+    queryKey: ["/api/projects"],
   });
 
   const deleteDefectMutation = useMutation({
@@ -56,8 +61,9 @@ export default function Defects() {
                          defect.defectId.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || defect.status === statusFilter;
     const matchesSeverity = severityFilter === "all" || defect.severity === severityFilter;
+    const matchesProject = projectFilter === "all" || defect.projectId?.toString() === projectFilter;
     
-    return matchesSearch && matchesStatus && matchesSeverity;
+    return matchesSearch && matchesStatus && matchesSeverity && matchesProject;
   }) || [];
 
   const getStatusBadge = (status: string) => {
@@ -241,6 +247,19 @@ export default function Defects() {
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects?.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
