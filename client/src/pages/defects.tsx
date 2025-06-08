@@ -122,7 +122,7 @@ export default function Defects() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -182,6 +182,22 @@ export default function Defects() {
               </div>
               <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
                 <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Closed</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {defects?.filter((d: any) => d.status === "closed").length || 0}
+                </p>
+              </div>
+              <div className="w-8 h-8 bg-gray-100 dark:bg-gray-900/20 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
               </div>
             </div>
           </CardContent>
