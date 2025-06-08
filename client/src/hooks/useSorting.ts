@@ -33,6 +33,11 @@ export function useSorting<T>(data: T[], initialSortKey?: string) {
         comparison = aValue - bValue;
       } else if (aValue instanceof Date && bValue instanceof Date) {
         comparison = aValue.getTime() - bValue.getTime();
+      } else if (sortConfig.key === "createdAt" || sortConfig.key === "updatedAt") {
+        // Handle date strings specifically
+        const dateA = new Date(aValue);
+        const dateB = new Date(bValue);
+        comparison = dateA.getTime() - dateB.getTime();
       } else {
         // Convert to string for comparison
         comparison = String(aValue).toLowerCase().localeCompare(String(bValue).toLowerCase());
