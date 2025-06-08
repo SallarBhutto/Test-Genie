@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
-import EnhancedTestSuiteModal from "@/components/modals/enhanced-test-suite-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -17,7 +16,6 @@ import { useProject } from "@/contexts/ProjectContext";
 
 export default function TestCases() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
-  const [showCreateTestSuite, setShowCreateTestSuite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTestCase, setEditingTestCase] = useState(null);
   const { selectedProject } = useProject();
@@ -209,16 +207,10 @@ export default function TestCases() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Cases</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowCreateTestSuite(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Test Suite
-          </Button>
-          <Button onClick={() => setShowCreateTestCase(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Test Case
-          </Button>
-        </div>
+        <Button onClick={() => setShowCreateTestCase(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Test Case
+        </Button>
       </div>
 
       <Card>
@@ -428,10 +420,7 @@ export default function TestCases() {
         }}
         editingTestCase={editingTestCase}
       />
-      <EnhancedTestSuiteModal
-        open={showCreateTestSuite}
-        onOpenChange={setShowCreateTestSuite}
-      />
+
     </div>
   );
 }
