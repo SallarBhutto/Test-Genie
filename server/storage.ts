@@ -661,6 +661,56 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     return await db.transaction(async (tx) => {
+      // Check if user has created projects - these cannot be reassigned easily
+      const createdProjects = await tx
+        .select()
+        .from(projects)
+        .where(eq(projects.createdBy, id));
+      
+      if (createdProjects.length > 0) {
+        throw new Error(`Cannot delete user: has created ${createdProjects.length} project(s). Transfer ownership first.`);
+      }
+      
+      // Check if user has created modules
+      const createdModules = await tx
+        .select()
+        .from(modules)
+        .where(eq(modules.createdBy, id));
+      
+      if (createdModules.length > 0) {
+        throw new Error(`Cannot delete user: has created ${createdModules.length} module(s). Transfer ownership first.`);
+      }
+      
+      // Check if user has created components
+      const createdComponents = await tx
+        .select()
+        .from(components)
+        .where(eq(components.createdBy, id));
+      
+      if (createdComponents.length > 0) {
+        throw new Error(`Cannot delete user: has created ${createdComponents.length} component(s). Transfer ownership first.`);
+      }
+      
+      // Check if user has created test cases
+      const createdTestCases = await tx
+        .select()
+        .from(testCases)
+        .where(eq(testCases.createdBy, id));
+      
+      if (createdTestCases.length > 0) {
+        throw new Error(`Cannot delete user: has created ${createdTestCases.length} test case(s). Transfer ownership first.`);
+      }
+      
+      // Check if user has created test runs
+      const createdTestRuns = await tx
+        .select()
+        .from(testRuns)
+        .where(eq(testRuns.createdBy, id));
+      
+      if (createdTestRuns.length > 0) {
+        throw new Error(`Cannot delete user: has created ${createdTestRuns.length} test run(s). Transfer ownership first.`);
+      }
+      
       // Check if user has reported defects - these cannot be nullified as they need to maintain audit trail
       const reportedDefects = await tx
         .select()
@@ -671,11 +721,21 @@ export class DatabaseStorage implements IStorage {
         throw new Error(`Cannot delete user: has reported ${reportedDefects.length} defect(s). Reassign or resolve defects first.`);
       }
       
-      // Nullify assigned defects (assignments can be removed)
+      // Nullify assignments that can be safely removed
       await tx
         .update(defects)
         .set({ assignedTo: null })
         .where(eq(defects.assignedTo, id));
+      
+      await tx
+        .update(testCases)
+        .set({ assignedTo: null })
+        .where(eq(testCases.assignedTo, id));
+      
+      await tx
+        .update(testRunResults)
+        .set({ executedBy: null })
+        .where(eq(testRunResults.executedBy, id));
       
       // Delete any sessions for this user
       await tx.delete(sessions).where(eq(sessions.userId, id));
