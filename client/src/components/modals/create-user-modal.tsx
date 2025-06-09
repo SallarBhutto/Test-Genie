@@ -57,20 +57,37 @@ export default function CreateUserModal({ open, onOpenChange }: CreateUserModalP
 
   const createUserMutation = useMutation({
     mutationFn: (data: FormData) => apiRequest('POST', '/api/users', data),
-    onSuccess: () => {
-      // Invalidate and refetch users to show new user immediately
+    onSuccess: (response) => {
+      // Invalidate and refetch users and license info to show updated counts
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/license/info'] });
+      
+      const message = response.licenseInfo 
+        ? `User created successfully. ${response.licenseInfo.remainingSlots} slots remaining.`
+        : "User created successfully";
+        
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: message,
       });
       form.reset();
       onOpenChange(false);
     },
-    onError: () => {
+    onError: (error: any) => {
+      let errorMessage = "Failed to create user";
+      
+      // Handle license-specific errors
+      if (error.message.includes("User limit reached")) {
+        errorMessage = error.message;
+      } else if (error.message.includes("Invalid license")) {
+        errorMessage = "Invalid license key. Unable to add new team members.";
+      } else if (error.message.includes("License key required")) {
+        errorMessage = "License validation required to add team members.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: errorMessage,
         variant: "destructive",
       });
     },

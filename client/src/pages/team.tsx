@@ -131,9 +131,12 @@ export default function Team() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Team</h1>
-        <Button onClick={() => setShowCreateUser(true)}>
+        <Button 
+          onClick={() => setShowCreateUser(true)}
+          disabled={licenseInfo && licenseInfo.remainingSlots <= 0}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add Member
+          {licenseInfo && licenseInfo.remainingSlots <= 0 ? 'User Limit Reached' : 'Add Member'}
         </Button>
       </div>
 
