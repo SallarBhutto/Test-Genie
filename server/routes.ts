@@ -418,8 +418,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const currentUser = req.user;
       
-      console.log("Delete user request:", { id, currentUser: currentUser.id, role: currentUser.role });
-      
       // Only admins can delete users
       if (currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Permission denied. Only administrators can delete users." });
@@ -431,13 +429,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const success = await storage.deleteUser(id);
-      console.log("Delete user result:", success);
-      
       if (!success) {
         return res.status(404).json({ message: "User not found" });
       }
       res.status(204).send();
     } catch (error) {
+      if (error instanceof Error && error.message.includes('Cannot delete user')) {
+        return res.status(400).json({ message: error.message });
+      }
       console.error("Delete user error:", error);
       res.status(500).json({ message: "Failed to delete user" });
     }
