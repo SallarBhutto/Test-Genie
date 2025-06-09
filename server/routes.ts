@@ -13,6 +13,7 @@ import {
   sendWelcomeEmail 
 } from "./emailService";
 import { licenseMiddleware } from "./middleware/license";
+import { getLicenseInfo } from "./utils/license";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -248,6 +249,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // License info endpoint
+  app.get("/api/license/info", async (req, res) => {
+    try {
+      const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
+      
+      if (!licenseKey) {
+        return res.status(403).json({ message: "License key required" });
+      }
+
+      const licenseInfo = await getLicenseInfo(licenseKey);
+      
+      if (!licenseInfo || !licenseInfo.valid) {
+        return res.status(403).json({ message: "Invalid license key" });
+      }
+
+      const currentUsers = await storage.getUsers();
+      const currentUserCount = currentUsers.length;
+      const maxUsers = licenseInfo.subscription?.userCount || 0;
+
+      res.json({
+        valid: licenseInfo.valid,
+        subscription: licenseInfo.subscription,
+        currentUserCount,
+        maxUsers,
+        remainingSlots: Math.max(0, maxUsers - currentUserCount)
+      });
+    } catch (error) {
+      console.error("Error fetching license info:", error);
+      res.status(500).json({ message: "Failed to fetch license information" });
+    }
+  });
+
   // Users
   app.get("/api/users", async (req, res) => {
     try {
@@ -273,11 +306,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", async (req, res) => {
     try {
       console.log("POST /api/users called with body:", req.body);
+      
+      // Get license key from header or environment
+      const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
+      
+      if (!licenseKey) {
+        return res.status(403).json({ 
+          message: "License key required to add team members" 
+        });
+      }
+
+      // Get license information to check user limits
+      const licenseInfo = await getLicenseInfo(licenseKey);
+      
+      if (!licenseInfo || !licenseInfo.valid) {
+        return res.status(403).json({ 
+          message: "Invalid license key" 
+        });
+      }
+
+      // Get current user count
+      const currentUsers = await storage.getUsers();
+      const currentUserCount = currentUsers.length;
+      const maxUsers = licenseInfo.subscription?.userCount || 0;
+      
+      // Check if adding a new user would exceed the limit
+      if (currentUserCount >= maxUsers) {
+        return res.status(400).json({ 
+          message: `User limit reached. Your subscription allows ${maxUsers} users. You currently have ${currentUserCount} users.`,
+          currentUserCount,
+          maxUsers,
+          remainingSlots: 0
+        });
+      }
+
       const validatedData = insertUserSchema.parse(req.body);
       console.log("Validated data:", validatedData);
       const user = await storage.createUser(validatedData);
       console.log("Created user:", user);
-      res.status(201).json(user);
+      
+      // Return success response with updated counts
+      res.status(201).json({
+        ...user,
+        licenseInfo: {
+          currentUserCount: currentUserCount + 1,
+          maxUsers,
+          remainingSlots: maxUsers - (currentUserCount + 1)
+        }
+      });
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(400).json({ 

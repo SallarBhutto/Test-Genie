@@ -53,6 +53,11 @@ export default function Team() {
     queryKey: ["/api/users"],
   });
 
+  const { data: licenseInfo } = useQuery({
+    queryKey: ["/api/license/info"],
+    retry: false,
+  });
+
   const { data: testCases = [] } = useQuery({
     queryKey: ["/api/test-cases"],
   });
@@ -131,6 +136,28 @@ export default function Team() {
           Add Member
         </Button>
       </div>
+
+      {/* License Information */}
+      {licenseInfo && (
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-300">License Status</p>
+                <p className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+                  {licenseInfo.remainingSlots} of {licenseInfo.maxUsers} slots available
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  Current users: {licenseInfo.currentUserCount} / {licenseInfo.maxUsers}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/20 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Team Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
