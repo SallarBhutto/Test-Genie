@@ -38,6 +38,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Apply license middleware to all routes
+  app.use(licenseMiddleware);
+  
   // Register API routes FIRST before Vite middleware
   const server = await registerRoutes(app);
 
