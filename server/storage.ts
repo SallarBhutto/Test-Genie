@@ -660,8 +660,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return (result.rowCount || 0) > 0;
+    return await db.transaction(async (tx) => {
+      // Check if user has reported defects - these cannot be nullified as they need to maintain audit trail
+      const reportedDefects = await tx
+        .select()
+        .from(defects)
+        .where(eq(defects.reportedBy, id));
+      
+      if (reportedDefects.length > 0) {
+        throw new Error(`Cannot delete user: has reported ${reportedDefects.length} defect(s). Reassign or resolve defects first.`);
+      }
+      
+      // Nullify assigned defects (assignments can be removed)
+      await tx
+        .update(defects)
+        .set({ assignedTo: null })
+        .where(eq(defects.assignedTo, id));
+      
+      // Delete any sessions for this user
+      await tx.delete(sessions).where(eq(sessions.userId, id));
+      
+      // Delete the user
+      const result = await tx.delete(users).where(eq(users.id, id));
+      return (result.rowCount || 0) > 0;
+    });
   }
 
   async getProjects(): Promise<Project[]> {
