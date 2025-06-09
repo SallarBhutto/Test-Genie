@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -55,11 +56,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-
-  const { data: currentUser } = useQuery({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-  });
+  const { user: currentUser } = useAuth();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -76,6 +73,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   // Update form values when user data is loaded
   useEffect(() => {
     if (currentUser) {
+      console.log("Profile modal - current user data:", currentUser);
       form.reset({
         fullName: currentUser.fullName || "",
         username: currentUser.username || "",
