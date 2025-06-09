@@ -661,65 +661,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     return await db.transaction(async (tx) => {
-      // Check if user has created projects - these cannot be reassigned easily
-      const createdProjects = await tx
+      // Find admin user to transfer ownership to
+      const [adminUser] = await tx
         .select()
-        .from(projects)
-        .where(eq(projects.createdBy, id));
+        .from(users)
+        .where(eq(users.role, 'admin'))
+        .limit(1);
       
-      if (createdProjects.length > 0) {
-        throw new Error(`Cannot delete user: has created ${createdProjects.length} project(s). Transfer ownership first.`);
+      if (!adminUser) {
+        throw new Error('Cannot delete user: no admin user found to transfer ownership to.');
       }
       
-      // Check if user has created modules
-      const createdModules = await tx
-        .select()
-        .from(modules)
-        .where(eq(modules.createdBy, id));
-      
-      if (createdModules.length > 0) {
-        throw new Error(`Cannot delete user: has created ${createdModules.length} module(s). Transfer ownership first.`);
-      }
-      
-      // Check if user has created components
-      const createdComponents = await tx
-        .select()
-        .from(components)
-        .where(eq(components.createdBy, id));
-      
-      if (createdComponents.length > 0) {
-        throw new Error(`Cannot delete user: has created ${createdComponents.length} component(s). Transfer ownership first.`);
-      }
-      
-      // Check if user has created test cases
-      const createdTestCases = await tx
-        .select()
-        .from(testCases)
-        .where(eq(testCases.createdBy, id));
-      
-      if (createdTestCases.length > 0) {
-        throw new Error(`Cannot delete user: has created ${createdTestCases.length} test case(s). Transfer ownership first.`);
-      }
-      
-      // Check if user has created test runs
-      const createdTestRuns = await tx
-        .select()
-        .from(testRuns)
-        .where(eq(testRuns.createdBy, id));
-      
-      if (createdTestRuns.length > 0) {
-        throw new Error(`Cannot delete user: has created ${createdTestRuns.length} test run(s). Transfer ownership first.`);
-      }
-      
-      // Check if user has reported defects - these cannot be nullified as they need to maintain audit trail
+      // Check if user has reported defects - these cannot be transferred as they need to maintain audit trail
       const reportedDefects = await tx
         .select()
         .from(defects)
         .where(eq(defects.reportedBy, id));
       
       if (reportedDefects.length > 0) {
-        throw new Error(`Cannot delete user: has reported ${reportedDefects.length} defect(s). Reassign or resolve defects first.`);
+        throw new Error(`Cannot delete user: has reported ${reportedDefects.length} defect(s). Defect reporting cannot be transferred to maintain audit trail.`);
       }
+      
+      // Transfer ownership of created content to admin user
+      await tx
+        .update(projects)
+        .set({ createdBy: adminUser.id })
+        .where(eq(projects.createdBy, id));
+      
+      await tx
+        .update(modules)
+        .set({ createdBy: adminUser.id })
+        .where(eq(modules.createdBy, id));
+      
+      await tx
+        .update(components)
+        .set({ createdBy: adminUser.id })
+        .where(eq(components.createdBy, id));
+      
+      await tx
+        .update(testCases)
+        .set({ createdBy: adminUser.id })
+        .where(eq(testCases.createdBy, id));
+      
+      await tx
+        .update(testRuns)
+        .set({ createdBy: adminUser.id })
+        .where(eq(testRuns.createdBy, id));
       
       // Nullify assignments that can be safely removed
       await tx
