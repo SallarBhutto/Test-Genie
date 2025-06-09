@@ -1,14 +1,14 @@
-const { validateLicense } = require('../utils/license');
-require('dotenv').config();
+import { type Request, Response, NextFunction } from 'express';
+import { validateLicense } from '../utils/license';
 
 /**
  * Express middleware to validate license keys
  * Checks X-License-Key header or LICENSE_KEY environment variable
  * Returns 403 if license is invalid, otherwise calls next()
  */
-async function licenseMiddleware(req, res, next) {
+export async function licenseMiddleware(req: Request, res: Response, next: NextFunction) {
   // Get license key from header or environment variable
-  const licenseKey = req.headers['x-license-key'] || process.env.LICENSE_KEY;
+  const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
   
   if (!licenseKey) {
     return res.status(403).json({ 
@@ -34,7 +34,3 @@ async function licenseMiddleware(req, res, next) {
     });
   }
 }
-
-module.exports = {
-  licenseMiddleware
-};
