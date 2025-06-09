@@ -221,26 +221,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", async (req, res) => {
+  app.post("/api/auth/logout", async (req: any, res) => {
     try {
-      const sessionId = req.headers.authorization?.split(' ')[1];
-      if (sessionId) {
-        await storage.deleteSession(sessionId);
+      if (req.session) {
+        req.session.destroy((err: any) => {
+          if (err) {
+            console.error("Session destroy error:", err);
+            return res.status(500).json({ message: "Logout failed" });
+          }
+          res.json({ message: "Logged out successfully" });
+        });
+      } else {
+        res.json({ message: "Logged out successfully" });
       }
-      res.json({ message: "Logged out successfully" });
     } catch (error) {
+      console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });
     }
   });
 
   app.get("/api/auth/me", requireAuth, async (req: any, res) => {
     try {
-      const session = await storage.getSession(req.sessionId);
-      if (!session || session.expiresAt < new Date()) {
-        return res.status(401).json({ message: "Session expired" });
-      }
-
-      const user = await storage.getUser(session.userId);
+      const user = req.user;
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -416,6 +418,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const currentUser = req.user;
       
+      console.log("Delete user request:", { id, currentUser: currentUser.id, role: currentUser.role });
+      
       // Only admins can delete users
       if (currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Permission denied. Only administrators can delete users." });
@@ -427,11 +431,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const success = await storage.deleteUser(id);
+      console.log("Delete user result:", success);
+      
       if (!success) {
         return res.status(404).json({ message: "User not found" });
       }
       res.status(204).send();
     } catch (error) {
+      console.error("Delete user error:", error);
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
