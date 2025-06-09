@@ -366,7 +366,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertUserSchema.partial().parse(req.body);
+      const { currentPassword, ...updateData } = req.body;
+      
+      // If password is being changed, verify current password
+      if (updateData.password && currentPassword) {
+        const existingUser = await storage.getUser(id);
+        if (!existingUser) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // In a real app, you would hash and compare passwords
+        // For this demo, we'll do a simple comparison
+        if (existingUser.password !== currentPassword) {
+          return res.status(400).json({ message: "Current password is incorrect" });
+        }
+      }
+      
+      const validatedData = insertUserSchema.partial().parse(updateData);
       const user = await storage.updateUser(id, validatedData);
       if (!user) {
         return res.status(404).json({ message: "User not found" });

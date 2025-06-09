@@ -1,4 +1,4 @@
-import { Bell, LogOut, ChevronDown, Building2 } from "lucide-react";
+import { Bell, LogOut, ChevronDown, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,10 +18,13 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useProject } from "@/contexts/ProjectContext";
+import ProfileModal from "@/components/modals/profile-modal";
+import { useState } from "react";
 
 export default function TopBar() {
   const { user, logout, isLogoutPending } = useAuth();
   const { selectedProject, setSelectedProject, projects, isLoading } = useProject();
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleLogout = () => {
     logout({}, {
@@ -29,6 +32,10 @@ export default function TopBar() {
         window.location.href = "/";
       },
     });
+  };
+
+  const handleProfileClick = () => {
+    setShowProfile(true);
   };
 
   return (
@@ -99,6 +106,10 @@ export default function TopBar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleProfileClick}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} disabled={isLogoutPending}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{isLogoutPending ? "Signing out..." : "Sign out"}</span>
@@ -108,6 +119,11 @@ export default function TopBar() {
           )}
         </div>
       </div>
+      
+      <ProfileModal 
+        open={showProfile} 
+        onOpenChange={setShowProfile} 
+      />
     </header>
   );
 }
