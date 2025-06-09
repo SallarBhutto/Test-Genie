@@ -16,16 +16,22 @@ import { licenseMiddleware } from "./middleware/license";
 import { getLicenseInfo } from "./utils/license";
 
 // Authentication middleware
-function requireAuth(req: any, res: any, next: any) {
-  const sessionId = req.headers.authorization?.split(' ')[1];
-  if (!sessionId) {
+async function requireAuth(req: any, res: any, next: any) {
+  try {
+    // Check for Express session-based authentication
+    if (req.session && req.session.userId) {
+      const user = await storage.getUser(req.session.userId);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    }
+    
+    return res.status(401).json({ message: "Authentication required" });
+  } catch (error) {
+    console.error("Authentication error:", error);
     return res.status(401).json({ message: "Authentication required" });
   }
-  
-  // Verify session exists and is valid
-  // For now, we'll implement basic session management
-  req.sessionId = sessionId;
-  next();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -49,13 +55,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Email verification removed - all users can login directly
 
-      // Create session
-      const sessionId = crypto.randomUUID();
-      const session = await storage.createSession({
-        id: sessionId,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      });
+      // Create Express session
+      (req as any).session.userId = user.id;
+      (req as any).session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        avatar: user.avatar,
+      };
 
       // Update last login
       await storage.updateUser(user.id, { lastLogin: new Date() });
@@ -69,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: user.role,
           avatar: user.avatar,
         },
-        sessionId: session.id,
+        sessionId: (req as any).session.id,
       });
     } catch (error) {
       console.error("Login error:", error);
