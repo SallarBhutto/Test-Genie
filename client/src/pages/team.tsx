@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Mail, Phone, Edit, MoreVertical, Users, UserCheck, UserX, Trash2 } from "lucide-react";
 import { useState } from "react";
 import CreateUserModal from "@/components/modals/create-user-modal";
+import EditUserModal from "@/components/modals/edit-user-modal";
 import { User } from "@shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -22,6 +23,8 @@ import {
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -29,6 +32,7 @@ export default function Team() {
     mutationFn: (userId: number) => apiRequest('DELETE', `/api/users/${userId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/license/info'] });
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -42,6 +46,11 @@ export default function Team() {
       });
     },
   });
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setShowEditUser(true);
+  };
 
   const handleDeleteUser = (user: User) => {
     if (confirm(`Are you sure you want to delete ${user.fullName}?`)) {
@@ -239,9 +248,26 @@ export default function Team() {
                       <p className="text-sm text-neutral-500 dark:text-neutral-400">@{user.username}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteUser(user)}
+                        className="text-red-600 dark:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="mb-4">
@@ -369,7 +395,7 @@ export default function Team() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => alert(`Edit functionality coming soon for ${user.fullName}`)}>
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit User
                             </DropdownMenuItem>
@@ -395,6 +421,12 @@ export default function Team() {
       <CreateUserModal 
         open={showCreateUser} 
         onOpenChange={setShowCreateUser} 
+      />
+      
+      <EditUserModal 
+        open={showEditUser} 
+        onOpenChange={setShowEditUser}
+        user={editingUser}
       />
     </div>
   );
