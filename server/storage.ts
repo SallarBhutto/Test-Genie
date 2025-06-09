@@ -1212,12 +1212,12 @@ export async function initializeDefaultUser() {
     if (!existingAdmin) {
       await storage.createUser({
         username: "admin",
-        password: "admin",
+        password: "123456",
         email: "admin@testgenie.com",
         fullName: "Administrator",
         role: "admin",
       });
-      console.log("Default admin user created: username=admin, password=admin");
+      console.log("Default admin user created: username=admin, password=123456");
     }
   } catch (error) {
     console.error("Failed to create default admin user:", error);
