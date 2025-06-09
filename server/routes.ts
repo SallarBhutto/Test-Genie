@@ -363,10 +363,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id", async (req, res) => {
+  app.patch("/api/users/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const { currentPassword, ...updateData } = req.body;
+      const currentUser = req.user;
+      
+      // Allow users to update their own profile, or admins to update any user
+      if (currentUser.id !== id && currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Permission denied. Only admins can update other users." });
+      }
       
       // If password is being changed, verify current password
       if (updateData.password && currentPassword) {
@@ -396,9 +402,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/users/:id", async (req, res) => {
+  app.delete("/api/users/:id", requireAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      const currentUser = req.user;
+      
+      // Only admins can delete users
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Permission denied. Only administrators can delete users." });
+      }
+      
+      // Prevent self-deletion
+      if (currentUser.id === id) {
+        return res.status(400).json({ message: "Cannot delete your own account." });
+      }
+      
       const success = await storage.deleteUser(id);
       if (!success) {
         return res.status(404).json({ message: "User not found" });

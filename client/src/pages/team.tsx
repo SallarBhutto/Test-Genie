@@ -13,6 +13,7 @@ import { User } from "@shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,9 @@ export default function Team() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+  
+  const isAdmin = currentUser?.role === 'admin';
 
   const deleteUserMutation = useMutation({
     mutationFn: (userId: number) => apiRequest('DELETE', `/api/users/${userId}`),
@@ -38,10 +42,10 @@ export default function Team() {
         description: "User deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error", 
-        description: "Failed to delete user",
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     },
@@ -140,13 +144,15 @@ export default function Team() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Team</h1>
-        <Button 
-          onClick={() => setShowCreateUser(true)}
-          disabled={licenseInfo && licenseInfo.remainingSlots <= 0}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {licenseInfo && licenseInfo.remainingSlots <= 0 ? 'User Limit Reached' : 'Add Member'}
-        </Button>
+        {isAdmin && (
+          <Button 
+            onClick={() => setShowCreateUser(true)}
+            disabled={licenseInfo && licenseInfo.remainingSlots <= 0}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {licenseInfo && licenseInfo.remainingSlots <= 0 ? 'User Limit Reached' : 'Add Member'}
+          </Button>
+        )}
       </div>
 
       {/* License Information */}
@@ -300,26 +306,30 @@ export default function Team() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit User
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600 dark:text-red-400"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {isAdmin ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteUser(user)}
+                                className="text-red-600 dark:text-red-400"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <span className="text-sm text-neutral-400">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
