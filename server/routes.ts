@@ -12,6 +12,7 @@ import {
   sendVerificationEmail, 
   sendWelcomeEmail 
 } from "./emailService";
+import { licenseMiddleware } from "./middleware/license";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -643,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/test-cases", async (req, res) => {
+  app.post("/api/test-cases", licenseMiddleware, async (req, res) => {
     console.log("=== TEST CASE CREATION START ===");
     console.log("Raw request body:", req.body);
     
@@ -720,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/test-runs", async (req, res) => {
+  app.post("/api/test-runs", licenseMiddleware, async (req, res) => {
     try {
       const { testCaseIds, ...testRunData } = req.body;
       const validatedData = insertTestRunSchema.parse(testRunData);
@@ -761,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/test-runs/:id", async (req, res) => {
+  app.patch("/api/test-runs/:id", licenseMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       console.log("Updating test run", id, "with data:", req.body);
@@ -968,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/test-run-results/:id", async (req, res) => {
+  app.patch("/api/test-run-results/:id", licenseMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const result = await storage.updateTestRunResult(id, req.body);
@@ -995,8 +996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard Statistics
-  app.get("/api/dashboard/stats", async (req, res) => {
+  // Dashboard Statistics (protected by license)
+  app.get("/api/dashboard/stats", licenseMiddleware, async (req, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
       

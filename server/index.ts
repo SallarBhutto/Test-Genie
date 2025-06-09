@@ -39,9 +39,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Apply license middleware to all routes
-  app.use(licenseMiddleware);
-  
   // Register API routes FIRST before Vite middleware
   const server = await registerRoutes(app);
 
@@ -53,6 +50,10 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Apply license middleware to root path and dashboard routes
+  app.get('/', licenseMiddleware, (req, res, next) => next());
+  app.get('/dashboard', licenseMiddleware, (req, res, next) => next());
+  
   // Setup vite AFTER API routes to prevent interference
   if (app.get("env") === "development") {
     await setupVite(app, server);
