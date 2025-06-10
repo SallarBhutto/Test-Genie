@@ -84,6 +84,10 @@ export default function TestCases() {
     queryKey: ["/api/test-cases", selectedProject?.id],
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
   // Delete mutation
   const deleteTestCaseMutation = useMutation({
     mutationFn: (id: number) => fetch(`/api/test-cases/${id}`, { method: 'DELETE' }),
@@ -382,6 +386,7 @@ export default function TestCases() {
                   const project = projects.find((p: any) => p.id === testCase.projectId);
                   const module = modules.find((m: any) => m.id === testCase.moduleId);  
                   const component = components.find((c: any) => c.id === testCase.componentId);
+                  const creator = users.find((u: any) => u.id === testCase.createdBy);
                   
                   return (
                     <TableRow key={testCase.id}>
@@ -423,11 +428,11 @@ export default function TestCases() {
                       <div className="flex items-center space-x-2">
                         <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                           <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                            JS
+                            {creator?.fullName ? creator.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                           </span>
                         </div>
                         <span className="text-sm">
-                          John Smith
+                          {creator?.fullName || creator?.username || 'Unknown User'}
                         </span>
                       </div>
                     </TableCell>
