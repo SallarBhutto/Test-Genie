@@ -113,19 +113,19 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const sessionId = localStorage.getItem("sessionId");
+      const token = localStorage.getItem("authToken");
       
-      if (sessionId) {
+      if (token) {
         await fetch("/api/auth/logout", {
           method: "POST",
           credentials: "include",
           headers: {
-            Authorization: `Bearer ${sessionId}`,
+            Authorization: `Bearer ${token}`,
           },
         });
       }
       
-      localStorage.removeItem("sessionId");
+      localStorage.removeItem("authToken");
     },
     onSuccess: () => {
       setUser(null);
