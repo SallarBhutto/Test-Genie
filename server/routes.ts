@@ -864,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure steps is a proper array
       const dataWithFixedSteps = {
         ...req.body,
-        steps: Array.isArray(req.body.steps) ? req.body.steps.filter(step => step && step.trim() !== "") : []
+        steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
       };
       
       const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);

@@ -88,15 +88,13 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     queryKey: ["/api/test-suites"],
   });
 
-
-
   // Filter modules by selected project
-  const filteredModules = modules?.filter((module: any) => 
+  const filteredModules = (modules as any[])?.filter((module: any) => 
     selectedProjectId ? module.projectId === selectedProjectId : true
   ) || [];
 
   // Filter components by selected module
-  const filteredComponents = components?.filter((component: any) => 
+  const filteredComponents = (components as any[])?.filter((component: any) => 
     selectedModuleId ? component.moduleId === selectedModuleId : true
   ) || [];
 
@@ -201,32 +199,17 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       form.reset();
       setSteps([""]);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Test case creation/update error:", error);
       toast({
         title: "Error",
         description: editingTestCase 
-          ? "Failed to update test case. Please try again."
+          ? "Failed to update test case. Please try again." 
           : "Failed to create test case. Please try again.",
         variant: "destructive",
       });
     },
   });
-
-  const handleAddStep = () => {
-    setSteps([...steps, ""]);
-  };
-
-  const handleRemoveStep = (index: number) => {
-    if (steps.length > 1) {
-      setSteps(steps.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleStepChange = (index: number, value: string) => {
-    const newSteps = [...steps];
-    newSteps[index] = value;
-    setSteps(newSteps);
-  };
 
   const onSubmit = (data: FormData) => {
     console.log("Form submitted with data:", data);
@@ -234,136 +217,153 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     console.log("Steps:", steps);
     console.log("Form errors:", form.formState.errors);
     
-    createTestCaseMutation.mutate({
+    const finalData = {
       ...data,
       steps: steps.filter(step => step.trim() !== ""),
-    });
+    };
+    
+    createTestCaseMutation.mutate(finalData);
   };
 
-  // Add debugging for form state
+  const addStep = () => {
+    setSteps([...steps, ""]);
+  };
+
+  const removeStep = (index: number) => {
+    const newSteps = steps.filter((_, i) => i !== index);
+    setSteps(newSteps.length > 0 ? newSteps : [""]);
+  };
+
+  const updateStep = (index: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[index] = value;
+    setSteps(newSteps);
+  };
+
   console.log("Form state:", {
     isValid: form.formState.isValid,
     errors: form.formState.errors,
     isSubmitting: form.formState.isSubmitting
   });
-
   console.log("Modal render - open:", open, "editingTestCase:", editingTestCase);
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingTestCase ? "Edit Test Case" : "Create New Test Case"}</DialogTitle>
+          <DialogTitle>
+            {editingTestCase ? "Edit Test Case" : "Create New Test Case"}
+          </DialogTitle>
           <DialogDescription>
-            {editingTestCase ? "Update the test case details." : "Add a new test case to your test suite."}
+            {editingTestCase 
+              ? "Update the test case details below." 
+              : "Fill in the details to create a new test case. The test case ID will be auto-generated."}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Hierarchical Project → Module → Component Selection */}
-            <div className="space-y-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-white">Project Structure</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="projectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(Number(value));
-                          setSelectedProjectId(Number(value));
-                          setSelectedModuleId(null);
-                          form.setValue("moduleId", 0);
-                          form.setValue("componentId", 0);
-                        }}
-                        value={field.value ? field.value.toString() : ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(projects as any[])?.map((project) => (
-                            <SelectItem key={project.id} value={project.id.toString()}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="moduleId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Module *</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          field.onChange(Number(value));
-                          setSelectedModuleId(Number(value));
-                          form.setValue("componentId", 0);
-                        }}
-                        value={field.value ? field.value.toString() : ""}
-                        disabled={!selectedProjectId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select module" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {filteredModules?.map((module) => (
-                            <SelectItem key={module.id} value={module.id.toString()}>
-                              {module.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="componentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Component *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        value={field.value ? field.value.toString() : ""}
-                        disabled={!selectedModuleId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select component" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {filteredComponents?.map((component) => (
-                            <SelectItem key={component.id} value={component.id.toString()}>
-                              {component.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project *</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        const projectId = Number(value);
+                        field.onChange(projectId);
+                        setSelectedProjectId(projectId);
+                        setSelectedModuleId(null);
+                        form.setValue("moduleId", 0);
+                        form.setValue("componentId", 0);
+                      }}
+                      value={field.value ? field.value.toString() : ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(projects as any[])?.map((project: any) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="moduleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Module *</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        const moduleId = Number(value);
+                        field.onChange(moduleId);
+                        setSelectedModuleId(moduleId);
+                        form.setValue("componentId", 0);
+                      }}
+                      value={field.value ? field.value.toString() : ""}
+                      disabled={!selectedProjectId}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select module" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {filteredModules?.map((module: any) => (
+                          <SelectItem key={module.id} value={module.id.toString()}>
+                            {module.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="componentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Component *</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      value={field.value ? field.value.toString() : ""}
+                      disabled={!selectedModuleId}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select component" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {filteredComponents?.map((component: any) => (
+                          <SelectItem key={component.id} value={component.id.toString()}>
+                            {component.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="priority"
@@ -394,7 +394,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Title *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter test case title" {...field} />
                   </FormControl>
@@ -411,9 +411,9 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Describe what this test case validates" 
-                      rows={3} 
-                      {...field} 
+                      placeholder="Enter test case description"
+                      className="min-h-[80px]"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -429,9 +429,9 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   <FormLabel>Preconditions</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="List any preconditions required" 
-                      rows={2} 
-                      {...field} 
+                      placeholder="Enter any preconditions"
+                      className="min-h-[60px]"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -440,40 +440,39 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
             />
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Test Steps
-              </label>
-              <div className="space-y-3">
+              <FormLabel>Test Steps *</FormLabel>
+              <FormDescription>
+                Add the steps to execute this test case
+              </FormDescription>
+              <div className="space-y-2 mt-2">
                 {steps.map((step, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <span className="flex-shrink-0 w-8 h-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-sm font-medium">
-                      {index + 1}
-                    </span>
-                    <Input
-                      value={step}
-                      onChange={(e) => handleStepChange(index, e.target.value)}
-                      placeholder="Enter test step"
-                      className="flex-1"
-                    />
+                  <div key={index} className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder={`Step ${index + 1}`}
+                        value={step}
+                        onChange={(e) => updateStep(index, e.target.value)}
+                      />
+                    </div>
                     {steps.length > 1 && (
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
-                        onClick={() => handleRemoveStep(index)}
+                        onClick={() => removeStep(index)}
                       >
-                        <X className="w-4 h-4" />
+                        <X className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
                 ))}
                 <Button
                   type="button"
-                  variant="ghost"
-                  onClick={handleAddStep}
-                  className="text-primary"
+                  variant="outline"
+                  onClick={addStep}
+                  className="w-full"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Step
                 </Button>
               </div>
@@ -484,12 +483,12 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
               name="expectedResult"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Expected Result</FormLabel>
+                  <FormLabel>Expected Result *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Describe the expected outcome" 
-                      rows={3} 
-                      {...field} 
+                      placeholder="Enter the expected result"
+                      className="min-h-[80px]"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -500,20 +499,50 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="createdBy"
+                name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Created By</FormLabel>
-                    <FormControl>
-                      <Input 
-                        value="John Smith" 
-                        disabled 
-                        className="bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Automatically set to current user
-                    </FormDescription>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="assignedTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned To</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                      value={field.value ? field.value.toString() : ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select assignee" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Unassigned</SelectItem>
+                        {(users as any[])?.map((user: any) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.fullName || user.username}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -521,14 +550,17 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
             </div>
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createTestCaseMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createTestCaseMutation.isPending}
+              >
                 {createTestCaseMutation.isPending 
                   ? (editingTestCase ? "Updating..." : "Creating...") 
                   : (editingTestCase ? "Update Test Case" : "Create Test Case")
