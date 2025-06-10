@@ -18,6 +18,10 @@ import { getLicenseInfo } from "./utils/license";
 // Authentication middleware
 async function requireAuth(req: any, res: any, next: any) {
   try {
+    console.log("Auth check - Session exists:", !!req.session);
+    console.log("Auth check - Session userId:", req.session?.userId);
+    console.log("Auth check - Session ID:", req.session?.id);
+    
     // Check for Express session-based authentication
     if (req.session && req.session.userId) {
       const user = await storage.getUser(req.session.userId);
@@ -56,6 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Email verification removed - all users can login directly
 
       // Create Express session
+      console.log("Login - Session before setting:", req.session?.id);
       (req as any).session.userId = user.id;
       (req as any).session.user = {
         id: user.id,
@@ -65,6 +70,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role,
         avatar: user.avatar,
       };
+      console.log("Login - Session after setting userId:", req.session?.userId);
+      console.log("Login - Session ID:", req.session?.id);
 
       // Update last login
       await storage.updateUser(user.id, { lastLogin: new Date() });
