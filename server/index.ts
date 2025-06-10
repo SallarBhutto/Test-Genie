@@ -1,6 +1,7 @@
 import 'dotenv/config';  
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { licenseMiddleware } from "./middleware/license";
@@ -9,15 +10,21 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration
+// Create memory store for sessions
+const MemStore = MemoryStore(session);
+
+// Session configuration with memory store
 app.use(session({
   secret: process.env.SESSION_SECRET || 'default-secret-key',
-  resave: true, // Force session save on each request
-  saveUninitialized: true, // Save empty sessions
-  name: 'sessionId', // Explicit session name
+  store: new MemStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  }),
+  resave: false,
+  saveUninitialized: false,
+  name: 'connect.sid', // Default session cookie name
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: false, // Allow client-side access for debugging
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax' // Allow cross-site requests for Replit environment
   }

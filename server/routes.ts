@@ -15,6 +15,21 @@ import {
 import { licenseMiddleware } from "./middleware/license";
 import { getLicenseInfo } from "./utils/license";
 
+// Extend Express session interface
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      fullName: string;
+      role: string;
+      avatar: string | null;
+    };
+  }
+}
+
 // Authentication middleware
 async function requireAuth(req: any, res: any, next: any) {
   try {
