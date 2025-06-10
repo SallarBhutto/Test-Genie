@@ -526,8 +526,8 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
                     <Select 
-                      onValueChange={(value) => field.onChange(value ? Number(value) : null)}
-                      value={field.value ? field.value.toString() : ""}
+                      onValueChange={(value) => field.onChange(value === "unassigned" ? null : Number(value))}
+                      value={field.value ? field.value.toString() : "unassigned"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -535,7 +535,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {(users as any[])?.map((user: any) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
                             {user.fullName || user.username}
