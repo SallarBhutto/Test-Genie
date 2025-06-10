@@ -36,7 +36,6 @@ import { z } from "zod";
 import { Plus, X } from "lucide-react";
 
 const formSchema = z.object({
-  testCaseId: z.string().min(1, "Test case ID is required"),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   preconditions: z.string().optional(),
@@ -89,11 +88,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     queryKey: ["/api/test-suites"],
   });
 
-  // Auto-generate test case ID
-  const { data: generatedId } = useQuery({
-    queryKey: ["/api/test-cases/generate-id"],
-    enabled: open && !editingTestCase,
-  });
+
 
   // Filter modules by selected project
   const filteredModules = modules?.filter((module: any) => 
@@ -108,7 +103,6 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      testCaseId: "",
       title: "",
       description: "",
       preconditions: "",
@@ -124,7 +118,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     },
   });
 
-  // Effect to auto-select header project and set generated ID
+  // Effect to auto-select header project
   useEffect(() => {
     if (open && !editingTestCase) {
       // Auto-select header project
@@ -132,19 +126,13 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         setSelectedProjectId(selectedProject.id);
         form.setValue("projectId", selectedProject.id);
       }
-      
-      // Set auto-generated test case ID
-      if (generatedId?.testCaseId) {
-        form.setValue("testCaseId", generatedId.testCaseId);
-      }
     }
-  }, [open, selectedProject, generatedId, editingTestCase, form]);
+  }, [open, selectedProject, editingTestCase, form]);
 
   // Effect to populate form when editing
   useEffect(() => {
     if (editingTestCase && open) {
       form.reset({
-        testCaseId: editingTestCase.testCaseId || "",
         title: editingTestCase.title || "",
         description: editingTestCase.description || "",
         preconditions: editingTestCase.preconditions || "",
@@ -164,7 +152,6 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
     } else if (!editingTestCase && open) {
       // Reset form for new test case
       form.reset({
-        testCaseId: "",
         title: "",
         description: "",
         preconditions: "",
@@ -376,25 +363,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="testCaseId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Test Case ID</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Auto-generated" 
-                        {...field} 
-                        readOnly 
-                        className="bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 cursor-not-allowed"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
                 name="priority"
