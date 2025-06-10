@@ -12,11 +12,12 @@ app.use(express.urlencoded({ extended: false }));
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'default-secret-key',
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Force session save on each request
+  saveUninitialized: true, // Save empty sessions
+  name: 'sessionId', // Explicit session name
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
+    httpOnly: false, // Allow client-side access for debugging
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax' // Allow cross-site requests for Replit environment
   }
