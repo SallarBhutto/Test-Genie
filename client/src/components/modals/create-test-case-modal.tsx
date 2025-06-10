@@ -66,6 +66,10 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
   const queryClient = useQueryClient();
   const { selectedProject } = useProject();
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
   const { data: users } = useQuery({
     queryKey: ["/api/users"],
   });
@@ -109,7 +113,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       priority: "medium",
       status: "draft",
       assignedTo: undefined,
-      createdBy: 1,
+      createdBy: (currentUser as any)?.id || 1,
       projectId: 0,
       moduleId: 0,
       componentId: 0,
@@ -125,7 +129,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         form.setValue("projectId", selectedProject.id);
       }
     }
-  }, [open, selectedProject, editingTestCase, form]);
+  }, [open, selectedProject, editingTestCase, form, currentUser]);
 
   // Effect to populate form when editing
   useEffect(() => {
@@ -139,7 +143,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         priority: editingTestCase.priority || "medium",
         status: editingTestCase.status || "draft",
         assignedTo: editingTestCase.assignedTo,
-        createdBy: editingTestCase.createdBy || 1,
+        createdBy: editingTestCase.createdBy || (currentUser as any)?.id || 1,
         projectId: editingTestCase.projectId || 0,
         moduleId: editingTestCase.moduleId || 0,
         componentId: editingTestCase.componentId || 0,
@@ -158,7 +162,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         priority: "medium",
         status: "draft",
         assignedTo: undefined,
-        createdBy: 1,
+        createdBy: (currentUser as any)?.id || 1,
         projectId: 0,
         moduleId: 0,
         componentId: 0,
@@ -167,7 +171,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       setSelectedProjectId(null);
       setSelectedModuleId(null);
     }
-  }, [editingTestCase, open, form]);
+  }, [editingTestCase, open, form, currentUser]);
 
   const createTestCaseMutation = useMutation({
     mutationFn: async (data: FormData) => {
