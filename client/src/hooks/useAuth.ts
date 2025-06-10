@@ -31,8 +31,8 @@ export function useAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const sessionId = localStorage.getItem("sessionId");
-        if (!sessionId) {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
           setIsLoading(false);
           return;
         }
@@ -40,7 +40,7 @@ export function useAuth() {
         const response = await fetch("/api/auth/me", {
           credentials: "include",
           headers: {
-            Authorization: `Bearer ${sessionId}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -48,11 +48,11 @@ export function useAuth() {
           const userData = await response.json();
           setUser(userData);
         } else {
-          localStorage.removeItem("sessionId");
+          localStorage.removeItem("authToken");
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        localStorage.removeItem("sessionId");
+        localStorage.removeItem("authToken");
       } finally {
         setIsLoading(false);
       }
@@ -82,7 +82,7 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       setUser(data.user);
-      localStorage.setItem("sessionId", data.sessionId);
+      localStorage.setItem("authToken", data.token);
     },
   });
 
@@ -107,7 +107,7 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       setUser(data.user);
-      localStorage.setItem("sessionId", data.sessionId);
+      localStorage.setItem("authToken", data.token);
     },
   });
 

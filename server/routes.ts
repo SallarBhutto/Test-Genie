@@ -30,19 +30,33 @@ declare module "express-session" {
   }
 }
 
+// In-memory session store as fallback
+const activeSessions = new Map<string, { userId: number; expiresAt: Date }>();
+
 // Authentication middleware
 async function requireAuth(req: any, res: any, next: any) {
   try {
-    console.log("Auth check - Session exists:", !!req.session);
-    console.log("Auth check - Session userId:", req.session?.userId);
-    console.log("Auth check - Session ID:", req.session?.id);
-    
-    // Check for Express session-based authentication
+    // First try session-based auth
     if (req.session && req.session.userId) {
       const user = await storage.getUser(req.session.userId);
       if (user) {
         req.user = user;
         return next();
+      }
+    }
+    
+    // Fallback to Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const sessionData = activeSessions.get(token);
+      
+      if (sessionData && sessionData.expiresAt > new Date()) {
+        const user = await storage.getUser(sessionData.userId);
+        if (user) {
+          req.user = user;
+          return next();
+        }
       }
     }
     
@@ -75,7 +89,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Email verification removed - all users can login directly
 
       // Create Express session
-      console.log("Login - Session before setting:", req.session?.id);
       (req as any).session.userId = user.id;
       (req as any).session.user = {
         id: user.id,
@@ -85,8 +98,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role,
         avatar: user.avatar,
       };
-      console.log("Login - Session after setting userId:", req.session?.userId);
-      console.log("Login - Session ID:", req.session?.id);
+
+      // Generate backup token for fallback authentication
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      activeSessions.set(token, { userId: user.id, expiresAt });
 
       // Update last login
       await storage.updateUser(user.id, { lastLogin: new Date() });
@@ -100,6 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: user.role,
           avatar: user.avatar,
         },
+        token,
         sessionId: (req as any).session.id,
       });
     } catch (error) {
