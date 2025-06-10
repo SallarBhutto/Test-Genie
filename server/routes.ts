@@ -813,7 +813,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("Raw request body:", req.body);
     
     try {
-      const validatedData = insertTestCaseSchema.parse(req.body);
+      // Auto-generate test case ID
+      const existingTestCases = await storage.getTestCases();
+      const maxId = existingTestCases.reduce((max, tc) => {
+        const match = tc.testCaseId.match(/TC-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      const generatedTestCaseId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
+      console.log("Generated test case ID:", generatedTestCaseId);
+      
+      // Add the generated ID to the request data and ensure steps is a proper array
+      const dataWithId = {
+        ...req.body,
+        testCaseId: generatedTestCaseId,
+        steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
+      };
+      
+      const validatedData = insertTestCaseSchema.parse(dataWithId);
       console.log("Validated data:", validatedData);
       
       const testCase = await storage.createTestCase(validatedData);
@@ -839,7 +860,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertTestCaseSchema.parse(req.body);
+      
+      // Ensure steps is a proper array
+      const dataWithFixedSteps = {
+        ...req.body,
+        steps: Array.isArray(req.body.steps) ? req.body.steps.filter(step => step && step.trim() !== "") : []
+      };
+      
+      const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
       console.log("Validated data:", validatedData);
       
       const testCase = await storage.updateTestCase(id, validatedData);
