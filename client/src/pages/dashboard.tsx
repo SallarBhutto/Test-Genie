@@ -45,10 +45,18 @@ export default function Dashboard() {
     queryKey: ["/api/defects", selectedProject?.id],
   });
 
-  const filteredTestCases = testCases?.filter((testCase: any) =>
+  const { data: testRuns } = useQuery({
+    queryKey: ["/api/test-runs", selectedProject?.id],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
+  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
     testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  ) : [];
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -105,9 +113,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-500">12%</span>
-              <span className="text-neutral-500 dark:text-neutral-400 ml-2">vs last month</span>
+              <span className="text-neutral-500 dark:text-neutral-400">
+                {selectedProject ? `Project: ${selectedProject.name}` : 'All Projects'}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -126,9 +134,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-500">8%</span>
-              <span className="text-neutral-500 dark:text-neutral-400 ml-2">vs last month</span>
+              <span className="text-neutral-500 dark:text-neutral-400">
+                Total active runs
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -147,9 +155,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowDown className="w-4 h-4 text-red-500 mr-1" />
-              <span className="text-red-500">15%</span>
-              <span className="text-neutral-500 dark:text-neutral-400 ml-2">vs last month</span>
+              <span className="text-neutral-500 dark:text-neutral-400">
+                Active defects
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -168,9 +176,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-500">2.1%</span>
-              <span className="text-neutral-500 dark:text-neutral-400 ml-2">vs last month</span>
+              <span className="text-neutral-500 dark:text-neutral-400">
+                Test success rate
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -195,37 +203,79 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Login Module Test Suite</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Completed 2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-green-600 dark:text-green-400">95% Passed</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">120 tests</p>
-                  </div>
-                </div>
+                {testRuns && testRuns.length > 0 ? (
+                  testRuns.slice(0, 3).map((testRun: any) => {
+                    const getStatusIcon = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
+                        case 'running':
+                          return <Play className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
+                        case 'failed':
+                          return <Bug className="w-5 h-5 text-red-600 dark:text-red-400" />;
+                        default:
+                          return <Play className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+                      }
+                    };
 
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                      <Play className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Payment Gateway Tests</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Running for 45 minutes</p>
-                    </div>
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return 'bg-green-100 dark:bg-green-900/20';
+                        case 'running':
+                          return 'bg-yellow-100 dark:bg-yellow-900/20';
+                        case 'failed':
+                          return 'bg-red-100 dark:bg-red-900/20';
+                        default:
+                          return 'bg-blue-100 dark:bg-blue-900/20';
+                      }
+                    };
+
+                    const getStatusTextColor = (status: string) => {
+                      switch (status) {
+                        case 'completed':
+                          return 'text-green-600 dark:text-green-400';
+                        case 'running':
+                          return 'text-yellow-600 dark:text-yellow-400';
+                        case 'failed':
+                          return 'text-red-600 dark:text-red-400';
+                        default:
+                          return 'text-blue-600 dark:text-blue-400';
+                      }
+                    };
+
+                    return (
+                      <div key={testRun.id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 ${getStatusColor(testRun.status)} rounded-lg flex items-center justify-center`}>
+                            {getStatusIcon(testRun.status)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-neutral-900 dark:text-white">{testRun.name}</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                              {testRun.executedAt ? 
+                                `Executed ${new Date(testRun.executedAt).toLocaleDateString()}` : 
+                                `Created ${new Date(testRun.createdAt).toLocaleDateString()}`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-medium ${getStatusTextColor(testRun.status)}`}>
+                            {testRun.status.charAt(0).toUpperCase() + testRun.status.slice(1)}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {testRun.description || 'No description'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                    No test runs available
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">In Progress</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">67/89 tests</p>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -304,55 +354,61 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTestCases.slice(0, 10).map((testCase: any) => (
-                  <TableRow key={testCase.id}>
-                    <TableCell>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell className="font-medium text-primary">
-                      {testCase.testCaseId}
-                    </TableCell>
-                    <TableCell>{testCase.title}</TableCell>
-                    <TableCell>
-                      <Badge className={cn("status-badge", getPriorityBadge(testCase.priority))}>
-                        {testCase.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={cn("status-badge", getStatusBadge(testCase.status))}>
-                        {testCase.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {testCase.assignee?.avatar && (
-                          <img 
-                            src={testCase.assignee.avatar} 
-                            alt={testCase.assignee.fullName} 
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
-                        <span className="text-sm">{testCase.assignee?.fullName || "Unassigned"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-neutral-500">
-                      {new Date(testCase.updatedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="icon">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Play className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredTestCases.slice(0, 10).map((testCase: any) => {
+                  const assignedUser = users.find((u: any) => u.id === testCase.assignedTo);
+                  
+                  return (
+                    <TableRow key={testCase.id}>
+                      <TableCell>
+                        <Checkbox />
+                      </TableCell>
+                      <TableCell className="font-medium text-primary">
+                        {testCase.testCaseId}
+                      </TableCell>
+                      <TableCell>{testCase.title}</TableCell>
+                      <TableCell>
+                        <Badge className={cn("status-badge", getPriorityBadge(testCase.priority))}>
+                          {testCase.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("status-badge", getStatusBadge(testCase.status))}>
+                          {testCase.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {assignedUser && (
+                            <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                              <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                {assignedUser.fullName ? assignedUser.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() : assignedUser.username[0].toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm">
+                            {assignedUser?.fullName || assignedUser?.username || "Unassigned"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-neutral-500">
+                        {new Date(testCase.updatedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="icon">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Play className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
