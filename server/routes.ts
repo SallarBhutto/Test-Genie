@@ -861,22 +861,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Ensure steps is a proper array
-      const dataWithFixedSteps = {
-        ...req.body,
-        steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
-      };
+      // Check if this is a partial update (like status change)
+      const isPartialUpdate = Object.keys(req.body).length === 1 && 
+        ['status', 'priority', 'assignedTo'].includes(Object.keys(req.body)[0]);
       
-      const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
-      console.log("Validated data:", validatedData);
-      
-      const testCase = await storage.updateTestCase(id, validatedData);
-      if (!testCase) {
-        return res.status(404).json({ message: "Test case not found" });
+      if (isPartialUpdate) {
+        // For partial updates, just validate the specific fields
+        console.log("Processing partial update");
+        const testCase = await storage.updateTestCase(id, req.body);
+        if (!testCase) {
+          return res.status(404).json({ message: "Test case not found" });
+        }
+        console.log("Test case updated successfully:", testCase);
+        res.json(testCase);
+      } else {
+        // For full updates, use full validation
+        console.log("Processing full update");
+        // Ensure steps is a proper array
+        const dataWithFixedSteps = {
+          ...req.body,
+          steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
+        };
+        
+        const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
+        console.log("Validated data:", validatedData);
+        
+        const testCase = await storage.updateTestCase(id, validatedData);
+        if (!testCase) {
+          return res.status(404).json({ message: "Test case not found" });
+        }
+        
+        console.log("Test case updated successfully:", testCase);
+        res.json(testCase);
       }
-      
-      console.log("Test case updated successfully:", testCase);
-      res.json(testCase);
     } catch (error) {
       console.error("=== TEST CASE UPDATE ERROR ===");
       console.error("Error details:", error);
