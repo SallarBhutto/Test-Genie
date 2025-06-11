@@ -256,12 +256,31 @@ export class AzureDevOpsService {
       // Update description if provided
       if (updates.description) {
         const formattedDescription = this.formatDescription(updates, testCaseTitle);
-        console.log(`📝 Adding description update (formatted)`);
+        console.log(`📝 Adding description update:`, formattedDescription);
+        
+        // Update both System.Description and Repro Steps for better visibility
         workItemFields.push({
           op: 'add',
           path: '/fields/System.Description',
           value: formattedDescription
         });
+        
+        // Also update the Repro Steps field with a simpler format
+        const reproSteps = `**Description:** ${updates.description}\n\n` +
+                          `**Defect ID:** ${updates.defectId || 'N/A'}\n\n` +
+                          (testCaseTitle ? `**Related Test Case:** ${testCaseTitle}\n\n` : '') +
+                          `**Priority:** ${updates.priority || 'N/A'}\n\n` +
+                          `**Severity:** ${updates.severity || 'N/A'}\n\n` +
+                          `**Status:** ${updates.status || 'N/A'}\n\n` +
+                          `*Synced from QualityBytes*`;
+        
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
+          value: reproSteps
+        });
+        
+        console.log(`📝 Adding repro steps update:`, reproSteps);
       }
 
       // Update status if provided
