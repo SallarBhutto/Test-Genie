@@ -186,8 +186,17 @@ export const insertTestRunResultSchema = createInsertSchema(testRunResults).omit
   executedAt: true,
 });
 
+// For backend creation (includes auto-generated defectId)
+export const insertDefectWithIdSchema = createInsertSchema(defects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// For frontend forms (excludes defectId since it's auto-generated)
 export const insertDefectSchema = createInsertSchema(defects).omit({
   id: true,
+  defectId: true, // Auto-generated on backend
   createdAt: true,
   updatedAt: true,
 });

@@ -1027,7 +1027,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/defects", async (req, res) => {
     try {
-      const validatedData = insertDefectSchema.parse(req.body);
+      // Auto-generate defect ID
+      const existingDefects = await storage.getDefects();
+      const maxId = existingDefects.reduce((max, defect) => {
+        const match = defect.defectId.match(/DEF-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      const generatedDefectId = `DEF-${(maxId + 1).toString().padStart(4, '0')}`;
+      
+      // Add the generated ID to the request data
+      const dataWithId = {
+        ...req.body,
+        defectId: generatedDefectId
+      };
+      
+      const validatedData = insertDefectSchema.parse(dataWithId);
       
       // Create the defect in QualityBytes
       const defect = await storage.createDefect(validatedData);
