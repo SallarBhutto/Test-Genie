@@ -4,13 +4,14 @@ import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FolderOpen, Users, FileText } from "lucide-react";
+import { Plus, FolderOpen, Users, FileText, Edit, Settings } from "lucide-react";
 import CreateProjectModal from "@/components/modals/create-project-modal";
 import { getQueryFn } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
 
 export default function Projects() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["/api/projects"],
@@ -38,6 +39,18 @@ export default function Projects() {
       testCases: projectTestCases.length,
       members: projectMembers,
     };
+  };
+
+  const handleEditProject = (project: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingProject(project);
+    setCreateModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setCreateModalOpen(false);
+    setEditingProject(null);
   };
 
   if (isLoading) {
@@ -97,6 +110,14 @@ export default function Projects() {
                       </Badge>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => handleEditProject(project, e)}
+                    className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -123,7 +144,8 @@ export default function Projects() {
 
       <CreateProjectModal
         open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
+        onOpenChange={handleModalClose}
+        editingProject={editingProject}
       />
     </div>
   );
