@@ -22,7 +22,11 @@ let pool: any;
 if (isNeonDatabase) {
   // Use Neon serverless driver for Replit/Neon
   neonConfig.webSocketConstructor = ws;
-  pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+  neonConfig.poolQueryViaFetch = true; // Use fetch for better reliability
+  pool = new NeonPool({ 
+    connectionString: process.env.DATABASE_URL,
+    ssl: true
+  });
   db = drizzle({ client: pool, schema });
 } else {
   // Use regular PostgreSQL driver for local Docker/traditional PostgreSQL
@@ -35,5 +39,18 @@ if (isNeonDatabase) {
   });
   db = pgDrizzle(pool, { schema });
 }
+
+// Test database connection
+async function testConnection() {
+  try {
+    await pool.query('SELECT 1');
+    console.log('Database connection successful');
+  } catch (error) {
+    console.error('Database connection failed:', error);
+  }
+}
+
+// Initialize connection test
+testConnection();
 
 export { db, pool };
