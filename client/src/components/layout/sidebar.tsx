@@ -6,15 +6,17 @@ import {
   FileText, 
   Play, 
   Bug, 
- 
   TrendingUp, 
   Users,
   Package,
   Layers,
   Target,
   Settings,
-  TestTube
+  TestTube,
+  X
 } from "lucide-react";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -33,18 +35,38 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const { isOpen, close } = useSidebar();
+
+  if (!isOpen) return null;
 
   return (
-    <aside className="w-64 bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-10">
-      {/* Header */}
-      <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Target className="w-4 h-4 text-white" />
+    <>
+      {/* Backdrop for mobile */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        onClick={close}
+      />
+      
+      <aside className="w-64 bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-50 transform transition-transform duration-300 ease-in-out">
+        {/* Header */}
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Target className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">QualityBytes</h1>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={close}
+              className="h-8 w-8 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">QualityBytes</h1>
         </div>
-      </div>
       
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
@@ -69,8 +91,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-
-    </aside>
+      </aside>
+    </>
   );
 }
