@@ -26,7 +26,6 @@ import { useLocation } from "wouter";
 export default function TopBar() {
   const { user, logout, isLogoutPending } = useAuth();
   const { selectedProject, setSelectedProject, projects, isLoading } = useProject();
-  const { isOpen, isCollapsed, open } = useSidebar();
   const [showProfile, setShowProfile] = useState(false);
   const [location] = useLocation();
 
@@ -63,16 +62,6 @@ export default function TopBar() {
     <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {!isOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={open}
-              className="h-8 w-8 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          )}
           <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">{getPageTitle()}</h2>
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-neutral-500" />

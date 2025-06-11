@@ -31,10 +31,9 @@ import Sidebar from "@/components/layout/sidebar";
 import TopBar from "@/components/layout/top-bar";
 
 function AuthenticatedLayout() {
-  const { isOpen, isCollapsed } = useSidebar();
+  const { isCollapsed } = useSidebar();
   
   const getMainMargin = () => {
-    if (!isOpen) return 'ml-0';
     return isCollapsed ? 'ml-16' : 'ml-64';
   };
   

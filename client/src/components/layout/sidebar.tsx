@@ -37,21 +37,12 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { isOpen, isCollapsed, toggle } = useSidebar();
-
-  if (!isOpen) return null;
+  const { isCollapsed, toggle } = useSidebar();
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
 
   return (
-    <>
-      {/* Backdrop for mobile */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-        onClick={() => toggle()}
-      />
-      
-      <aside className={`${sidebarWidth} bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-50 transform transition-all duration-300 ease-in-out flex flex-col`}>
+    <aside className={`${sidebarWidth} bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-50 transform transition-all duration-300 ease-in-out flex flex-col`}>
         {/* Header */}
         <div className={`border-b border-neutral-200 dark:border-neutral-800 ${isCollapsed ? 'p-3' : 'p-6'}`}>
           <div className="flex items-center justify-center">
@@ -133,7 +124,6 @@ export default function Sidebar() {
           )}
         </Button>
       </div>
-      </aside>
-    </>
+    </aside>
   );
 }
