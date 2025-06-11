@@ -143,7 +143,7 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
               name="teamName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team Name</FormLabel>
+                  <FormLabel>Azure Area Path</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="e.g., Frontend Team, Backend Team, QA Team" 
