@@ -1147,17 +1147,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`);
           
-          // Get test case title if available for description formatting
+          // Get test case title - check if testCaseId is being updated or use existing
           let testCaseTitle;
-          if (updatedDefect.testCaseId) {
-            const testCase = await storage.getTestCase(updatedDefect.testCaseId);
+          const testCaseId = req.body.testCaseId !== undefined ? req.body.testCaseId : updatedDefect.testCaseId;
+          if (testCaseId) {
+            const testCase = await storage.getTestCase(testCaseId);
             testCaseTitle = testCase?.title;
           }
+          
+          // Create update data that includes both new values and context needed for Azure DevOps
+          const updateData = {
+            ...req.body,
+            // Include original defect context for proper formatting
+            defectId: originalDefect.defectId,
+            createdAt: originalDefect.createdAt,
+            // Use updated values where available, otherwise fall back to original
+            priority: req.body.priority || originalDefect.priority,
+            severity: req.body.severity || originalDefect.severity,
+            status: req.body.status || originalDefect.status
+          };
           
           // Update all changed fields in Azure DevOps
           const azureResult = await azureDevOpsService.updateWorkItem(
             originalDefect.azureWorkItemId,
-            req.body,
+            updateData,
             testCaseTitle
           );
           

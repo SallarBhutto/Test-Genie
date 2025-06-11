@@ -182,9 +182,13 @@ export class AzureDevOpsService {
     }
   }
 
-  private formatDescription(defect: Defect, testCaseTitle?: string): string {
+  private formatDescription(defect: any, testCaseTitle?: string): string {
     let description = `<h3>Bug Report from QualityBytes</h3>`;
-    description += `<p><strong>Defect ID:</strong> ${defect.defectId}</p>`;
+    
+    if (defect.defectId) {
+      description += `<p><strong>Defect ID:</strong> ${defect.defectId}</p>`;
+    }
+    
     description += `<p><strong>Description:</strong></p>`;
     description += `<p>${defect.description}</p>`;
     
@@ -192,10 +196,22 @@ export class AzureDevOpsService {
       description += `<p><strong>Related Test Case:</strong> ${testCaseTitle}</p>`;
     }
     
-    description += `<p><strong>Priority:</strong> ${defect.priority}</p>`;
-    description += `<p><strong>Severity:</strong> ${defect.severity}</p>`;
-    description += `<p><strong>Status:</strong> ${defect.status}</p>`;
-    description += `<p><strong>Reported Date:</strong> ${new Date(defect.createdAt).toLocaleDateString()}</p>`;
+    if (defect.priority) {
+      description += `<p><strong>Priority:</strong> ${defect.priority}</p>`;
+    }
+    
+    if (defect.severity) {
+      description += `<p><strong>Severity:</strong> ${defect.severity}</p>`;
+    }
+    
+    if (defect.status) {
+      description += `<p><strong>Status:</strong> ${defect.status}</p>`;
+    }
+    
+    if (defect.createdAt) {
+      description += `<p><strong>Reported Date:</strong> ${new Date(defect.createdAt).toLocaleDateString()}</p>`;
+    }
+    
     description += `<p><em>This bug was automatically created from QualityBytes test management system.</em></p>`;
 
     return description;
