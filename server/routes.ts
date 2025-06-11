@@ -1129,12 +1129,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/defects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const defect = await storage.updateDefect(id, req.body);
-      if (!defect) {
+      
+      // Get the original defect to check if it has Azure DevOps integration
+      const originalDefect = await storage.getDefect(id);
+      if (!originalDefect) {
         return res.status(404).json({ message: "Defect not found" });
       }
-      res.json(defect);
+      
+      // Update the defect in QualityBytes
+      const updatedDefect = await storage.updateDefect(id, req.body);
+      if (!updatedDefect) {
+        return res.status(404).json({ message: "Defect not found" });
+      }
+      
+      // If this defect was synced to Azure DevOps, update it there too
+      if (originalDefect.azureWorkItemId && await azureDevOpsService.isConfigured()) {
+        try {
+          console.log(`🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`);
+          
+          // Map status changes to Azure DevOps states
+          let azureStatus = req.body.status;
+          if (req.body.status) {
+            switch (req.body.status) {
+              case 'open':
+                azureStatus = 'New';
+                break;
+              case 'in_progress':
+                azureStatus = 'Active';
+                break;
+              case 'resolved':
+                azureStatus = 'Resolved';
+                break;
+              case 'closed':
+                azureStatus = 'Closed';
+                break;
+              case 'reopened':
+                azureStatus = 'Active';
+                break;
+              default:
+                azureStatus = 'New';
+            }
+            
+            const azureResult = await azureDevOpsService.updateWorkItemStatus(
+              originalDefect.azureWorkItemId,
+              azureStatus
+            );
+            
+            if (azureResult.success) {
+              console.log(`✅ Azure DevOps work item ${originalDefect.azureWorkItemId} updated successfully`);
+            } else {
+              console.warn(`⚠️ Failed to update Azure DevOps work item ${originalDefect.azureWorkItemId}:`, azureResult.error);
+            }
+          }
+        } catch (azureError) {
+          console.error(`❌ Azure DevOps update error for defect ${originalDefect.defectId}:`, azureError);
+          // Don't fail the defect update if Azure DevOps fails
+        }
+      }
+      
+      res.json(updatedDefect);
     } catch (error) {
+      console.error('Error updating defect:', error);
       res.status(500).json({ message: "Failed to update defect" });
     }
   });
