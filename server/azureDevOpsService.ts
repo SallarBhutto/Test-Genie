@@ -223,6 +223,8 @@ export class AzureDevOpsService {
       
       // First, verify the work item exists
       const checkUrl = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      console.log(`🔍 Check URL: ${checkUrl}`);
+      console.log(`🔍 Base URL: ${this.baseUrl}`);
       const checkResponse = await fetch(checkUrl, {
         method: 'GET',
         headers: this.getAuthHeaders()
@@ -417,7 +419,8 @@ export class AzureDevOpsService {
           personalAccessToken: settings.azureDevOps.personalAccessToken,
           apiVersion: '7.0'
         };
-        console.log('🔍 Updated Azure DevOps config for defect creation');
+        this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
+        console.log('🔍 Updated Azure DevOps config and baseUrl for defect creation');
       }
       
       return configured;
