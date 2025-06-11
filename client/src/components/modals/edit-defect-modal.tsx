@@ -58,9 +58,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
   });
 
   const form = useForm<InsertDefect>({
-    resolver: zodResolver(insertDefectSchema.extend({
-      defectId: insertDefectSchema.shape.defectId.optional(),
-    })),
+    resolver: zodResolver(insertDefectSchema),
     defaultValues: {
       title: "",
       description: "",

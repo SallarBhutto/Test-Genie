@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,11 +22,13 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editingProject?: any;
 }
 
-export default function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
+export default function CreateProjectModal({ open, onOpenChange, editingProject }: CreateProjectModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isEditing = !!editingProject;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -35,19 +37,43 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       description: "",
       teamName: "",
       status: "Active",
-      createdBy: 1, // Default user ID
+      createdBy: 1,
     },
   });
 
+  // Reset form when editing project changes
+  useEffect(() => {
+    if (editingProject) {
+      form.reset({
+        name: editingProject.name || "",
+        description: editingProject.description || "",
+        teamName: editingProject.teamName || "",
+        status: editingProject.status || "Active",
+        createdBy: editingProject.createdBy || 1,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        teamName: "",
+        status: "Active",
+        createdBy: 1,
+      });
+    }
+  }, [editingProject, form]);
+
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await fetch("/api/projects", {
-        method: "POST",
+      const url = isEditing ? `/api/projects/${editingProject.id}` : "/api/projects";
+      const method = isEditing ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
-        throw new Error("Failed to create project");
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} project`);
       }
       return response.json();
     },
@@ -56,7 +82,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Success",
-        description: "Project created successfully",
+        description: `Project ${isEditing ? 'updated' : 'created'} successfully`,
       });
       form.reset();
       onOpenChange(false);
@@ -64,7 +90,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create project",
+        description: `Failed to ${isEditing ? 'update' : 'create'} project`,
         variant: "destructive",
       });
     },
@@ -78,7 +104,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Project' : 'Create New Project'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -117,7 +143,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
               name="teamName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Team Name</FormLabel>
+                  <FormLabel>Azure Area Path</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="e.g., Frontend Team, Backend Team, QA Team" 
@@ -156,7 +182,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create Project"}
+                {createMutation.isPending ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update Project" : "Create Project")}
               </Button>
             </div>
           </form>

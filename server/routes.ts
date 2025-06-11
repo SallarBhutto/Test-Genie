@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
 import { azureDevOpsService } from "./azureDevOpsService";
 import { settingsService } from "./settingsService";
-import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
+import { insertTestCaseSchema, insertDefectSchema, insertDefectWithIdSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import { 
@@ -527,6 +527,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/projects/:id", async (req, res) => {
+    console.log("=== PROJECT UPDATE START ===");
+    console.log("Project ID:", req.params.id);
+    console.log("Raw request body:", req.body);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertProjectSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
+      
+      const project = await storage.updateProject(id, validatedData);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      console.log("Project updated successfully:", project);
+      res.json(project);
+    } catch (error) {
+      console.error("=== PROJECT UPDATE ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      
+      res.status(400).json({ 
+        message: "Invalid project data", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   // Modules
   app.get("/api/modules", async (req, res) => {
     try {
@@ -861,22 +890,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Ensure steps is a proper array
-      const dataWithFixedSteps = {
-        ...req.body,
-        steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
-      };
+      // Check if this is a partial update (like status change)
+      const isPartialUpdate = Object.keys(req.body).length === 1 && 
+        ['status', 'priority', 'assignedTo'].includes(Object.keys(req.body)[0]);
       
-      const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
-      console.log("Validated data:", validatedData);
-      
-      const testCase = await storage.updateTestCase(id, validatedData);
-      if (!testCase) {
-        return res.status(404).json({ message: "Test case not found" });
+      if (isPartialUpdate) {
+        // For partial updates, just validate the specific fields
+        console.log("Processing partial update");
+        const testCase = await storage.updateTestCase(id, req.body);
+        if (!testCase) {
+          return res.status(404).json({ message: "Test case not found" });
+        }
+        console.log("Test case updated successfully:", testCase);
+        res.json(testCase);
+      } else {
+        // For full updates, use full validation
+        console.log("Processing full update");
+        // Ensure steps is a proper array
+        const dataWithFixedSteps = {
+          ...req.body,
+          steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
+        };
+        
+        const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
+        console.log("Validated data:", validatedData);
+        
+        const testCase = await storage.updateTestCase(id, validatedData);
+        if (!testCase) {
+          return res.status(404).json({ message: "Test case not found" });
+        }
+        
+        console.log("Test case updated successfully:", testCase);
+        res.json(testCase);
       }
-      
-      console.log("Test case updated successfully:", testCase);
-      res.json(testCase);
     } catch (error) {
       console.error("=== TEST CASE UPDATE ERROR ===");
       console.error("Error details:", error);
@@ -1027,7 +1073,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/defects", async (req, res) => {
     try {
-      const validatedData = insertDefectSchema.parse(req.body);
+      // Auto-generate defect ID
+      const existingDefects = await storage.getDefects();
+      const maxId = existingDefects.reduce((max, defect) => {
+        const match = defect.defectId.match(/DEF-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      
+      const generatedDefectId = `DEF-${(maxId + 1).toString().padStart(4, '0')}`;
+      
+      // Add the generated ID to the request data
+      const dataWithId = {
+        ...req.body,
+        defectId: generatedDefectId
+      };
+      
+      const validatedData = insertDefectWithIdSchema.parse(dataWithId);
       
       // Create the defect in QualityBytes
       const defect = await storage.createDefect(validatedData);
@@ -1110,12 +1175,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/defects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const defect = await storage.updateDefect(id, req.body);
-      if (!defect) {
+      
+      // Get the original defect to check if it has Azure DevOps integration
+      const originalDefect = await storage.getDefect(id);
+      if (!originalDefect) {
         return res.status(404).json({ message: "Defect not found" });
       }
-      res.json(defect);
+      
+      // Update the defect in QualityBytes
+      const updatedDefect = await storage.updateDefect(id, req.body);
+      if (!updatedDefect) {
+        return res.status(404).json({ message: "Defect not found" });
+      }
+      
+      // If this defect was synced to Azure DevOps, update it there too
+      if (originalDefect.azureWorkItemId && await azureDevOpsService.isConfigured()) {
+        try {
+          console.log(`🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`);
+          
+          // Get test case title - check if testCaseId is being updated or use existing
+          let testCaseTitle;
+          const testCaseId = req.body.testCaseId !== undefined ? req.body.testCaseId : updatedDefect.testCaseId;
+          if (testCaseId) {
+            const testCase = await storage.getTestCase(testCaseId);
+            testCaseTitle = testCase?.title;
+          }
+          
+          // Create update data that includes both new values and context needed for Azure DevOps
+          const updateData = {
+            ...req.body,
+            // Include original defect context for proper formatting
+            defectId: originalDefect.defectId,
+            createdAt: originalDefect.createdAt,
+            // Use updated values where available, otherwise fall back to original
+            priority: req.body.priority || originalDefect.priority,
+            severity: req.body.severity || originalDefect.severity,
+            status: req.body.status || originalDefect.status
+          };
+          
+          // Update all changed fields in Azure DevOps
+          const azureResult = await azureDevOpsService.updateWorkItem(
+            originalDefect.azureWorkItemId,
+            updateData,
+            testCaseTitle
+          );
+          
+          if (azureResult.success) {
+            console.log(`✅ Azure DevOps work item ${originalDefect.azureWorkItemId} updated successfully`);
+          } else {
+            console.warn(`⚠️ Failed to update Azure DevOps work item ${originalDefect.azureWorkItemId}:`, azureResult.error);
+          }
+        } catch (azureError) {
+          console.error(`❌ Azure DevOps update error for defect ${originalDefect.defectId}:`, azureError);
+          // Don't fail the defect update if Azure DevOps fails
+        }
+      }
+      
+      res.json(updatedDefect);
     } catch (error) {
+      console.error('Error updating defect:', error);
       res.status(500).json({ message: "Failed to update defect" });
     }
   });

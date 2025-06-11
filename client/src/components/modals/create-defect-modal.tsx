@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDefectSchema } from "@shared/schema";
 import { z } from "zod";
+import { useEffect } from "react";
 
 const formSchema = insertDefectSchema;
 type FormData = z.infer<typeof formSchema>;
@@ -43,6 +45,7 @@ interface CreateDefectModalProps {
 export default function CreateDefectModal({ open, onOpenChange }: CreateDefectModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: users } = useQuery({
     queryKey: ["/api/users"],
@@ -59,18 +62,24 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      defectId: "",
       title: "",
       description: "",
       severity: "medium",
       priority: "medium",
       status: "open",
       projectId: 0,
-      reportedBy: 1, // This would come from auth context in a real app
+      reportedBy: user?.id || 1,
       assignedTo: undefined,
       testCaseId: undefined,
     },
   });
+
+  // Update form when user data is available
+  useEffect(() => {
+    if (user?.id) {
+      form.setValue("reportedBy", user.id);
+    }
+  }, [user?.id, form]);
 
   const createDefectMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -123,44 +132,29 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="defectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Defect ID</FormLabel>
+            <FormField
+              control={form.control}
+              name="severity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Severity</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input placeholder="DEF-001" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select severity" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="severity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Severity</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select severity" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
