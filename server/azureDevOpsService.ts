@@ -86,7 +86,7 @@ export class AzureDevOpsService {
       this.config.organization = azureConfig.organization;
       this.config.project = azureConfig.project;
       this.config.personalAccessToken = azureConfig.personalAccessToken;
-      this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
+      this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
 
       const workItemFields: WorkItem[] = [
         {
