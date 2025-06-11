@@ -53,10 +53,10 @@ export default function Dashboard() {
     queryKey: ["/api/users"],
   });
 
-  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) =>
+  const filteredTestCases = (testCases as any[] || []).filter((testCase: any) =>
     testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  );
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -105,7 +105,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Test Cases</p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                  {stats?.totalTestCases || 0}
+                  {(stats as any)?.totalTestCases || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -126,7 +126,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Runs</p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                  {stats?.testRuns || 0}
+                  {(stats as any)?.testRuns || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -147,7 +147,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Open Defects</p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                  {stats?.openDefects || 0}
+                  {(stats as any)?.openDefects || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
@@ -168,7 +168,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Pass Rate</p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                  {stats?.passRate || "0%"}
+                  {(stats as any)?.passRate || "0%"}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
@@ -187,7 +187,7 @@ export default function Dashboard() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TestExecutionChart />
-        <DefectStatusChart defects={defects || []} />
+        <DefectStatusChart defects={(defects as any[]) || []} />
       </div>
 
       {/* Recent Activity & Quick Actions */}
@@ -203,7 +203,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {testRuns && testRuns.length > 0 ? (
+                {Array.isArray(testRuns) && testRuns.length > 0 ? (
                   testRuns.slice(0, 3).map((testRun: any) => {
                     const getStatusIcon = (status: string) => {
                       switch (status) {
@@ -355,7 +355,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {filteredTestCases.slice(0, 10).map((testCase: any) => {
-                  const assignedUser = users.find((u: any) => u.id === testCase.assignedTo);
+                  const assignedUser = (users as any[]).find((u: any) => u.id === testCase.assignedTo);
                   
                   return (
                     <TableRow key={testCase.id}>
