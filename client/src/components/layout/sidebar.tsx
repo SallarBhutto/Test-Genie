@@ -13,10 +13,12 @@ import {
   Target,
   Settings,
   TestTube,
-  X
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -35,44 +37,62 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { isOpen, close } = useSidebar();
+  const { isOpen, isCollapsed, toggle } = useSidebar();
 
   if (!isOpen) return null;
+
+  const sidebarWidth = isCollapsed ? "w-16" : "w-64";
 
   return (
     <>
       {/* Backdrop for mobile */}
       <div 
         className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-        onClick={close}
+        onClick={() => toggle()}
       />
       
-      <aside className="w-64 bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-50 transform transition-transform duration-300 ease-in-out">
+      <aside className={`${sidebarWidth} bg-white dark:bg-neutral-900 shadow-sm border-r border-neutral-200 dark:border-neutral-800 fixed h-full z-50 transform transition-all duration-300 ease-in-out flex flex-col`}>
         {/* Header */}
-        <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Target className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">QualityBytes</h1>
+        <div className={`border-b border-neutral-200 dark:border-neutral-800 ${isCollapsed ? 'p-3' : 'p-6'}`}>
+          <div className="flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <Target className="w-4 h-4 text-white" />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={close}
-              className="h-8 w-8 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {!isCollapsed && (
+              <h1 className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">QualityBytes</h1>
+            )}
           </div>
         </div>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-2 space-y-1">
         {navigation.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;
+          
+          if (isCollapsed) {
+            return (
+              <Tooltip key={item.name}>
+                <TooltipTrigger asChild>
+                  <Link href={item.href}>
+                    <div
+                      className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-lg transition-colors cursor-pointer mx-auto",
+                        isActive
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                          : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {item.name}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
           
           return (
             <Link key={item.name} href={item.href}>
@@ -80,7 +100,7 @@ export default function Sidebar() {
                 className={cn(
                   "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
                     : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 )}
               >
@@ -91,6 +111,28 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      
+      {/* Toggle Button at Bottom */}
+      <div className={`border-t border-neutral-200 dark:border-neutral-800 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+        <Button
+          variant="ghost"
+          size={isCollapsed ? "icon" : "sm"}
+          onClick={toggle}
+          className={cn(
+            "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors",
+            isCollapsed ? "w-10 h-10 mx-auto" : "w-full justify-start"
+          )}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Collapse
+            </>
+          )}
+        </Button>
+      </div>
       </aside>
     </>
   );

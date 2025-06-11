@@ -31,12 +31,17 @@ import Sidebar from "@/components/layout/sidebar";
 import TopBar from "@/components/layout/top-bar";
 
 function AuthenticatedLayout() {
-  const { isOpen } = useSidebar();
+  const { isOpen, isCollapsed } = useSidebar();
+  
+  const getMainMargin = () => {
+    if (!isOpen) return 'ml-0';
+    return isCollapsed ? 'ml-16' : 'ml-64';
+  };
   
   return (
     <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
       <Sidebar />
-      <main className={`flex-1 transition-all duration-300 ease-in-out ${isOpen ? 'ml-64' : 'ml-0'}`}>
+      <main className={`flex-1 transition-all duration-300 ease-in-out ${getMainMargin()}`}>
         <TopBar />
         <div className="p-6">
               <Switch>

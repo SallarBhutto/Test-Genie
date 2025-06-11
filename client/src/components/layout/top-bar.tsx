@@ -26,7 +26,7 @@ import { useLocation } from "wouter";
 export default function TopBar() {
   const { user, logout, isLogoutPending } = useAuth();
   const { selectedProject, setSelectedProject, projects, isLoading } = useProject();
-  const { isOpen, toggle } = useSidebar();
+  const { isOpen, isCollapsed, open } = useSidebar();
   const [showProfile, setShowProfile] = useState(false);
   const [location] = useLocation();
 
@@ -67,7 +67,7 @@ export default function TopBar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={toggle}
+              onClick={open}
               className="h-8 w-8 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100"
             >
               <Menu className="h-4 w-4" />
