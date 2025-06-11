@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { ProjectProvider } from "@/contexts/ProjectContext";
+import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
@@ -29,41 +30,50 @@ import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import TopBar from "@/components/layout/top-bar";
 
+function AuthenticatedLayout() {
+  const { isOpen } = useSidebar();
+  
+  return (
+    <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
+      <Sidebar />
+      <main className={`flex-1 transition-all duration-300 ease-in-out ${isOpen ? 'ml-64' : 'ml-0'}`}>
+        <TopBar />
+        <div className="p-6">
+              <Switch>
+                <Route path="/" component={Dashboard} />
+                <Route path="/dashboard" component={Dashboard} />
+                <Route path="/projects" component={Projects} />
+                <Route path="/projects/:id" component={ProjectDetail} />
+                <Route path="/modules" component={Modules} />
+                <Route path="/modules/:id" component={ModuleDetail} />
+                <Route path="/modules/:moduleId/components" component={Components} />
+                <Route path="/components" component={Components} />
+                <Route path="/components/:id" component={ComponentDetail} />
+                <Route path="/components/:componentId/test-cases" component={TestCases} />
+                <Route path="/test-cases" component={TestCases} />
+                <Route path="/test-suites" component={TestSuites} />
+                <Route path="/test-runs" component={TestRunsFixed} />
+                <Route path="/test-runs/:id/execute" component={TestRunExecute} />
+                <Route path="/test-runs/:id/results" component={TestRunResults} />
+                <Route path="/defects" component={Defects} />
+                <Route path="/reports" component={Reports} />
+                <Route path="/team" component={Team} />
+                <Route path="/settings" component={Settings} />
+                <Route component={NotFound} />
+              </Switch>
+            </div>
+      </main>
+    </div>
+  );
+}
+
 function AuthenticatedApp() {
   return (
-    <ProjectProvider>
-      <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
-        <Sidebar />
-        <main className="flex-1 ml-64">
-          <TopBar />
-          <div className="p-6">
-            <Switch>
-              <Route path="/" component={Dashboard} />
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/projects" component={Projects} />
-              <Route path="/projects/:id" component={ProjectDetail} />
-              <Route path="/modules" component={Modules} />
-              <Route path="/modules/:id" component={ModuleDetail} />
-              <Route path="/modules/:moduleId/components" component={Components} />
-              <Route path="/components" component={Components} />
-              <Route path="/components/:id" component={ComponentDetail} />
-              <Route path="/components/:componentId/test-cases" component={TestCases} />
-              <Route path="/test-cases" component={TestCases} />
-              <Route path="/test-suites" component={TestSuites} />
-              <Route path="/test-runs" component={TestRunsFixed} />
-              <Route path="/test-runs/:id/execute" component={TestRunExecute} />
-              <Route path="/test-runs/:id/results" component={TestRunResults} />
-              <Route path="/defects" component={Defects} />
-
-              <Route path="/reports" component={Reports} />
-              <Route path="/team" component={Team} />
-              <Route path="/settings" component={Settings} />
-              <Route component={NotFound} />
-            </Switch>
-          </div>
-        </main>
-      </div>
-    </ProjectProvider>
+    <SidebarProvider>
+      <ProjectProvider>
+        <AuthenticatedLayout />
+      </ProjectProvider>
+    </SidebarProvider>
   );
 }
 
