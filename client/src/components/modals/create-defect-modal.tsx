@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDefectSchema } from "@shared/schema";
 import { z } from "zod";
+import { useEffect } from "react";
 
 const formSchema = insertDefectSchema;
 type FormData = z.infer<typeof formSchema>;
@@ -43,6 +45,7 @@ interface CreateDefectModalProps {
 export default function CreateDefectModal({ open, onOpenChange }: CreateDefectModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: users } = useQuery({
     queryKey: ["/api/users"],
@@ -65,11 +68,18 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
       priority: "medium",
       status: "open",
       projectId: 0,
-      reportedBy: 1, // This would come from auth context in a real app
+      reportedBy: user?.id || 1,
       assignedTo: undefined,
       testCaseId: undefined,
     },
   });
+
+  // Update form when user data is available
+  useEffect(() => {
+    if (user?.id) {
+      form.setValue("reportedBy", user.id);
+    }
+  }, [user?.id, form]);
 
   const createDefectMutation = useMutation({
     mutationFn: async (data: FormData) => {
