@@ -26,7 +26,7 @@ export class AzureDevOpsService {
       apiVersion: '7.0'
     };
     
-    this.baseUrl = `https://dev.azure.com/${this.config.organization}/${this.config.project}/_apis`;
+    this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
   }
 
   private getAuthHeaders() {
@@ -86,7 +86,7 @@ export class AzureDevOpsService {
       this.config.organization = azureConfig.organization;
       this.config.project = azureConfig.project;
       this.config.personalAccessToken = azureConfig.personalAccessToken;
-      this.baseUrl = `https://dev.azure.com/${this.config.organization}/${this.config.project}/_apis`;
+      this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
 
       const workItemFields: WorkItem[] = [
         {
@@ -340,6 +340,55 @@ export class AzureDevOpsService {
 
   async getWorkItemUrl(workItemId: number): string {
     return `https://dev.azure.com/${this.config.organization}/${this.config.project}/_workitems/edit/${workItemId}`;
+  }
+
+  async testWorkItemAccess(workItemId: number): Promise<{ success: boolean; error?: string; workItem?: any }> {
+    try {
+      console.log(`🔍 Testing access to work item ${workItemId}`);
+      console.log(`🔍 Using base URL: ${this.baseUrl}`);
+      
+      const url = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      console.log(`🔍 Request URL: ${url}`);
+      
+      const authHeaders = this.getAuthHeaders();
+      console.log(`🔍 Auth headers:`, { ...authHeaders, Authorization: '[REDACTED]' });
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: authHeaders
+      });
+
+      console.log(`🔍 Response status: ${response.status}`);
+      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Failed to access work item ${workItemId}:`, response.status, errorText);
+        return {
+          success: false,
+          error: `${response.status} - ${errorText}`
+        };
+      }
+
+      const workItem = await response.json();
+      console.log(`✅ Successfully accessed work item ${workItemId}:`, {
+        id: workItem.id,
+        title: workItem.fields?.['System.Title'],
+        state: workItem.fields?.['System.State']
+      });
+
+      return {
+        success: true,
+        workItem
+      };
+
+    } catch (error) {
+      console.error(`❌ Error testing work item access:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
   }
 
   async isConfigured(): Promise<boolean> {
