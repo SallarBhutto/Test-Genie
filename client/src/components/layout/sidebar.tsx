@@ -58,7 +58,10 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1">
         {navigation.map((item) => {
-          const isActive = location === item.href;
+          // Special handling for Dashboard to match both "/" and "/dashboard"
+          const isActive = item.name === "Dashboard" 
+            ? (location === "/" || location === "/dashboard")
+            : location === item.href;
           const Icon = item.icon;
           
           if (isCollapsed) {
