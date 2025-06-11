@@ -20,14 +20,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProject } from "@/contexts/ProjectContext";
 import ProfileModal from "@/components/modals/profile-modal";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function TopBar() {
   const { user, logout, isLogoutPending } = useAuth();
   const { selectedProject, setSelectedProject, projects, isLoading } = useProject();
   const [showProfile, setShowProfile] = useState(false);
+  const [location] = useLocation();
+
+  // Function to get page title based on current route
+  const getPageTitle = () => {
+    const path = location;
+    if (path === "/") return "Dashboard";
+    if (path === "/projects") return "Projects";
+    if (path === "/modules") return "Modules";
+    if (path === "/components") return "Components";
+    if (path === "/test-cases") return "Test Cases";
+    if (path === "/test-suites") return "Test Suites";
+    if (path === "/test-runs") return "Test Runs";
+    if (path === "/defects") return "Defects";
+    if (path === "/reports") return "Reports";
+    if (path === "/team") return "Team";
+    if (path === "/settings") return "Settings";
+    return "Dashboard"; // Default fallback
+  };
 
   const handleLogout = () => {
-    logout({}, {
+    logout(undefined, {
       onSuccess: () => {
         window.location.href = "/";
       },
@@ -42,7 +61,7 @@ export default function TopBar() {
     <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Dashboard</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">{getPageTitle()}</h2>
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-neutral-500" />
             <Select
