@@ -186,14 +186,45 @@ export default function Dashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TestExecutionChart />
+        {/* <TestExecutionChart /> */}
         <DefectStatusChart defects={(defects as any[]) || []} />
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              className="w-full" 
+              onClick={() => setShowCreateTestCase(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Test Case
+            </Button>
+            {/* <Button variant="outline" className="w-full">
+              <Play className="w-4 h-4 mr-2" />
+              Run Test Suite
+            </Button> */}
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowCreateDefect(true)}
+            >
+              <Bug className="w-4 h-4 mr-2" />
+              Report Defect
+            </Button>
+            {/* <Button variant="outline" className="w-full">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Generate Report
+            </Button> */}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Activity & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Test Runs */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -281,37 +312,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              className="w-full" 
-              onClick={() => setShowCreateTestCase(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Test Case
-            </Button>
-            <Button variant="outline" className="w-full">
-              <Play className="w-4 h-4 mr-2" />
-              Run Test Suite
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => setShowCreateDefect(true)}
-            >
-              <Bug className="w-4 h-4 mr-2" />
-              Report Defect
-            </Button>
-            <Button variant="outline" className="w-full">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Generate Report
-            </Button>
-          </CardContent>
-        </Card>
+        
       </div>
 
       {/* Test Case Management Section */}
@@ -350,7 +351,7 @@ export default function Dashboard() {
                   <TableHead>Status</TableHead>
                   <TableHead>Assigned To</TableHead>
                   <TableHead>Last Updated</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {/* <TableHead>Actions</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -393,7 +394,7 @@ export default function Dashboard() {
                       <TableCell className="text-sm text-neutral-500">
                         {new Date(testCase.updatedAt).toLocaleString()}
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <div className="flex items-center space-x-2">
                           <Button variant="ghost" size="icon">
                             <Edit className="w-4 h-4" />
@@ -405,7 +406,7 @@ export default function Dashboard() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   );
                 })}

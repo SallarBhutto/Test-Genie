@@ -19,11 +19,14 @@ export default function Landing() {
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/login">
+            {/* <Link href="/login">
               <Button variant="ghost">Sign In</Button>
             </Link>
             <Link href="/signup">
               <Button>Get Started</Button>
+            </Link> */}
+            <Link href="/login">
+              <Button>Sign In</Button>
             </Link>
           </div>
         </div>
@@ -39,14 +42,14 @@ export default function Landing() {
             Streamline Your <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Testing Workflow</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            QualityBytes is a comprehensive test management platform that helps teams organize, execute, and track testing activities with precision and efficiency.
+            QualityBytes is a comprehensive test management platform by SamosaLabs that helps teams organize, execute, and track testing activities with precision and efficiency.
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/signup">
+            {/* <Link href="/signup">
               <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                 Start Free Trial
               </Button>
-            </Link>
+            </Link> */}
             <Link href="/login">
               <Button size="lg" variant="outline">
                 Sign In
@@ -55,6 +58,12 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Section Divider */}
+      <div className="container mx-auto px-4 py-4 text-center">
+        <span className="inline-block border-t border-gray-300 dark:border-gray-700 w-24 mb-2" />
+        {/* <p className="text-sm text-gray-500 dark:text-gray-400">Explore Platform Features</p> */}
+      </div>
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-16">
@@ -133,9 +142,9 @@ export default function Landing() {
               <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center mb-4">
                 <Target className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <CardTitle>Requirements Tracking</CardTitle>
+              <CardTitle>Azure Integration</CardTitle>
               <CardDescription>
-                Link test cases to requirements for complete traceability and coverage analysis.
+                Seamlessly sync bugs with your Azure DevOps projects for unified project management.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -152,22 +161,36 @@ export default function Landing() {
             Join teams worldwide who trust TestGenie to deliver quality software faster and more efficiently.
           </p>
           <div className="flex justify-center space-x-4">
-            <Link href="/signup">
+            {/* <Link href="/signup">
               <Button size="lg" variant="secondary">
                 Get Started Now
               </Button>
+            </Link> */}
+            <Link href="/login">
+              <Button size="lg" variant="outline">
+                Sign In
+              </Button>
             </Link>
-            <p className="text-blue-100 text-sm flex items-center">
+            {/* <p className="text-blue-100 text-sm flex items-center">
               Demo credentials: admin / admin
-            </p>
+            </p> */}
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-900 border-t py-8">
-        <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400">
-          <p>&copy; 2024 TestGenie. All rights reserved.</p>
+        <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400 space-y-2">
+          <p>&copy; 2024 TestGenie. All rights reserved by SamosaLabs.</p>
+          <p>
+            For queries or issues, contact us at{" "}
+            <a
+              href="mailto:info@samosalabs.com"
+              className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
+            >
+              info@samosalabs.com
+            </a>
+          </p>
         </div>
       </footer>
     </div>

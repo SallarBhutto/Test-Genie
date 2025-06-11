@@ -124,8 +124,13 @@ export default function Defects() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
+        <div>
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Defects</h1>
-        <Button onClick={() => setShowCreateDefect(true)}>
+           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+            Manage and organize your application defects
+          </p>
+        </div>
+        <Button className="ml-auto" onClick={() => setShowCreateDefect(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Report Defect
         </Button>

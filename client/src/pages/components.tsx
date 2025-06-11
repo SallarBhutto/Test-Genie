@@ -106,7 +106,7 @@ export default function Components() {
             Manage and organize your application components
           </p>
         </div>
-        <Button onClick={() => setCreateModalOpen(true)}>
+        <Button className="ml-auto" onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Component
         </Button>

@@ -62,7 +62,7 @@ export default function TopBar() {
     <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">{getPageTitle()}</h2>
+          {/* <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">{getPageTitle()}</h2> */}
           <div className="flex items-center space-x-2">
             <Building2 className="w-4 h-4 text-neutral-500" />
             <Select
@@ -92,10 +92,10 @@ export default function TopBar() {
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="relative">
+          {/* <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
-          </Button>
+          </Button> */}
           
           {/* User Profile Dropdown */}
           {user && (

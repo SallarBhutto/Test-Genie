@@ -103,22 +103,22 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            {/* <div className="mt-6 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Don't have an account?{" "}
                 <Link href="/signup" className="text-blue-600 hover:text-blue-500 font-medium">
                   Sign up
                 </Link>
               </p>
-            </div>
+            </div> */}
 
-            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            {/* <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
                 <strong>Demo Credentials:</strong><br />
                 Username: admin<br />
                 Password: admin
               </p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 

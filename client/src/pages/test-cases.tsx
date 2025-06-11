@@ -214,8 +214,13 @@ export default function TestCases() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
+        <div>
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Cases</h1>
-        <Button onClick={() => setShowCreateTestCase(true)}>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+            Manage and organize your application test cases
+          </p>
+        </div>
+        <Button className="ml-auto" onClick={() => setShowCreateTestCase(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Test Case
         </Button>
@@ -369,14 +374,14 @@ export default function TestCases() {
                   >
                     Created By
                   </SortableTableHead>
-                  <SortableTableHead
+                  {/* <SortableTableHead
                     sortKey="updatedAt"
                     currentSortKey={sortConfig.key}
                     sortDirection={sortConfig.direction}
                     onSort={requestSort}
                   >
                     Last Updated
-                  </SortableTableHead>
+                  </SortableTableHead> */}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -436,9 +441,9 @@ export default function TestCases() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-neutral-500">
+                    {/* <TableCell className="text-sm text-neutral-500">
                       {new Date(testCase.updatedAt).toLocaleDateString()}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button 

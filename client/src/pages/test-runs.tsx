@@ -90,7 +90,7 @@ export default function TestRuns() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Runs</h1>
+        {/* <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Runs</h1> */}
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Test Run

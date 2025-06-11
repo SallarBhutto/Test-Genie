@@ -31,8 +31,13 @@ export default function TestRuns() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
+        <div>
         <h1 className="text-3xl font-bold">Test Runs</h1>
-        <Button onClick={() => setShowCreateModal(true)}>
+           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+            Manage and organize your application test runs
+          </p>
+        </div>
+        <Button className="ml-auto" onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Test Run
         </Button>

@@ -85,14 +85,14 @@ export default function TestSuites() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Test Suites</h1>
           <p className="text-neutral-600 dark:text-neutral-400">Manage and organize your test case collections</p>
         </div>
-        <Button onClick={() => setShowCreateTestSuite(true)}>
+        <Button className="ml-auto" onClick={() => setShowCreateTestSuite(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Create Test Suite
         </Button>
