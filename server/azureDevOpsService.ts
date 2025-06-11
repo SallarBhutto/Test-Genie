@@ -148,7 +148,7 @@ export class AzureDevOpsService {
         value: reproSteps
       });
 
-      const url = `${this.baseUrl}/wit/workitems/$Bug?api-version=${this.config.apiVersion}`;
+      const url = `${this.baseUrl}/${this.config.project}/_apis/wit/workitems/$Bug?api-version=${this.config.apiVersion}`;
       
       const response = await fetch(url, {
         method: 'POST',
@@ -222,7 +222,7 @@ export class AzureDevOpsService {
       console.log(`🔍 Azure DevOps update request for work item ${workItemId}:`, JSON.stringify(updates, null, 2));
       
       // First, verify the work item exists
-      const checkUrl = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const checkUrl = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       console.log(`🔍 Check URL: ${checkUrl}`);
       console.log(`🔍 Base URL: ${this.baseUrl}`);
       const checkResponse = await fetch(checkUrl, {
@@ -324,7 +324,7 @@ export class AzureDevOpsService {
 
       console.log(`🔄 Sending ${workItemFields.length} field updates to Azure DevOps work item ${workItemId}`);
       
-      const url = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const url = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       
       const response = await fetch(url, {
         method: 'PATCH',
@@ -368,7 +368,7 @@ export class AzureDevOpsService {
       console.log(`🔍 Testing access to work item ${workItemId}`);
       console.log(`🔍 Using base URL: ${this.baseUrl}`);
       
-      const url = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const url = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       console.log(`🔍 Request URL: ${url}`);
       
       const authHeaders = this.getAuthHeaders();
