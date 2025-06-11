@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,13 +33,34 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: editingProject?.name || "",
-      description: editingProject?.description || "",
-      teamName: editingProject?.teamName || "",
-      status: editingProject?.status || "Active",
-      createdBy: editingProject?.createdBy || 1,
+      name: "",
+      description: "",
+      teamName: "",
+      status: "Active",
+      createdBy: 1,
     },
   });
+
+  // Reset form when editing project changes
+  useEffect(() => {
+    if (editingProject) {
+      form.reset({
+        name: editingProject.name || "",
+        description: editingProject.description || "",
+        teamName: editingProject.teamName || "",
+        status: editingProject.status || "Active",
+        createdBy: editingProject.createdBy || 1,
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        teamName: "",
+        status: "Active",
+        createdBy: 1,
+      });
+    }
+  }, [editingProject, form]);
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {

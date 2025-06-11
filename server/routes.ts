@@ -527,6 +527,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/projects/:id", async (req, res) => {
+    console.log("=== PROJECT UPDATE START ===");
+    console.log("Project ID:", req.params.id);
+    console.log("Raw request body:", req.body);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertProjectSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
+      
+      const project = await storage.updateProject(id, validatedData);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      console.log("Project updated successfully:", project);
+      res.json(project);
+    } catch (error) {
+      console.error("=== PROJECT UPDATE ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      
+      res.status(400).json({ 
+        message: "Invalid project data", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   // Modules
   app.get("/api/modules", async (req, res) => {
     try {
