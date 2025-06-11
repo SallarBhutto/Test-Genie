@@ -58,6 +58,17 @@ export class AzureDevOpsService {
     return severityMap[severity] || '3 - Medium';
   }
 
+  private mapStatusToAzureDevOps(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'open': 'New',
+      'in_progress': 'Active',
+      'resolved': 'Resolved',
+      'closed': 'Closed',
+      'reopened': 'Active'
+    };
+    return statusMap[status] || 'New';
+  }
+
   async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, projectTeamName?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
     try {
       // Get settings from database
@@ -97,6 +108,11 @@ export class AzureDevOpsService {
           op: 'add',
           path: '/fields/Microsoft.VSTS.Common.Severity',
           value: this.mapSeverityToAzureDevOps(defect.severity)
+        },
+        {
+          op: 'add',
+          path: '/fields/System.State',
+          value: this.mapStatusToAzureDevOps(defect.status)
         },
         {
           op: 'add',
@@ -185,15 +201,59 @@ export class AzureDevOpsService {
     return description;
   }
 
-  async updateWorkItemStatus(workItemId: number, status: string): Promise<{ success: boolean; error?: string }> {
+  async updateWorkItem(workItemId: number, updates: any, testCaseTitle?: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const workItemFields: WorkItem[] = [
-        {
+      const workItemFields: WorkItem[] = [];
+
+      // Update title if provided
+      if (updates.title) {
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.Title',
+          value: updates.title
+        });
+      }
+
+      // Update description if provided
+      if (updates.description) {
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.Description',
+          value: this.formatDescription(updates, testCaseTitle)
+        });
+      }
+
+      // Update status if provided
+      if (updates.status) {
+        workItemFields.push({
           op: 'add',
           path: '/fields/System.State',
-          value: status
-        }
-      ];
+          value: this.mapStatusToAzureDevOps(updates.status)
+        });
+      }
+
+      // Update priority if provided
+      if (updates.priority) {
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/Microsoft.VSTS.Common.Priority',
+          value: this.mapPriorityToAzureDevOps(updates.priority)
+        });
+      }
+
+      // Update severity if provided
+      if (updates.severity) {
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/Microsoft.VSTS.Common.Severity',
+          value: this.mapSeverityToAzureDevOps(updates.severity)
+        });
+      }
+
+      // Only proceed if there are fields to update
+      if (workItemFields.length === 0) {
+        return { success: true }; // Nothing to update
+      }
 
       const url = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       
@@ -221,6 +281,11 @@ export class AzureDevOpsService {
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
+  }
+
+  // Keep the old method for backward compatibility but delegate to new method
+  async updateWorkItemStatus(workItemId: number, status: string): Promise<{ success: boolean; error?: string }> {
+    return this.updateWorkItem(workItemId, { status });
   }
 
   async getWorkItemUrl(workItemId: number): string {
