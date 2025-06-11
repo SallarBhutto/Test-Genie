@@ -219,10 +219,31 @@ export class AzureDevOpsService {
 
   async updateWorkItem(workItemId: number, updates: any, testCaseTitle?: string): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log(`🔍 Azure DevOps update request for work item ${workItemId}:`, JSON.stringify(updates, null, 2));
+      
+      // First, verify the work item exists
+      const checkUrl = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const checkResponse = await fetch(checkUrl, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      });
+
+      if (!checkResponse.ok) {
+        const errorText = await checkResponse.text();
+        console.error(`❌ Work item ${workItemId} not found or not accessible:`, checkResponse.status, errorText);
+        return {
+          success: false,
+          error: `Work item ${workItemId} not found or not accessible: ${checkResponse.status} - ${errorText}`
+        };
+      }
+
+      console.log(`✅ Work item ${workItemId} exists and is accessible`);
+      
       const workItemFields: WorkItem[] = [];
 
       // Update title if provided
       if (updates.title) {
+        console.log(`📝 Adding title update: ${updates.title}`);
         workItemFields.push({
           op: 'add',
           path: '/fields/System.Title',
@@ -232,45 +253,56 @@ export class AzureDevOpsService {
 
       // Update description if provided
       if (updates.description) {
+        const formattedDescription = this.formatDescription(updates, testCaseTitle);
+        console.log(`📝 Adding description update (formatted)`);
         workItemFields.push({
           op: 'add',
           path: '/fields/System.Description',
-          value: this.formatDescription(updates, testCaseTitle)
+          value: formattedDescription
         });
       }
 
       // Update status if provided
       if (updates.status) {
+        const mappedStatus = this.mapStatusToAzureDevOps(updates.status);
+        console.log(`📝 Adding status update: ${updates.status} -> ${mappedStatus}`);
         workItemFields.push({
           op: 'add',
           path: '/fields/System.State',
-          value: this.mapStatusToAzureDevOps(updates.status)
+          value: mappedStatus
         });
       }
 
       // Update priority if provided
       if (updates.priority) {
+        const mappedPriority = this.mapPriorityToAzureDevOps(updates.priority);
+        console.log(`📝 Adding priority update: ${updates.priority} -> ${mappedPriority}`);
         workItemFields.push({
           op: 'add',
           path: '/fields/Microsoft.VSTS.Common.Priority',
-          value: this.mapPriorityToAzureDevOps(updates.priority)
+          value: mappedPriority
         });
       }
 
       // Update severity if provided
       if (updates.severity) {
+        const mappedSeverity = this.mapSeverityToAzureDevOps(updates.severity);
+        console.log(`📝 Adding severity update: ${updates.severity} -> ${mappedSeverity}`);
         workItemFields.push({
           op: 'add',
           path: '/fields/Microsoft.VSTS.Common.Severity',
-          value: this.mapSeverityToAzureDevOps(updates.severity)
+          value: mappedSeverity
         });
       }
 
       // Only proceed if there are fields to update
       if (workItemFields.length === 0) {
+        console.log(`ℹ️ No fields to update for work item ${workItemId}`);
         return { success: true }; // Nothing to update
       }
 
+      console.log(`🔄 Sending ${workItemFields.length} field updates to Azure DevOps work item ${workItemId}`);
+      
       const url = `${this.baseUrl}/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       
       const response = await fetch(url, {
@@ -282,12 +314,14 @@ export class AzureDevOpsService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Azure DevOps Update Error:', response.status, errorText);
+        console.error('Update payload:', JSON.stringify(workItemFields, null, 2));
         return {
           success: false,
           error: `Failed to update work item: ${response.status} - ${errorText}`
         };
       }
 
+      console.log(`✅ Successfully updated Azure DevOps work item ${workItemId}`);
       return { success: true };
 
     } catch (error) {
