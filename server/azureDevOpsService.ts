@@ -26,7 +26,7 @@ export class AzureDevOpsService {
       apiVersion: '7.0'
     };
     
-    this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
+    this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
   }
 
   private getAuthHeaders() {
@@ -221,6 +221,23 @@ export class AzureDevOpsService {
     try {
       console.log(`🔍 Azure DevOps update request for work item ${workItemId}:`, JSON.stringify(updates, null, 2));
       
+      // Get settings from database
+      const settings = await settingsService.getSettings();
+      const azureConfig = settings.azureDevOps;
+      
+      if (!azureConfig.enabled || !azureConfig.organization || !azureConfig.project || !azureConfig.personalAccessToken) {
+        return {
+          success: false,
+          error: 'Azure DevOps integration not configured or disabled. Please check settings.'
+        };
+      }
+
+      // Update config with current settings
+      this.config.organization = azureConfig.organization;
+      this.config.project = azureConfig.project;
+      this.config.personalAccessToken = azureConfig.personalAccessToken;
+      this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
+      
       // First, verify the work item exists
       const checkUrl = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       console.log(`🔍 Check URL: ${checkUrl}`);
@@ -366,6 +383,24 @@ export class AzureDevOpsService {
   async testWorkItemAccess(workItemId: number): Promise<{ success: boolean; error?: string; workItem?: any }> {
     try {
       console.log(`🔍 Testing access to work item ${workItemId}`);
+      
+      // Get settings from database
+      const settings = await settingsService.getSettings();
+      const azureConfig = settings.azureDevOps;
+      
+      if (!azureConfig.enabled || !azureConfig.organization || !azureConfig.project || !azureConfig.personalAccessToken) {
+        return {
+          success: false,
+          error: 'Azure DevOps integration not configured or disabled. Please check settings.'
+        };
+      }
+
+      // Update config with current settings
+      this.config.organization = azureConfig.organization;
+      this.config.project = azureConfig.project;
+      this.config.personalAccessToken = azureConfig.personalAccessToken;
+      this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
+      
       console.log(`🔍 Using base URL: ${this.baseUrl}`);
       
       const url = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
