@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
 import { azureDevOpsService } from "./azureDevOpsService";
 import { settingsService } from "./settingsService";
-import { insertTestCaseSchema, insertDefectSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
+import { insertTestCaseSchema, insertDefectSchema, insertDefectWithIdSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import { 
@@ -1046,7 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defectId: generatedDefectId
       };
       
-      const validatedData = insertDefectSchema.parse(dataWithId);
+      const validatedData = insertDefectWithIdSchema.parse(dataWithId);
       
       // Create the defect in QualityBytes
       const defect = await storage.createDefect(validatedData);
