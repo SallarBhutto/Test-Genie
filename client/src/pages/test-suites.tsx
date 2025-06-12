@@ -40,7 +40,8 @@ export default function TestSuites() {
   const deleteTestSuiteMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await apiRequest("DELETE", `/api/test-suites/${id}`);
-      return response.json();
+      // 204 responses have no content, so don't try to parse JSON
+      return response.status === 204 ? null : response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
