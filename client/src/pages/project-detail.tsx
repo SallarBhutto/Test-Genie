@@ -55,47 +55,48 @@ export default function ProjectDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start space-x-4 flex-1 min-w-0">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <Link href="/projects">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Projects
             </Button>
           </Link>
-          <div className="flex-1 min-w-0 max-w-2xl">
-            <h1 
-              className="text-3xl font-bold text-neutral-900 dark:text-white break-words"
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                wordBreak: 'break-word'
-              }}
-            >
-              {(project as Project).name}
-            </h1>
-            <p 
-              className="text-neutral-600 dark:text-neutral-300 mt-2 break-words"
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                wordBreak: 'break-word'
-              }}
-            >
-              {(project as Project).description || "No description provided"}
-            </p>
-          </div>
+          <Link href="/modules">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Module
+            </Button>
+          </Link>
         </div>
-        <Link href="/modules">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Module
-          </Button>
-        </Link>
+        
+        <div className="max-w-4xl">
+          <h1 
+            className="text-3xl font-bold text-neutral-900 dark:text-white break-words"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word'
+            }}
+          >
+            {(project as Project).name}
+          </h1>
+          <p 
+            className="text-neutral-600 dark:text-neutral-300 mt-2 break-words"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word'
+            }}
+          >
+            {(project as Project).description || "No description provided"}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
