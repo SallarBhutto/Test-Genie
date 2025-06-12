@@ -147,6 +147,14 @@ export class AzureWebhookService {
 
       console.log(`✅ Successfully synced Azure DevOps changes to defect ${defect.defectId}`);
 
+      // Broadcast real-time update to connected clients
+      try {
+        const { sseService } = await import("./sseService");
+        sseService.broadcastDefectUpdate(defect.defectId, workItemId);
+      } catch (error) {
+        console.warn("⚠️ Failed to broadcast real-time update:", error);
+      }
+
       // Log sync success
       eventLogger.logEvent({
         type: 'sync_success',

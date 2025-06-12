@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
+import { useSSE } from "@/hooks/useSSE";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
@@ -32,11 +33,11 @@ import TopBar from "@/components/layout/top-bar";
 
 function AuthenticatedLayout() {
   const { isCollapsed } = useSidebar();
-  
+
   const getMainMargin = () => {
     return isCollapsed ? 'ml-16' : 'ml-64';
   };
-  
+
   return (
     <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-900">
       <Sidebar />
@@ -108,12 +109,23 @@ function Router() {
   return isAuthenticated ? <AuthenticatedApp /> : <UnauthenticatedApp />;
 }
 
+function AppContent() {
+  // Initialize SSE connection for real-time updates
+  useSSE();
+
+  return (
+    <>
+      <Router />
+      <Toaster />
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );

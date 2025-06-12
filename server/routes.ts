@@ -1461,6 +1461,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Server-Sent Events endpoint for real-time updates
+  app.get("/api/events", (req, res) => {
+    // Set headers for SSE
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Generate unique client ID
+    const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Import and add client to SSE service
+    import("./sseService").then(({ sseService }) => {
+      sseService.addClient(clientId, res);
+
+      // Handle client disconnect
+      req.on('close', () => {
+        sseService.removeClient(clientId);
+      });
+
+      req.on('aborted', () => {
+        sseService.removeClient(clientId);
+      });
+    });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
