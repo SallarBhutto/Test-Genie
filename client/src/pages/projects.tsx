@@ -102,7 +102,7 @@ export default function Projects() {
                       <FolderOpen className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                      <CardTitle className="text-lg line-clamp-1 truncate">{project.name}</CardTitle>
                       <Badge
                         variant={
                           project.status === "active" ? "default" : "secondary"
@@ -124,7 +124,7 @@ export default function Projects() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2">
                   {project.description}
                 </p>
                 <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
