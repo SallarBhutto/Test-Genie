@@ -12,7 +12,7 @@ export default function TestRunResults() {
   const testRunId = params?.id ? parseInt(params.id) : null;
 
   const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
-    queryKey: ['/api/test-runs', testRunId],
+    queryKey: [`/api/test-runs/${testRunId}`],
     enabled: !!testRunId
   });
 
