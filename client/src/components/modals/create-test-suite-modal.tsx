@@ -240,20 +240,20 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create Test Suite</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 flex-1 min-h-0">
-            <Tabs defaultValue="details" className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="details">Test Suite Details</TabsTrigger>
                 <TabsTrigger value="testcases">Select Test Cases</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="details" className="space-y-4">
+              <TabsContent value="details" className="space-y-4 overflow-y-auto p-1">
                 <FormField
                   control={form.control}
                   name="name"
@@ -312,7 +312,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
                 />
               </TabsContent>
 
-              <TabsContent value="testcases" className="flex-1 flex flex-col min-h-0">
+              <TabsContent value="testcases" className="flex-1 flex flex-col overflow-hidden p-1">
                 {selectedProjectId > 0 ? (
                   <div className="flex flex-col gap-4 h-full">
                     {/* Search */}
@@ -334,8 +334,8 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
                     )}
                     
                     {/* Hierarchical Test Cases List */}
-                    <div className="border rounded-lg flex-1 overflow-hidden">
-                      <div className="h-full overflow-y-auto p-4">
+                    <div className="border rounded-lg flex-1 min-h-0 overflow-hidden">
+                      <div className="h-full overflow-y-auto overflow-x-hidden p-4">
                         {Object.keys(filteredHierarchicalData).length === 0 ? (
                           <div className="text-center py-8 text-gray-500">
                             {projectTestCases.length === 0 
@@ -440,7 +440,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
               </TabsContent>
             </Tabs>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t">
+            <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0">
               <Button
                 type="button"
                 variant="outline"
