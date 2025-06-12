@@ -862,6 +862,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTestSuite(id: number): Promise<boolean> {
+    // First, remove all test case associations from the test suite
+    await db.delete(testSuiteTestCases).where(eq(testSuiteTestCases.testSuiteId, id));
+    
+    // Then delete the test suite itself
     const result = await db.delete(testSuites).where(eq(testSuites.id, id));
     return result.rowCount > 0;
   }
