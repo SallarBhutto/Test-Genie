@@ -101,8 +101,8 @@ export default function Projects() {
                     <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                       <FolderOpen className="w-5 h-5 text-primary" />
                     </div>
-                    <div>
-                      <CardTitle className="text-lg line-clamp-1 truncate">{project.name}</CardTitle>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg line-clamp-1">{project.name}</CardTitle>
                       <Badge
                         variant={
                           project.status === "active" ? "default" : "secondary"
