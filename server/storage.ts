@@ -877,7 +877,7 @@ export class DatabaseStorage implements IStorage {
         preconditions: testCases.preconditions,
         steps: testCases.steps,
         expectedResult: testCases.expectedResult,
-        priority: testCases.priority,```tool_code
+        priority: testCases.priority,
         status: testCases.status,
         projectId: testCases.projectId,
         moduleId: testCases.moduleId,
