@@ -62,38 +62,39 @@ export default function ModuleDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <Link href="/modules">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Modules
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
-              {(module as Module).name}
-            </h1>
-            <p className="text-neutral-600 dark:text-neutral-300 mt-1">
-              {project && (
-                <Link href={`/projects/${project.id}`} className="hover:underline">
-                  <span className="text-sm text-blue-600 dark:text-blue-400">
-                    {project.name}
-                  </span>
-                </Link>
-              )}
-            </p>
-            <p className="text-neutral-600 dark:text-neutral-300 mt-2">
-              {(module as Module).description || "No description provided"}
-            </p>
-          </div>
+          <Link href="/components">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Component
+            </Button>
+          </Link>
         </div>
-        <Link href="/components">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Component
-          </Button>
-        </Link>
+        
+        <div className="max-w-4xl">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white break-words">
+            {(module as Module).name}
+          </h1>
+          <p className="text-neutral-600 dark:text-neutral-300 mt-1">
+            {project && (
+              <Link href={`/projects/${project.id}`} className="hover:underline">
+                <span className="text-sm text-blue-600 dark:text-blue-400">
+                  {project.name}
+                </span>
+              </Link>
+            )}
+          </p>
+          <p className="text-neutral-600 dark:text-neutral-300 mt-2 break-words">
+            {(module as Module).description || "No description provided"}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
