@@ -15,8 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSorting } from "@/hooks/useSorting";
+import { useParams } from "wouter";
 
 export default function TestCases() {
+  const { componentId } = useParams();
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTestCase, setEditingTestCase] = useState(null);
@@ -32,6 +34,25 @@ export default function TestCases() {
   useEffect(() => {
     setFilters(prev => ({ ...prev, module: "all", component: "all" }));
   }, [selectedProject]);
+
+  // Auto-filter by component when navigating from component detail page
+  useEffect(() => {
+    if (componentId) {
+      // Find the component and its module to set proper filters
+      const component = Array.isArray(components) ? components.find((c: any) => c.id === parseInt(componentId)) : null;
+      if (component) {
+        const module = Array.isArray(modules) ? modules.find((m: any) => m.id === component.moduleId) : null;
+        setFilters(prev => ({
+          ...prev,
+          module: module ? module.id.toString() : "all",
+          component: componentId,
+        }));
+      } else {
+        // If component not found yet, just set the component filter
+        setFilters(prev => ({ ...prev, component: componentId }));
+      }
+    }
+  }, [componentId, components, modules]);
 
   // Get filtered modules based on selected project from header
   const getAvailableModules = () => {
