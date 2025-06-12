@@ -12,6 +12,7 @@ export default function ModuleDetail() {
 
   const { data: module, isLoading: moduleLoading } = useQuery({
     queryKey: ["/api/modules", moduleId],
+    queryFn: () => fetch(`/api/modules/${moduleId}`).then(res => res.json()),
   });
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
