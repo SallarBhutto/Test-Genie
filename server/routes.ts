@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
 import { azureDevOpsService } from "./azureDevOpsService";
 import { settingsService } from "./settingsService";
-import { insertTestCaseSchema, insertDefectSchema, insertDefectWithIdSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
+import { insertTestCaseSchema, updateTestCaseSchema, insertDefectSchema, insertDefectWithIdSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 import { 
@@ -924,7 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
         };
         
-        const validatedData = insertTestCaseSchema.parse(dataWithFixedSteps);
+        const validatedData = updateTestCaseSchema.parse(dataWithFixedSteps);
         console.log("Validated data:", validatedData);
         
         const testCase = await storage.updateTestCase(id, validatedData);

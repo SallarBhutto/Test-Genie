@@ -63,11 +63,6 @@ export const testSuites = pgTable("test_suites", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const testSuiteTestCases = pgTable("test_suite_test_cases", {
-  testSuiteId: integer("test_suite_id").references(() => testSuites.id).notNull(),
-  testCaseId: integer("test_case_id").references(() => testCases.id).notNull(),
-});
-
 export const testCases = pgTable("test_cases", {
   id: serial("id").primaryKey(),
   testCaseId: text("test_case_id").notNull().unique(),
@@ -85,6 +80,11 @@ export const testCases = pgTable("test_cases", {
   createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const testSuiteTestCases = pgTable("test_suite_test_cases", {
+  testSuiteId: integer("test_suite_id").references(() => testSuites.id).notNull(),
+  testCaseId: integer("test_case_id").references(() => testCases.id).notNull(),
 });
 
 export const testRuns = pgTable("test_runs", {
@@ -165,16 +165,20 @@ export const insertTestSuiteSchema = createInsertSchema(testSuites).omit({
   createdAt: true,
 });
 
-export const insertTestSuiteTestCaseSchema = createInsertSchema(testSuiteTestCases).omit({
-  id: true,
-  addedAt: true,
-});
+export const insertTestSuiteTestCaseSchema = createInsertSchema(testSuiteTestCases);
 
 export const insertTestCaseSchema = createInsertSchema(testCases).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
+
+export const updateTestCaseSchema = createInsertSchema(testCases).omit({
+  id: true,
+  testCaseId: true, // Don't require testCaseId for updates since it already exists
+  createdAt: true,
+  updatedAt: true,
+}).partial(); // Make all fields optional for partial updates
 
 export const insertTestRunSchema = createInsertSchema(testRuns).omit({
   id: true,
