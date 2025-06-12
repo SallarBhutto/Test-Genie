@@ -55,8 +55,8 @@ export default function ProjectDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start space-x-4 flex-1 min-w-0">
           <Link href="/projects">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
