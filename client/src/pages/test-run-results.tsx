@@ -25,6 +25,10 @@ export default function TestRunResults() {
     queryKey: ['/api/test-cases']
   });
 
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/users']
+  });
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'passed':
@@ -49,7 +53,7 @@ export default function TestRunResults() {
     }
   };
 
-  if (testRunLoading || resultsLoading || testCasesLoading) {
+  if (testRunLoading || resultsLoading || testCasesLoading || usersLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Loading test results...</div>
@@ -67,12 +71,24 @@ export default function TestRunResults() {
 
   const displayResults = Array.isArray(results) ? results : [];
   const displayTestCases = Array.isArray(testCases) ? testCases : [];
+  const displayUsers = Array.isArray(users) ? users : [];
 
   // Create a map of test case IDs to test case details
   const testCaseMap = displayTestCases.reduce((map, testCase) => {
     map[testCase.id] = testCase;
     return map;
   }, {} as Record<number, TestCase>);
+
+  // Create a map of user IDs to user names
+  const userMap = displayUsers.reduce((map, user) => {
+    map[user.id] = user.fullName || user.username;
+    return map;
+  }, {} as Record<number, string>);
+
+  // Helper function to get user name
+  const getUserName = (userId: number) => {
+    return userMap[userId] || `User ${userId}`;
+  };
 
   // Calculate summary statistics
   const totalTests = displayResults.length;
@@ -228,7 +244,7 @@ export default function TestRunResults() {
                         {result.executedBy && (
                           <div className="flex items-center gap-1 mt-1">
                             <User className="w-3 h-3" />
-                            User {result.executedBy}
+                            {getUserName(result.executedBy)}
                           </div>
                         )}
                       </div>
