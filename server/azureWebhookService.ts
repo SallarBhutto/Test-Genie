@@ -107,8 +107,6 @@ export class AzureWebhookService {
           message: "Event type not handled"
         };
       }
-
-      const workItemId = payload.resource?.workItemId;
       if (!workItemId) {
         console.warn("⚠️ No work item ID found in webhook payload");
         return {
