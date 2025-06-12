@@ -687,6 +687,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/test-suites/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteTestSuite(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Test suite not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Test suite deletion error:", error);
+      res.status(500).json({ message: "Failed to delete test suite" });
+    }
+  });
+
   // Test Suite Test Cases endpoints
   app.get("/api/test-suites/:id/test-cases", async (req, res) => {
     try {
