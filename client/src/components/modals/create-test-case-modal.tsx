@@ -145,6 +145,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         expectedResult: editingTestCase.expectedResult || "",
         priority: editingTestCase.priority || "medium",
         status: editingTestCase.status || "draft",
+        isAutomated: editingTestCase.isAutomated || false,
         assignedTo: editingTestCase.assignedTo,
         createdBy: editingTestCase.createdBy || (currentUser as any)?.id || 1,
         projectId: editingTestCase.projectId || 0,
@@ -164,6 +165,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
         expectedResult: "",
         priority: "medium",
         status: "draft",
+        isAutomated: false,
         assignedTo: undefined,
         createdBy: (currentUser as any)?.id || 1,
         projectId: 0,
@@ -555,6 +557,27 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="isAutomated"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Is Automated</FormLabel>
+                    <FormDescription>
+                      Check this if the test case is automated
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button
