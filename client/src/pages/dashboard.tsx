@@ -26,12 +26,14 @@ import DefectStatusChart from "@/components/charts/defect-status-chart";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/contexts/ProjectContext";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
   const [showCreateDefect, setShowCreateDefect] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { selectedProject } = useProject();
+  const [, setLocation] = useLocation();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/dashboard/stats", selectedProject?.id],
@@ -229,7 +231,7 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Recent Test Runs</CardTitle>
-                <Button variant="ghost" size="sm">View All</Button>
+                <Button variant="ghost" size="sm" onClick={() => setLocation('/test-runs')}>View All</Button>
               </div>
             </CardHeader>
             <CardContent>
