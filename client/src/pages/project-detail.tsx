@@ -12,6 +12,7 @@ export default function ProjectDetail() {
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["/api/projects", projectId],
+    queryFn: () => fetch(`/api/projects/${projectId}`).then(res => res.json()),
   });
 
   const { data: modules = [], isLoading: modulesLoading } = useQuery({
@@ -62,11 +63,11 @@ export default function ProjectDetail() {
               Back to Projects
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white line-clamp-2">
               {(project as Project).name}
             </h1>
-            <p className="text-neutral-600 dark:text-neutral-300 mt-2">
+            <p className="text-neutral-600 dark:text-neutral-300 mt-2 line-clamp-3">
               {(project as Project).description || "No description provided"}
             </p>
           </div>
