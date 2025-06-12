@@ -6,13 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
 import CreateTestRunModal from "@/components/modals/create-test-run-modal";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function TestRuns() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [, setLocation] = useLocation();
+  const { selectedProject } = useProject();
 
   const { data: testRuns, isLoading } = useQuery({
-    queryKey: ['/api/test-runs']
+    queryKey: ['/api/test-runs', selectedProject?.id],
+    queryFn: () => {
+      const url = selectedProject 
+        ? `/api/test-runs?projectId=${selectedProject.id}`
+        : '/api/test-runs';
+      return fetch(url).then(res => res.json());
+    }
   });
 
   const handleExecuteClick = (id: number) => {
