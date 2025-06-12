@@ -20,12 +20,25 @@ import {
   XCircle,
   AlertTriangle
 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface AzureDevOpsSettings {
   enabled: boolean;
   organization: string;
   project: string;
   personalAccessToken: string;
+  webhookSecret?: string;
 }
 
 interface SystemSettings {
@@ -33,6 +46,14 @@ interface SystemSettings {
   emailNotifications: boolean;
   darkMode: boolean;
 }
+
+const azureDevOpsSchema = z.object({
+  enabled: z.boolean(),
+  organization: z.string().min(1, "Organization is required"),
+  project: z.string().min(1, "Project is required"),
+  personalAccessToken: z.string().min(1, "Personal Access Token is required"),
+  webhookSecret: z.string().optional(),
+});
 
 export default function Settings() {
   const { toast } = useToast();
@@ -88,29 +109,30 @@ export default function Settings() {
     },
   });
 
-  const handleAzureDevOpsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const azureSettings: AzureDevOpsSettings = {
-      enabled: formData.get("enabled") === "on",
-      organization: formData.get("organization") as string,
-      project: formData.get("project") as string,
-      personalAccessToken: formData.get("personalAccessToken") as string,
-    };
+  const form = useForm<z.infer<typeof azureDevOpsSchema>>({
+    resolver: zodResolver(azureDevOpsSchema),
+    defaultValues: {
+      enabled: settings?.azureDevOps.enabled || false,
+      organization: settings?.azureDevOps.organization || "",
+      project: settings?.azureDevOps.project || "",
+      personalAccessToken: settings?.azureDevOps.personalAccessToken || "",
+      webhookSecret: settings?.azureDevOps.webhookSecret || "",
+    },
+  });
 
-    azureDevOpsMutation.mutate(azureSettings);
+  const handleAzureDevOpsSubmit = (data: z.infer<typeof azureDevOpsSchema>) => {
+    azureDevOpsMutation.mutate(data);
   };
 
   const getConnectionStatus = () => {
     if (!settings?.azureDevOps.enabled) {
       return { status: "disabled", icon: XCircle, color: "text-gray-500", text: "Disabled" };
     }
-    
+
     if (!settings?.azureDevOps.organization || !settings?.azureDevOps.project || !settings?.azureDevOps.personalAccessToken) {
       return { status: "incomplete", icon: AlertTriangle, color: "text-yellow-500", text: "Incomplete Configuration" };
     }
-    
+
     return { status: "ready", icon: CheckCircle, color: "text-green-500", text: "Ready" };
   };
 
@@ -173,7 +195,7 @@ export default function Settings() {
                     <span>Azure DevOps Integration</span>
                   </CardTitle>
                   <CardDescription>
-                    Automatically create work items in Azure DevOps when bugs are reported in QualityBytes
+                    Configure Azure DevOps integration for automatic bug tracking and bidirectional sync
                   </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -185,99 +207,140 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAzureDevOpsSubmit} className="space-y-6">
-                {/* Enable/Disable Switch */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="enabled">Enable Azure DevOps Integration</Label>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Automatically sync bugs to Azure DevOps work items
-                    </p>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleAzureDevOpsSubmit)} className="space-y-6">
+                  {/* Enable/Disable Switch */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="enabled">Enable Azure DevOps Integration</Label>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        Automatically sync bugs to Azure DevOps work items
+                      </p>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="enabled"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Switch 
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <Switch 
-                    id="enabled"
-                    name="enabled"
-                    defaultChecked={settings?.azureDevOps.enabled}
-                  />
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                {/* Configuration Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="organization">Organization Name</Label>
-                    <Input
-                      id="organization"
+                  {/* Configuration Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
                       name="organization"
-                      placeholder="your-organization"
-                      defaultValue={settings?.azureDevOps.organization}
-                      required
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="your-organization" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Your Azure DevOps organization name (from URL)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Your Azure DevOps organization name (from URL)
-                    </p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="project">Project Name</Label>
-                    <Input
-                      id="project"
+                    <FormField
+                      control={form.control}
                       name="project"
-                      placeholder="your-project"
-                      defaultValue={settings?.azureDevOps.project}
-                      required
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Project Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="your-project" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            The specific project where work items will be created
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      The specific project where work items will be created
-                    </p>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="personalAccessToken">Personal Access Token</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      id="personalAccessToken"
-                      name="personalAccessToken"
-                      type={showToken ? "text" : "password"}
-                      placeholder="Enter your PAT token"
-                      defaultValue={settings?.azureDevOps.personalAccessToken}
-                      required
-                    />
+                  <FormField
+                    control={form.control}
+                    name="personalAccessToken"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Personal Access Token</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type={showToken ? "text" : "password"}
+                            placeholder="Enter your Azure DevOps PAT" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Generate a PAT in Azure DevOps with Work Items (Read & Write) permissions
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="webhookSecret"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Webhook Secret (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Enter webhook secret for signature validation" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Optional secret for validating webhook signatures from Azure DevOps
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3">
+                    <Button 
+                      type="submit" 
+                      disabled={azureDevOpsMutation.isPending}
+                      className="flex-1"
+                    >
+                      {azureDevOpsMutation.isPending ? "Saving..." : "Save Configuration"}
+                    </Button>
+
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setShowToken(!showToken)}
+                      onClick={() => testConnectionMutation.mutate()}
+                      disabled={testConnectionMutation.isPending || !form.getValues("enabled")}
                     >
-                      {showToken ? "Hide" : "Show"}
+                      {testConnectionMutation.isPending ? "Testing..." : "Test Connection"}
                     </Button>
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    Generate a PAT with "Work Items (read & write)" permissions in Azure DevOps
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex space-x-3">
-                  <Button 
-                    type="submit" 
-                    disabled={azureDevOpsMutation.isPending}
-                    className="flex-1"
-                  >
-                    {azureDevOpsMutation.isPending ? "Saving..." : "Save Configuration"}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => testConnectionMutation.mutate()}
-                    disabled={testConnectionMutation.isPending || !settings?.azureDevOps.enabled}
-                  >
-                    {testConnectionMutation.isPending ? "Testing..." : "Test Connection"}
-                  </Button>
-                </div>
-              </form>
+                </form>
+              </Form>
 
               {/* Integration Info */}
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">

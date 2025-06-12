@@ -1364,6 +1364,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Azure DevOps Webhook endpoint
+  app.post("/api/webhooks/azure-devops", async (req, res) => {
+    try {
+      const signature = req.headers['x-vss-signature'] as string;
+      const payload = JSON.stringify(req.body);
+      
+      console.log("📥 Received Azure DevOps webhook:", {
+        eventType: req.body.eventType,
+        workItemId: req.body.resource?.workItemId,
+        hasSignature: !!signature
+      });
+
+      // Get webhook secret from settings
+      const settings = await settingsService.getSettings();
+      const webhookSecret = settings.azureDevOps?.webhookSecret;
+
+      // Import the webhook service
+      const { azureWebhookService } = await import("./azureWebhookService");
+
+      // Validate signature if secret is configured
+      if (webhookSecret && !azureWebhookService.validateWebhookSignature(payload, signature, webhookSecret)) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Invalid webhook signature" 
+        });
+      }
+
+      // Process the webhook
+      const result = await azureWebhookService.processWebhook(req.body);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+
+    } catch (error) {
+      console.error("❌ Error processing Azure DevOps webhook:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process webhook",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Settings API Routes
   app.get("/api/settings", async (req, res) => {
     try {
@@ -1399,6 +1445,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: "Failed to test Azure DevOps connection" 
       });
+    }
+  });
+
+  // Sync Events endpoint
+  app.get("/api/sync-events", async (req, res) => {
+    try {
+      const { eventLogger } = await import("./eventLogger");
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const events = eventLogger.getRecentEvents(limit);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching sync events:", error);
+      res.status(500).json({ message: "Failed to fetch sync events" });
     }
   });
 

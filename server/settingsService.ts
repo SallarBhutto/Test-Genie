@@ -23,7 +23,7 @@ export class SettingsService {
     // Parse Azure DevOps settings with debugging
     let parsedAzureDevOps;
     console.log('🔍 Raw azureDevOps setting:', azureDevOpsSetting);
-    
+
     if (azureDevOpsSetting?.value) {
       if (typeof azureDevOpsSetting.value === 'string') {
         try {
@@ -70,7 +70,7 @@ export class SettingsService {
   async updateAzureDevOpsSettings(settings: AzureDevOpsSettings): Promise<SystemSettings> {
     // Save to database
     await storage.setSetting('azureDevOps', settings);
-    
+
     // Update environment variables for the Azure DevOps service
     if (settings.enabled && settings.organization && settings.project && settings.personalAccessToken) {
       process.env.AZURE_DEVOPS_ORGANIZATION = settings.organization;
@@ -88,42 +88,42 @@ export class SettingsService {
       delete process.env.AZURE_DEVOPS_PAT;
       console.log('🔧 Environment variables cleared');
     }
-    
+
     return this.getSettings();
   }
 
   async testAzureDevOpsConnection(): Promise<{ success: boolean; message: string }> {
     const settings = await this.getSettings();
     const { azureDevOps } = settings;
-    
+
     if (!azureDevOps.enabled) {
       return { success: false, message: 'Azure DevOps integration is disabled' };
     }
-    
+
     if (!azureDevOps.organization || !azureDevOps.project || !azureDevOps.personalAccessToken) {
       return { success: false, message: 'Missing required Azure DevOps configuration' };
     }
-    
+
     try {
       // Test the connection by making a simple API call to get project info
       const baseUrl = `https://dev.azure.com/${azureDevOps.organization}/_apis`;
       const apiUrl = `${baseUrl}/projects/${azureDevOps.project}?api-version=7.0`;
       const token = Buffer.from(`:${azureDevOps.personalAccessToken}`).toString('base64');
-      
+
       console.log('🔍 Azure DevOps Test Connection Details:');
       console.log('Organization:', azureDevOps.organization);
       console.log('Project:', azureDevOps.project);
       console.log('API URL:', apiUrl);
       console.log('Token length:', azureDevOps.personalAccessToken ? azureDevOps.personalAccessToken.length : 0);
       console.log('Token preview:', azureDevOps.personalAccessToken ? azureDevOps.personalAccessToken.substring(0, 10) + '...' : 'No token');
-      
+
       const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Basic ${token}`,
           'Accept': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         const projectData = await response.json();
         return { 
