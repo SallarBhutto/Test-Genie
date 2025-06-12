@@ -4,10 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SortableTableHead } from "@/components/ui/sortable-table-head";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
 import { cn } from "@/lib/utils";
@@ -28,6 +41,50 @@ export default function TestCases() {
     status: "all",
   });
 
+  // Reset module and component filters when header project changes
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, module: "all", component: "all" }));
+  }, [selectedProject]);
+
+  // Get filtered modules based on selected project from header
+  const getAvailableModules = () => {
+    if (!selectedProject) {
+      return Array.isArray(modules) ? modules : [];
+    }
+    return Array.isArray(modules)
+      ? modules.filter((m: any) => m.projectId === selectedProject.id)
+      : [];
+  };
+
+  // Get filtered components based on selected module
+  const getAvailableComponents = () => {
+    if (!filters.module || filters.module === "all") {
+      if (!selectedProject) {
+        return Array.isArray(components) ? components : [];
+      }
+      // Show components from selected project
+      const projectModules = Array.isArray(modules)
+        ? modules.filter((m: any) => m.projectId === selectedProject.id)
+        : [];
+      const moduleIds = projectModules.map((m: any) => m.id);
+      return Array.isArray(components)
+        ? components.filter((c: any) => moduleIds.includes(c.moduleId))
+        : [];
+    }
+    const moduleId = parseInt(filters.module);
+    return Array.isArray(components)
+      ? components.filter((c: any) => c.moduleId === moduleId)
+      : [];
+  };
+
+  // Handle module filter change - reset component filter
+  const handleModuleChange = (value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      module: value,
+      component: "all",
+    }));
+  };
   const { toast } = useToast();
 
   const { data: projects = [] } = useQuery({
@@ -50,48 +107,12 @@ export default function TestCases() {
     queryKey: ["/api/users"],
   });
 
-  // Reset module and component filters when header project changes
-  useEffect(() => {
-    setFilters(prev => ({ ...prev, module: "all", component: "all" }));
-  }, [selectedProject]);
-
-  // Get filtered modules based on selected project from header
-  const getAvailableModules = () => {
-    if (!selectedProject) {
-      return Array.isArray(modules) ? modules : [];
-    }
-    return Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
-  };
-
-  // Get filtered components based on selected module
-  const getAvailableComponents = () => {
-    if (!filters.module || filters.module === "all") {
-      if (!selectedProject) {
-        return Array.isArray(components) ? components : [];
-      }
-      // Show components from selected project
-      const projectModules = Array.isArray(modules) ? modules.filter((m: any) => m.projectId === selectedProject.id) : [];
-      const moduleIds = projectModules.map((m: any) => m.id);
-      return Array.isArray(components) ? components.filter((c: any) => moduleIds.includes(c.moduleId)) : [];
-    }
-    const moduleId = parseInt(filters.module);
-    return Array.isArray(components) ? components.filter((c: any) => c.moduleId === moduleId) : [];
-  };
-
-  // Handle module filter change - reset component filter
-  const handleModuleChange = (value: string) => {
-    setFilters(prev => ({ 
-      ...prev, 
-      module: value,
-      component: "all"
-    }));
-  };
-
   // Delete mutation
   const deleteTestCaseMutation = useMutation({
-    mutationFn: (id: number) => fetch(`/api/test-cases/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: number) =>
+      fetch(`/api/test-cases/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/test-cases'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
       toast({
         title: "Success",
         description: "Test case deleted successfully",
@@ -108,75 +129,140 @@ export default function TestCases() {
 
   // Status update mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) => 
+    mutationFn: ({ id, status }: { id: number; status: string }) =>
       fetch(`/api/test-cases/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/test-cases'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
       toast({
-        title: "Success",
-        description: "Test case status updated successfully",
+        title: "Status Updated",
+        description: "Test case status has been updated successfully",
       });
     },
     onError: () => {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Failed to update test case status",
         variant: "destructive",
       });
     },
   });
 
-  // Filter test cases based on filters and search
-  const filteredTestCases = Array.isArray(testCases) ? testCases.filter((testCase: any) => {
-    const matchesSearch = testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesModule = filters.module === "all" || testCase.moduleId === parseInt(filters.module);
-    const matchesComponent = filters.component === "all" || testCase.componentId === parseInt(filters.component);
-    const matchesPriority = filters.priority === "all" || testCase.priority === filters.priority;
-    const matchesStatus = filters.status === "all" || testCase.status === filters.status;
-
-    return matchesSearch && matchesModule && matchesComponent && matchesPriority && matchesStatus;
-  }) : [];
-
-  // Sorting
-  const { sortConfig, handleSort, sortedItems: sortedTestCases } = useSorting(filteredTestCases, 'title');
-
-  const handleStatusUpdate = (id: number, status: string) => {
-    updateStatusMutation.mutate({ id, status });
+  // Handler functions
+  const handleEditTestCase = (testCase: any) => {
+    console.log("Edit button clicked for test case:", testCase);
+    setEditingTestCase(testCase);
+    setShowCreateTestCase(true);
+    console.log("Modal should open now");
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this test case?')) {
+  const handleDeleteTestCase = (id: number) => {
+    if (window.confirm("Are you sure you want to delete this test case?")) {
       deleteTestCaseMutation.mutate(id);
     }
   };
 
-  const handleEdit = (testCase: any) => {
-    setEditingTestCase(testCase);
-    setShowCreateTestCase(true);
+  const handleStatusToggle = (testCase: any) => {
+    const newStatus = testCase.status === "draft" ? "active" : "draft";
+    updateStatusMutation.mutate({ id: testCase.id, status: newStatus });
   };
 
-  const handleModalClose = () => {
-    setShowCreateTestCase(false);
-    setEditingTestCase(null);
+  const filteredTestCases = Array.isArray(testCases)
+    ? testCases.filter((testCase: any) => {
+        const matchesSearch =
+          testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Filter by selected project from header
+        const matchesProject =
+          !selectedProject || testCase.projectId === selectedProject.id;
+
+        // Get the module and component for filtering
+        const module = Array.isArray(modules)
+          ? modules.find((m: any) => m.id === testCase.moduleId)
+          : null;
+        const component = Array.isArray(components)
+          ? components.find((c: any) => c.id === testCase.componentId)
+          : null;
+
+        const matchesModule =
+          !filters.module ||
+          filters.module === "all" ||
+          (module && module.id.toString() === filters.module);
+        const matchesComponent =
+          !filters.component ||
+          filters.component === "all" ||
+          (component && component.id.toString() === filters.component);
+        const matchesPriority =
+          !filters.priority ||
+          filters.priority === "all" ||
+          testCase.priority === filters.priority;
+        const matchesStatus =
+          !filters.status ||
+          filters.status === "all" ||
+          testCase.status === filters.status;
+
+        return (
+          matchesSearch &&
+          matchesProject &&
+          matchesModule &&
+          matchesComponent &&
+          matchesPriority &&
+          matchesStatus
+        );
+      })
+    : [];
+
+  const {
+    sortedData: sortedTestCases,
+    sortConfig,
+    requestSort,
+  } = useSorting(filteredTestCases, "testCaseId");
+
+  const getStatusBadge = (status: string) => {
+    const statusClasses = {
+      passed: "status-passed",
+      failed: "status-failed",
+      blocked: "status-blocked",
+      ready: "status-ready",
+      draft: "status-draft",
+    };
+    return (
+      statusClasses[status as keyof typeof statusClasses] || "status-draft"
+    );
   };
 
-  const availableModules = getAvailableModules();
-  const availableComponents = getAvailableComponents();
+  const getPriorityBadge = (priority: string) => {
+    const priorityClasses = {
+      critical: "priority-critical",
+      high: "priority-high",
+      medium: "priority-medium",
+      low: "priority-low",
+    };
+    return (
+      priorityClasses[priority as keyof typeof priorityClasses] ||
+      "priority-medium"
+    );
+  };
 
   if (testCasesLoading) {
     return (
       <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3 mb-8"></div>
-          <div className="h-96 bg-neutral-200 dark:bg-neutral-700 rounded"></div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Test Cases</h1>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Test Case
+          </Button>
         </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="h-96 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse"></div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -185,98 +271,125 @@ export default function TestCases() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Test Cases</h1>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+            Test Cases
+          </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Manage and execute your test cases
+            Manage and organize your application test cases
           </p>
         </div>
-        <Button onClick={() => setShowCreateTestCase(true)}>
+        <Button className="ml-auto" onClick={() => setShowCreateTestCase(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          New Test Case
+          Add Test Case
         </Button>
       </div>
 
-      {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
-              <Input
-                placeholder="Search test cases..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+          <CardTitle>All Test Cases</CardTitle>
+
+          {/* Filter Controls */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Select value={filters.module} onValueChange={handleModuleChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Modules" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Modules</SelectItem>
+                  {getAvailableModules().map((module: any) => (
+                    <SelectItem key={module.id} value={module.id.toString()}>
+                      {module.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.component}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, component: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Components" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Components</SelectItem>
+                  {getAvailableComponents().map((component: any) => (
+                    <SelectItem
+                      key={component.id}
+                      value={component.id.toString()}
+                    >
+                      {component.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.priority}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, priority: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.status}
+                onValueChange={(value) =>
+                  setFilters((prev) => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={filters.module} onValueChange={handleModuleChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Modules" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Modules</SelectItem>
-                {availableModules.map((module: any) => (
-                  <SelectItem key={module.id} value={module.id.toString()}>
-                    {module.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
 
-            <Select value={filters.component} onValueChange={(value) => setFilters(prev => ({ ...prev, component: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Components" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Components</SelectItem>
-                {availableComponents.map((component: any) => (
-                  <SelectItem key={component.id} value={component.id.toString()}>
-                    {component.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.priority} onValueChange={(value) => setFilters(prev => ({ ...prev, priority: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Priorities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="passed">Passed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="skipped">Skipped</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <Input
+                  placeholder="Search test cases..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setFilters({
+                    module: "all",
+                    component: "all",
+                    priority: "all",
+                    status: "all",
+                  })
+                }
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Test Cases Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Test Cases ({sortedTestCases.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="table-responsive">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -284,38 +397,96 @@ export default function TestCases() {
                     <Checkbox />
                   </TableHead>
                   <SortableTableHead
-                    label="ID"
                     sortKey="testCaseId"
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                  />
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Test Case ID
+                  </SortableTableHead>
                   <SortableTableHead
-                    label="Title"
                     sortKey="title"
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                  />
-                  <TableHead>Hierarchy</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Creator</TableHead>
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Title
+                  </SortableTableHead>
                   <SortableTableHead
-                    label="Created"
-                    sortKey="createdAt"
-                    sortConfig={sortConfig}
-                    onSort={handleSort}
-                  />
-                  <TableHead className="w-32">Actions</TableHead>
+                    sortKey="projectId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Project
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="moduleId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Module
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="componentId"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Component
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="priority"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Priority
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="status"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Status
+                  </SortableTableHead>
+                  <SortableTableHead
+                    sortKey="createdBy"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Created By
+                  </SortableTableHead>
+                  {/* <SortableTableHead
+                    sortKey="updatedAt"
+                    currentSortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
+                    onSort={requestSort}
+                  >
+                    Last Updated
+                  </SortableTableHead> */}
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedTestCases.map((testCase: any) => {
                   // Get hierarchy information from the loaded data using actual test case IDs
-                  const project = (projects as any[]).find((p: any) => p.id === testCase.projectId);
-                  const module = (modules as any[]).find((m: any) => m.id === testCase.moduleId);  
-                  const component = (components as any[]).find((c: any) => c.id === testCase.componentId);
-                  const creator = (users as any[]).find((u: any) => u.id === testCase.createdBy);
-                  
+                  const project = projects.find(
+                    (p: any) => p.id === testCase.projectId,
+                  );
+                  const module = modules.find(
+                    (m: any) => m.id === testCase.moduleId,
+                  );
+                  const component = components.find(
+                    (c: any) => c.id === testCase.componentId,
+                  );
+                  const creator = users.find(
+                    (u: any) => u.id === testCase.createdBy,
+                  );
+
                   return (
                     <TableRow key={testCase.id}>
                       <TableCell>
@@ -329,80 +500,98 @@ export default function TestCases() {
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="text-blue-600 dark:text-blue-400">
-                          {project?.name || 'Unknown Project'}
+                          {project?.name || "No Project"}
                         </span>
-                        {module && (
-                          <>
-                            <span className="mx-1 text-neutral-400">></span>
-                            <span className="text-green-600 dark:text-green-400">
-                              {module.name}
-                            </span>
-                          </>
-                        )}
-                        {component && (
-                          <>
-                            <span className="mx-1 text-neutral-400">></span>
-                            <span className="text-purple-600 dark:text-purple-400">
-                              {component.name}
-                            </span>
-                          </>
-                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-purple-600 dark:text-purple-400">
+                          {module?.name || "No Module"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <span className="text-green-600 dark:text-green-400">
+                          {component?.name || "No Component"}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={
-                          testCase.priority === "critical" ? "destructive" :
-                          testCase.priority === "high" ? "default" :
-                          "secondary"
-                        }>
+                        <Badge
+                          className={cn(
+                            "status-badge",
+                            getPriorityBadge(testCase.priority),
+                          )}
+                        >
                           {testCase.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={testCase.status}
-                          onValueChange={(value) => handleStatusUpdate(testCase.id, value)}
+                        <Badge
+                          className={cn(
+                            "status-badge",
+                            getStatusBadge(testCase.status),
+                          )}
                         >
-                          <SelectTrigger className="w-24">
-                            <SelectValue>
-                              <Badge variant={
-                                testCase.status === "passed" ? "default" :
-                                testCase.status === "failed" ? "destructive" :
-                                "secondary"
-                              }>
-                                {testCase.status === "passed" && <CheckCircle className="w-3 h-3 mr-1" />}
-                                {testCase.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
-                                {testCase.status}
-                              </Badge>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="passed">Passed</SelectItem>
-                            <SelectItem value="failed">Failed</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="skipped">Skipped</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          {testCase.status}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {creator?.fullName || 'Unknown'}
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              {creator?.fullName
+                                ? creator.fullName
+                                    .split(" ")
+                                    .map((n: string) => n[0])
+                                    .join("")
+                                    .toUpperCase()
+                                : "U"}
+                            </span>
+                          </div>
+                          <span className="text-sm">
+                            {creator?.fullName ||
+                              creator?.username ||
+                              "Unknown User"}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {new Date(testCase.createdAt).toLocaleDateString()}
-                      </TableCell>
+                      {/* <TableCell className="text-sm text-neutral-500">
+                      {new Date(testCase.updatedAt).toLocaleDateString()}
+                    </TableCell> */}
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(testCase)}
+                            size="icon"
+                            onClick={() => handleStatusToggle(testCase)}
+                            className={cn(
+                              "hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20",
+                              testCase.status === "active" &&
+                                "text-green-600 bg-green-50 dark:bg-green-900/20",
+                            )}
+                            title={
+                              testCase.status === "draft"
+                                ? "Mark as Active"
+                                : "Mark as Draft"
+                            }
+                          >
+                            {testCase.status === "draft" ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <Clock className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditTestCase(testCase)}
+                            className="hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(testCase.id)}
-                            className="text-red-600 hover:text-red-800"
+                            size="icon"
+                            onClick={() => handleDeleteTestCase(testCase.id)}
+                            className="hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -419,7 +608,10 @@ export default function TestCases() {
 
       <CreateTestCaseModal
         open={showCreateTestCase}
-        onOpenChange={handleModalClose}
+        onOpenChange={(open) => {
+          setShowCreateTestCase(open);
+          if (!open) setEditingTestCase(null);
+        }}
         editingTestCase={editingTestCase}
       />
     </div>
