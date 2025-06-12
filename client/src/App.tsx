@@ -85,7 +85,7 @@ function UnauthenticatedApp() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      <Route path="/signup" component={Signup} />
+      {/* <Route path="/signup" component={Signup} /> */}
       <Route component={Landing} />
     </Switch>
   );
