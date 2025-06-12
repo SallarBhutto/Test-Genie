@@ -73,6 +73,7 @@ export const testCases = pgTable("test_cases", {
   expectedResult: text("expected_result").notNull(),
   priority: text("priority").notNull().default("medium"), // low, medium, high, critical
   status: text("status").notNull().default("draft"), // draft, ready, passed, failed, blocked
+  isAutomated: boolean("is_automated").notNull().default(false),
   projectId: integer("project_id").references(() => projects.id),
   moduleId: integer("module_id").references(() => modules.id),
   componentId: integer("component_id").references(() => components.id),

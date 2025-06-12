@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,6 +44,7 @@ const formSchema = z.object({
   expectedResult: z.string().min(1, "Expected result is required"),
   priority: z.enum(["low", "medium", "high", "critical"]),
   status: z.enum(["draft", "active"]),
+  isAutomated: z.boolean(),
   projectId: z.number().min(1, "Project is required"),
   moduleId: z.number().min(1, "Module is required"),
   componentId: z.number().min(1, "Component is required"),
@@ -112,6 +114,7 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       expectedResult: "",
       priority: "medium",
       status: "draft",
+      isAutomated: false,
       assignedTo: undefined,
       createdBy: (currentUser as any)?.id || 1,
       projectId: 0,
