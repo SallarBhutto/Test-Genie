@@ -63,11 +63,29 @@ export default function ProjectDetail() {
               Back to Projects
             </Button>
           </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-white line-clamp-2">
+          <div className="flex-1 min-w-0 max-w-2xl">
+            <h1 
+              className="text-3xl font-bold text-neutral-900 dark:text-white break-words"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                wordBreak: 'break-word'
+              }}
+            >
               {(project as Project).name}
             </h1>
-            <p className="text-neutral-600 dark:text-neutral-300 mt-2 line-clamp-3">
+            <p 
+              className="text-neutral-600 dark:text-neutral-300 mt-2 break-words"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                wordBreak: 'break-word'
+              }}
+            >
               {(project as Project).description || "No description provided"}
             </p>
           </div>

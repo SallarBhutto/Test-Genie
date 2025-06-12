@@ -110,6 +110,8 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    word-wrap: break-word;
+    word-break: break-word;
   }
   
   .line-clamp-2 {
@@ -117,6 +119,8 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    word-wrap: break-word;
+    word-break: break-word;
   }
   
   .line-clamp-3 {
@@ -124,6 +128,8 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 }
 
