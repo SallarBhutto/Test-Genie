@@ -567,6 +567,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/modules/:id", async (req, res) => {
+    try {
+      const module = await storage.getModule(parseInt(req.params.id));
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+      res.json(module);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch module" });
+    }
+  });
+
   app.post("/api/modules", async (req, res) => {
     console.log("=== MODULE CREATION START ===");
     console.log("Raw request body:", req.body);

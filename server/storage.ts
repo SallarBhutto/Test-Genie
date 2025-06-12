@@ -54,7 +54,7 @@ export interface IStorage {
   createTestSuite(testSuite: InsertTestSuite): Promise<TestSuite>;
   updateTestSuite(id: number, testSuite: Partial<TestSuite>): Promise<TestSuite | undefined>;
   deleteTestSuite(id: number): Promise<boolean>;
-  
+
   // Test Suite Test Cases
   getTestSuiteTestCases(testSuiteId: number): Promise<TestCase[]>;
   addTestCasesToSuite(testSuiteId: number, testCaseIds: number[]): Promise<void>;
@@ -130,7 +130,7 @@ export class MemStorage implements IStorage {
       lastLogin: null,
       createdAt: new Date(),
     };
-    
+
     const user2: User = {
       id: this.currentId++,
       username: "sarah.wilson",
@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
   async updateProject(id: number, projectUpdate: Partial<Project>): Promise<Project | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
-    
+
     const updatedProject = { ...project, ...projectUpdate };
     this.projects.set(id, updatedProject);
     return updatedProject;
@@ -380,7 +380,7 @@ export class MemStorage implements IStorage {
   async updateModule(id: number, moduleUpdate: Partial<Module>): Promise<Module | undefined> {
     const module = this.modules.get(id);
     if (!module) return undefined;
-    
+
     const updatedModule = { ...module, ...moduleUpdate };
     this.modules.set(id, updatedModule);
     return updatedModule;
@@ -417,7 +417,7 @@ export class MemStorage implements IStorage {
   async updateComponent(id: number, componentUpdate: Partial<Component>): Promise<Component | undefined> {
     const component = this.components.get(id);
     if (!component) return undefined;
-    
+
     const updatedComponent = { ...component, ...componentUpdate };
     this.components.set(id, updatedComponent);
     return updatedComponent;
@@ -450,7 +450,7 @@ export class MemStorage implements IStorage {
   async updateTestSuite(id: number, testSuiteUpdate: Partial<TestSuite>): Promise<TestSuite | undefined> {
     const testSuite = this.testSuites.get(id);
     if (!testSuite) return undefined;
-    
+
     const updatedTestSuite = { ...testSuite, ...testSuiteUpdate };
     this.testSuites.set(id, updatedTestSuite);
     return updatedTestSuite;
@@ -484,7 +484,7 @@ export class MemStorage implements IStorage {
   async updateTestCase(id: number, testCaseUpdate: Partial<TestCase>): Promise<TestCase | undefined> {
     const testCase = this.testCases.get(id);
     if (!testCase) return undefined;
-    
+
     const updatedTestCase = { 
       ...testCase, 
       ...testCaseUpdate, 
@@ -521,13 +521,13 @@ export class MemStorage implements IStorage {
   async updateTestRun(id: number, testRunUpdate: Partial<TestRun>): Promise<TestRun | undefined> {
     const testRun = this.testRuns.get(id);
     if (!testRun) return undefined;
-    
+
     // Convert string dates to Date objects
     const processedUpdate = { ...testRunUpdate };
     if (processedUpdate.completedAt && typeof processedUpdate.completedAt === 'string') {
       processedUpdate.completedAt = new Date(processedUpdate.completedAt);
     }
-    
+
     const updatedTestRun = { ...testRun, ...processedUpdate };
     this.testRuns.set(id, updatedTestRun);
     return updatedTestRun;
@@ -561,7 +561,7 @@ export class MemStorage implements IStorage {
   async updateTestRunResult(id: number, resultUpdate: Partial<TestRunResult>): Promise<TestRunResult | undefined> {
     const result = this.testRunResults.get(id);
     if (!result) return undefined;
-    
+
     const updatedResult = { ...result, ...resultUpdate };
     this.testRunResults.set(id, updatedResult);
     return updatedResult;
@@ -591,7 +591,7 @@ export class MemStorage implements IStorage {
   async updateDefect(id: number, defectUpdate: Partial<Defect>): Promise<Defect | undefined> {
     const defect = this.defects.get(id);
     if (!defect) return undefined;
-    
+
     const updatedDefect = { 
       ...defect, 
       ...defectUpdate, 
@@ -667,66 +667,66 @@ export class DatabaseStorage implements IStorage {
         .from(users)
         .where(eq(users.role, 'admin'))
         .limit(1);
-      
+
       if (!adminUser) {
         throw new Error('Cannot delete user: no admin user found to transfer ownership to.');
       }
-      
+
       // Check if user has reported defects - these cannot be transferred as they need to maintain audit trail
       const reportedDefects = await tx
         .select()
         .from(defects)
         .where(eq(defects.reportedBy, id));
-      
+
       if (reportedDefects.length > 0) {
         throw new Error(`Cannot delete user: has reported ${reportedDefects.length} defect(s). Defect reporting cannot be transferred to maintain audit trail.`);
       }
-      
+
       // Transfer ownership of created content to admin user
       await tx
         .update(projects)
         .set({ createdBy: adminUser.id })
         .where(eq(projects.createdBy, id));
-      
+
       await tx
         .update(modules)
         .set({ createdBy: adminUser.id })
         .where(eq(modules.createdBy, id));
-      
+
       await tx
         .update(components)
         .set({ createdBy: adminUser.id })
         .where(eq(components.createdBy, id));
-      
+
       await tx
         .update(testCases)
         .set({ createdBy: adminUser.id })
         .where(eq(testCases.createdBy, id));
-      
+
       await tx
         .update(testRuns)
         .set({ createdBy: adminUser.id })
         .where(eq(testRuns.createdBy, id));
-      
+
       // Nullify assignments that can be safely removed
       await tx
         .update(defects)
         .set({ assignedTo: null })
         .where(eq(defects.assignedTo, id));
-      
+
       await tx
         .update(testCases)
         .set({ assignedTo: null })
         .where(eq(testCases.assignedTo, id));
-      
+
       await tx
         .update(testRunResults)
         .set({ executedBy: null })
         .where(eq(testRunResults.executedBy, id));
-      
+
       // Delete any sessions for this user
       await tx.delete(sessions).where(eq(sessions.userId, id));
-      
+
       // Delete the user
       const result = await tx.delete(users).where(eq(users.id, id));
       return (result.rowCount || 0) > 0;
@@ -772,8 +772,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getModule(id: number): Promise<Module | undefined> {
-    const [module] = await db.select().from(modules).where(eq(modules.id, id));
-    return module || undefined;
+    const result = await db.select().from(modules).where(eq(modules.id, id));
+    return result[0];
   }
 
   async createModule(insertModule: InsertModule): Promise<Module> {
@@ -877,7 +877,7 @@ export class DatabaseStorage implements IStorage {
         preconditions: testCases.preconditions,
         steps: testCases.steps,
         expectedResult: testCases.expectedResult,
-        priority: testCases.priority,
+        priority: testCases.priority,```tool_code
         status: testCases.status,
         projectId: testCases.projectId,
         moduleId: testCases.moduleId,
@@ -902,19 +902,19 @@ export class DatabaseStorage implements IStorage {
       })
       .from(testSuiteTestCases)
       .where(eq(testSuiteTestCases.testSuiteId, testSuiteId));
-    
+
     const existingTestCaseIds = new Set(existingRelations.map(rel => rel.testCaseId));
-    
+
     // Filter out test cases that are already in the suite
     const newTestCaseIds = testCaseIds.filter(id => !existingTestCaseIds.has(id));
-    
+
     // Insert new relationships using only the columns that exist in the table
     if (newTestCaseIds.length > 0) {
       const values = newTestCaseIds.map(testCaseId => ({
         testSuiteId,
         testCaseId,
       }));
-      
+
       try {
         await db.insert(testSuiteTestCases).values(values);
       } catch (error) {
@@ -1034,18 +1034,18 @@ export class DatabaseStorage implements IStorage {
   async updateTestRun(id: number, testRunUpdate: Partial<TestRun>): Promise<TestRun | undefined> {
     try {
       console.log("Database updateTestRun called with:", { id, testRunUpdate });
-      
+
       // Convert ISO string to Date object if completedAt is provided
       if (testRunUpdate.completedAt && typeof testRunUpdate.completedAt === 'string') {
         testRunUpdate.completedAt = new Date(testRunUpdate.completedAt);
       }
-      
+
       const [testRun] = await db
         .update(testRuns)
         .set(testRunUpdate)
         .where(eq(testRuns.id, id))
         .returning();
-      
+
       console.log("Database updateTestRun result:", testRun);
       return testRun || undefined;
     } catch (error) {
@@ -1093,18 +1093,18 @@ export class DatabaseStorage implements IStorage {
   async updateTestRunResult(id: number, resultUpdate: Partial<TestRunResult>): Promise<TestRunResult | undefined> {
     try {
       console.log("Database updateTestRunResult called with:", { id, resultUpdate });
-      
+
       // Convert ISO string to Date object if executedAt is provided
       if (resultUpdate.executedAt && typeof resultUpdate.executedAt === 'string') {
         resultUpdate.executedAt = new Date(resultUpdate.executedAt);
       }
-      
+
       const [result] = await db
         .update(testRunResults)
         .set(resultUpdate)
         .where(eq(testRunResults.id, id))
         .returning();
-      
+
       console.log("Database updateTestRunResult result:", result);
       return result || undefined;
     } catch (error) {
@@ -1172,7 +1172,7 @@ export class DatabaseStorage implements IStorage {
   async getSetting(key: string): Promise<Setting | undefined> {
     const [setting] = await db.select().from(settings).where(eq(settings.key, key));
     console.log(`🔍 getSetting(${key}):`, setting);
-    
+
     // Parse JSON value if it's a string
     if (setting && typeof setting.value === 'string') {
       try {
@@ -1182,7 +1182,7 @@ export class DatabaseStorage implements IStorage {
         console.error(`🔍 JSON parse error for ${key}:`, error);
       }
     }
-    
+
     return setting;
   }
 
