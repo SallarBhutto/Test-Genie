@@ -40,17 +40,31 @@ if (isNeonDatabase) {
   db = pgDrizzle(pool, { schema });
 }
 
-// Test database connection
+// Test database connection with retry logic
 async function testConnection() {
-  try {
-    await pool.query('SELECT 1');
-    console.log('Database connection successful');
-  } catch (error) {
-    console.error('Database connection failed:', error);
+  const maxRetries = 5;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('Database connection successful');
+      return true;
+    } catch (error) {
+      console.error(`Database connection failed (attempt ${retryCount + 1}/${maxRetries}):`, error);
+      retryCount++;
+      if (retryCount < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 5000 * retryCount));
+      }
+    }
   }
+  return false;
 }
 
-// Initialize connection test
-testConnection();
+// Initialize connection test and export connection status
+let isConnected = false;
+testConnection().then(result => {
+  isConnected = result;
+});
 
-export { db, pool };
+export { db, pool, isConnected };
