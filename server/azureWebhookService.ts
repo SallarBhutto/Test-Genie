@@ -19,13 +19,13 @@ interface AzureWebhookPayload {
   };
   resource: {
     id: number;
-    workItemId: number;
+    workItemId?: number; // Optional as it might not always be present
     rev: number;
-    revisedBy: {
+    revisedBy?: {
       displayName: string;
       id: string;
     };
-    revisedDate: string;
+    revisedDate?: string;
     fields: {
       [key: string]: {
         oldValue?: any;
@@ -84,7 +84,8 @@ export class AzureWebhookService {
    */
   async processWebhook(payload: AzureWebhookPayload): Promise<{ success: boolean; message: string; error?: string }> {
     try {
-      const workItemId = payload.resource?.workItemId;
+      // Azure DevOps work item webhooks use different field names for work item ID
+      const workItemId = payload.resource?.workItemId || payload.resource?.id;
       
       // Log webhook received
       eventLogger.logEvent({
@@ -95,7 +96,9 @@ export class AzureWebhookService {
 
       console.log("🔄 Processing Azure DevOps webhook:", {
         eventType: payload.eventType,
-        workItemId: payload.resource?.workItemId,
+        workItemId: workItemId,
+        resourceId: payload.resource?.id,
+        resourceWorkItemId: payload.resource?.workItemId,
         fields: Object.keys(payload.resource?.fields || {})
       });
 
