@@ -5,6 +5,7 @@ import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { licenseMiddleware } from "./middleware/license";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
