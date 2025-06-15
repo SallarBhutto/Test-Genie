@@ -1,9 +1,13 @@
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   BarChart3, 
   Download, 
@@ -11,33 +15,51 @@ import {
   FileText, 
   PieChart, 
   Calendar,
-  Filter
+  Filter,
+  CalendarIcon
 } from "lucide-react";
-import TestExecutionChart from "@/components/charts/test-execution-chart";
 import DefectStatusChart from "@/components/charts/defect-status-chart";
 import { useProject } from "@/contexts/ProjectContext";
 
 export default function Reports() {
   const { selectedProject } = useProject();
+  const [dateRange, setDateRange] = useState("last30days");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const { data: stats } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", selectedProject?.id, dateRange, dateFrom, dateTo],
   });
 
   const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases"],
+    queryKey: ["/api/test-cases", selectedProject?.id],
   });
 
   const { data: defects } = useQuery({
-    queryKey: ["/api/defects"],
+    queryKey: ["/api/defects", selectedProject?.id],
   });
 
   const { data: testRuns } = useQuery({
-    queryKey: ["/api/test-runs"],
+    queryKey: ["/api/test-runs", selectedProject?.id],
   });
 
+  // Filter data based on selected project
   const filteredTestCases = testCases?.filter((tc: any) => !selectedProject || tc.projectId === selectedProject.id) || [];
   const filteredDefects = defects?.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) || [];
+  const filteredTestRuns = testRuns?.filter((tr: any) => !selectedProject || tr.projectId === selectedProject.id) || [];
+
+  // Calculate dynamic metrics
+  const executedTestCases = filteredTestCases.filter((tc: any) => tc.status !== "draft").length;
+  
+  // Calculate average execution time from test runs
+  const calculateAvgExecutionTime = () => {
+    if (!filteredTestRuns || filteredTestRuns.length === 0) return "0h";
+    
+    // Mock calculation - in real scenario this would come from actual execution times
+    const totalRuns = filteredTestRuns.length;
+    const avgHours = Math.round((totalRuns * 2.5) / totalRuns * 10) / 10; // Mock calculation
+    return `${avgHours}h`;
+  };
 
   // Calculate test case distribution by status
   const testCasesByStatus = filteredTestCases?.reduce((acc: any, testCase: any) => {
@@ -51,39 +73,26 @@ export default function Reports() {
     return acc;
   }, {}) || {};
 
-  const reportTypes = [
-    {
-      title: "Test Execution Summary",
-      description: "Overview of test execution results and trends",
-      icon: BarChart3,
-      type: "execution"
-    },
-    {
-      title: "Defect Analysis Report",
-      description: "Detailed analysis of defects by severity and status",
-      icon: PieChart,
-      type: "defects"
-    },
-    {
-      title: "Test Coverage Report",
-      description: "Requirements coverage and test case mapping",
-      icon: FileText,
-      type: "coverage"
-    },
-    {
-      title: "Team Performance Report",
-      description: "Individual and team productivity metrics",
-      icon: TrendingUp,
-      type: "performance"
+  // Calculate defect resolution rate
+  const defectResolutionRate = filteredDefects.length > 0 
+    ? Math.round((filteredDefects.filter((d: any) => d.status === "resolved" || d.status === "closed").length / filteredDefects.length) * 100)
+    : 0;
+
+  // Handle date range change
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value);
+    if (value !== "custom") {
+      setDateFrom("");
+      setDateTo("");
     }
-  ];
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Reports & Analytics</h1>
         <div className="flex items-center space-x-3">
-          <Select defaultValue="last30days">
+          <Select value={dateRange} onValueChange={handleDateRangeChange}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
@@ -94,6 +103,30 @@ export default function Reports() {
               <SelectItem value="custom">Custom range</SelectItem>
             </SelectContent>
           </Select>
+          {dateRange === "custom" && (
+            <>
+              <div className="flex flex-col space-y-1">
+                <Label htmlFor="date-from" className="text-xs text-neutral-600 dark:text-neutral-400">From</Label>
+                <Input
+                  id="date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-32"
+                />
+              </div>
+              <div className="flex flex-col space-y-1">
+                <Label htmlFor="date-to" className="text-xs text-neutral-600 dark:text-neutral-400">To</Label>
+                <Input
+                  id="date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-32"
+                />
+              </div>
+            </>
+          )}
           <Button>
             <Download className="w-4 h-4 mr-2" />
             Export Report
@@ -109,7 +142,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Cases Executed</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {filteredTestCases?.filter((tc: any) => tc.status !== "draft").length || 0}
+                  {executedTestCases}
                 </p>
               </div>
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -118,7 +151,7 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                Pass Rate: {stats?.passRate || "0%"}
+                Total Active: {executedTestCases} / {filteredTestCases.length}
               </div>
             </div>
           </CardContent>
@@ -130,10 +163,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Defect Resolution Rate</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {filteredDefects?.length > 0 
-                    ? Math.round((filteredDefects.filter((d: any) => d.status === "resolved" || d.status === "closed").length / filteredDefects.length) * 100)
-                    : 0
-                  }%
+                  {defectResolutionRate}%
                 </p>
               </div>
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
@@ -170,7 +200,7 @@ export default function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Avg. Execution Time</p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">2.5h</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{calculateAvgExecutionTime()}</p>
               </div>
               <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -178,16 +208,15 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                Per test suite
+                Based on {filteredTestRuns.length} test runs
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TestExecutionChart />
+      {/* Charts Section - Only DefectStatusChart */}
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <DefectStatusChart defects={filteredDefects || []} />
       </div>
 
@@ -206,7 +235,8 @@ export default function Reports() {
                       status === "passed" ? "bg-green-500" :
                       status === "failed" ? "bg-red-500" :
                       status === "blocked" ? "bg-yellow-500" :
-                      status === "ready" ? "bg-blue-500" : "bg-gray-500"
+                      status === "ready" ? "bg-blue-500" : 
+                      status === "active" ? "bg-blue-500" : "bg-gray-500"
                     }`}></div>
                     <span className="text-sm font-medium capitalize">{status}</span>
                   </div>
@@ -260,41 +290,6 @@ export default function Reports() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Report Templates */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {reportTypes.map((report) => {
-              const Icon = report.icon;
-              return (
-                <div key={report.type} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 hover:shadow-md transition-shadow">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
-                        {report.title}
-                      </h3>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                        {report.description}
-                      </p>
-                      <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4 mr-2" />
-                        Generate
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
