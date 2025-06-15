@@ -805,6 +805,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
       
+      // Pagination parameters
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const offset = (page - 1) * limit;
+      
       let testCases = await storage.getTestCases(testSuiteId);
       
       // Filter by project if projectId is provided
@@ -844,15 +849,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Get total count before pagination
+      const totalCount = testCases.length;
+      
+      // Apply pagination
+      const paginatedTestCases = testCases.slice(offset, offset + limit);
+      
       // Populate with user data
       const users = await storage.getUsers();
-      const testCasesWithUsers = testCases.map(testCase => ({
+      const testCasesWithUsers = paginatedTestCases.map(testCase => ({
         ...testCase,
         assignee: users.find(user => user.id === testCase.assignedTo),
         createdByUser: users.find(user => user.id === testCase.createdBy),
       }));
       
-      res.json(testCasesWithUsers);
+      // Return paginated response
+      res.json({
+        data: testCasesWithUsers,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNextPage: offset + limit < totalCount,
+          hasPreviousPage: page > 1
+        }
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch test cases" });
     }

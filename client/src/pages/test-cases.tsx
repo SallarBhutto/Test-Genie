@@ -28,6 +28,14 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSorting } from "@/hooks/useSorting";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function TestCases() {
   const [showCreateTestCase, setShowCreateTestCase] = useState(false);
@@ -40,11 +48,19 @@ export default function TestCases() {
     priority: "all",
     status: "all",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Reset module and component filters when header project changes
   useEffect(() => {
     setFilters((prev) => ({ ...prev, module: "all", component: "all" }));
+    setCurrentPage(1);
   }, [selectedProject]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
 
   // Get filtered modules based on selected project from header
   const getAvailableModules = () => {
@@ -99,9 +115,28 @@ export default function TestCases() {
     queryKey: ["/api/components"],
   });
 
-  const { data: testCases, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id],
+  const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
+    queryKey: ["/api/test-cases", selectedProject?.id, currentPage, pageSize],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/test-cases?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch test cases');
+      }
+      return response.json();
+    },
   });
+
+  const testCases = testCasesResponse?.data || [];
+  const pagination = testCasesResponse?.pagination;
 
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
@@ -603,6 +638,75 @@ export default function TestCases() {
               </TableBody>
             </Table>
           </div>
+          
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{" "}
+                  {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of{" "}
+                  {pagination.totalCount} entries
+                </span>
+                <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-700">per page</span>
+              </div>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className={!pagination.hasPreviousPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page Numbers */}
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (pagination.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = pagination.page - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(pageNum)}
+                          isActive={pagination.page === pageNum}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                      className={!pagination.hasNextPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
