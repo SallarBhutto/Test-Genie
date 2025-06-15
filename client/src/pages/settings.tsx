@@ -365,9 +365,12 @@ export default function Settings() {
                           </h5>
                           <div className="bg-white dark:bg-gray-800 p-3 rounded border font-mono text-sm">
                             <code className="text-green-600 dark:text-green-400">
-                              {window.location.origin}/api/webhooks/azure-devops
+                              https://your-app-url/api/webhooks/azure-devops
                             </code>
                           </div>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                            Replace "your-app-url" with your actual QualityBytes deployment URL
+                          </p>
                         </div>
 
                         <div>
