@@ -99,9 +99,9 @@ export class AzureWebhookService {
         fields: Object.keys(payload.resource?.fields || {})
       });
 
-      // Check if this is a work item update event
-      if (payload.eventType !== "workitem.updated") {
-        console.log("ℹ️ Ignoring non-update event:", payload.eventType);
+      // Check if this is a supported work item event
+      if (payload.eventType !== "workitem.updated" && payload.eventType !== "workitem.created") {
+        console.log("ℹ️ Ignoring unsupported event:", payload.eventType);
         return {
           success: true,
           message: "Event type not handled"
@@ -115,58 +115,15 @@ export class AzureWebhookService {
         };
       }
 
-      // Find the defect that corresponds to this work item
-      const defect = await this.findDefectByWorkItemId(workItemId);
-      if (!defect) {
-        console.log("ℹ️ No matching defect found for work item:", workItemId);
-        return {
-          success: true,
-          message: "No matching defect found"
-        };
+      // Handle workitem.created event
+      if (payload.eventType === "workitem.created") {
+        return await this.handleWorkItemCreated(payload, workItemId);
       }
 
-      console.log(`✅ Found matching defect: ${defect.defectId} for work item ${workItemId}`);
-
-      // Extract changes from the webhook payload
-      const changes = this.extractChanges(payload);
-      if (Object.keys(changes).length === 0) {
-        console.log("ℹ️ No relevant changes found in webhook");
-        return {
-          success: true,
-          message: "No relevant changes to sync"
-        };
+      // Handle workitem.updated event
+      if (payload.eventType === "workitem.updated") {
+        return await this.handleWorkItemUpdated(payload, workItemId);
       }
-
-      console.log("🔄 Syncing changes:", changes);
-
-      // Update the defect in QualityBytes
-      const updatedDefect = await storage.updateDefect(defect.id, changes);
-      if (!updatedDefect) {
-        throw new Error("Failed to update defect in database");
-      }
-
-      console.log(`✅ Successfully synced Azure DevOps changes to defect ${defect.defectId}`);
-
-      // Broadcast real-time update to connected clients
-      try {
-        const { sseService } = await import("./sseService");
-        sseService.broadcastDefectUpdate(defect.defectId, workItemId);
-      } catch (error) {
-        console.warn("⚠️ Failed to broadcast real-time update:", error);
-      }
-
-      // Log sync success
-      eventLogger.logEvent({
-        type: 'sync_success',
-        workItemId,
-        defectId: defect.defectId,
-        message: `Successfully synced work item ${workItemId} to defect ${defect.defectId}`
-      });
-
-      return {
-        success: true,
-        message: `Defect ${defect.defectId} updated successfully`
-      };
 
     } catch (error) {
       console.error("❌ Error processing Azure DevOps webhook:", error);
@@ -183,6 +140,182 @@ export class AzureWebhookService {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
       };
+    }
+  }
+
+  /**
+   * Handle workitem.created event - create new defect in QualityBytes
+   */
+  private async handleWorkItemCreated(payload: AzureWebhookPayload, workItemId: number) {
+    console.log(`🆕 Processing workitem.created for work item ${workItemId}`);
+
+    // Check if we already have a defect for this work item
+    const existingDefect = await this.findDefectByWorkItemId(workItemId);
+    if (existingDefect) {
+      console.log(`ℹ️ Defect already exists for work item ${workItemId}: ${existingDefect.defectId}`);
+      return {
+        success: true,
+        message: `Defect ${existingDefect.defectId} already exists for this work item`
+      };
+    }
+
+    // Extract defect data from the created work item
+    const defectData = this.extractDefectDataFromWorkItem(payload);
+    if (!defectData) {
+      console.log("ℹ️ Could not extract valid defect data from work item");
+      return {
+        success: true,
+        message: "No valid defect data found in work item"
+      };
+    }
+
+    try {
+      // Create new defect in QualityBytes
+      const azureWorkItemUrl = `https://dev.azure.com/${payload.resourceContainers.account.id}/${payload.resourceContainers.project.id}/_workitems/edit/${workItemId}`;
+      
+      const newDefect = await storage.createDefect({
+        ...defectData,
+        azureWorkItemId: workItemId,
+        azureWorkItemUrl: azureWorkItemUrl,
+        reportedBy: 1 // Default to admin user for Azure-created defects
+      });
+
+      console.log(`✅ Created new defect ${newDefect.defectId} from Azure work item ${workItemId}`);
+
+      // Broadcast real-time update
+      try {
+        const { sseService } = await import("./sseService");
+        sseService.broadcastDefectUpdate(newDefect.defectId, workItemId);
+      } catch (error) {
+        console.warn("⚠️ Failed to broadcast real-time update:", error);
+      }
+
+      // Log sync success
+      eventLogger.logEvent({
+        type: 'sync_success',
+        workItemId,
+        defectId: newDefect.defectId,
+        message: `Created defect ${newDefect.defectId} from Azure work item ${workItemId}`
+      });
+
+      return {
+        success: true,
+        message: `Created defect ${newDefect.defectId} from Azure work item`
+      };
+
+    } catch (error) {
+      console.error("❌ Error creating defect from Azure work item:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle workitem.updated event - update existing defect in QualityBytes
+   */
+  private async handleWorkItemUpdated(payload: AzureWebhookPayload, workItemId: number) {
+    console.log(`🔄 Processing workitem.updated for work item ${workItemId}`);
+
+    // Find the defect that corresponds to this work item
+    const defect = await this.findDefectByWorkItemId(workItemId);
+    if (!defect) {
+      console.log("ℹ️ No matching defect found for work item:", workItemId);
+      return {
+        success: true,
+        message: "No matching defect found"
+      };
+    }
+
+    console.log(`✅ Found matching defect: ${defect.defectId} for work item ${workItemId}`);
+
+    // Extract changes from the webhook payload
+    const changes = this.extractChanges(payload);
+    if (Object.keys(changes).length === 0) {
+      console.log("ℹ️ No relevant changes found in webhook");
+      return {
+        success: true,
+        message: "No relevant changes to sync"
+      };
+    }
+
+    console.log("🔄 Syncing changes:", changes);
+
+    // Update the defect in QualityBytes
+    const updatedDefect = await storage.updateDefect(defect.id, changes);
+    if (!updatedDefect) {
+      throw new Error("Failed to update defect in database");
+    }
+
+    console.log(`✅ Successfully synced Azure DevOps changes to defect ${defect.defectId}`);
+
+    // Broadcast real-time update to connected clients
+    try {
+      const { sseService } = await import("./sseService");
+      sseService.broadcastDefectUpdate(defect.defectId, workItemId);
+    } catch (error) {
+      console.warn("⚠️ Failed to broadcast real-time update:", error);
+    }
+
+    // Log sync success
+    eventLogger.logEvent({
+      type: 'sync_success',
+      workItemId,
+      defectId: defect.defectId,
+      message: `Successfully synced work item ${workItemId} to defect ${defect.defectId}`
+    });
+
+    return {
+      success: true,
+      message: `Defect ${defect.defectId} updated successfully`
+    };
+  }
+
+  /**
+   * Extract defect data from newly created work item
+   */
+  private extractDefectDataFromWorkItem(payload: AzureWebhookPayload): any | null {
+    const resource = payload.resource;
+    if (!resource) return null;
+
+    try {
+      // Generate a unique defect ID
+      const defectId = `AZ-${resource.workItemId}`;
+
+      // Extract title (required)
+      const title = resource.fields?.['System.Title']?.newValue;
+      if (!title) {
+        console.warn("⚠️ No title found in created work item");
+        return null;
+      }
+
+      // Extract description
+      let description = "Imported from Azure DevOps";
+      if (resource.fields?.['System.Description']?.newValue) {
+        description = this.extractDescriptionFromHtml(resource.fields['System.Description'].newValue) || description;
+      } else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']?.newValue) {
+        description = this.extractDescriptionFromReproSteps(resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue) || description;
+      }
+
+      // Extract other fields with defaults
+      const status = this.mapAzureStatusToQualityBytes(resource.fields?.['System.State']?.newValue) || 'open';
+      const priority = this.mapAzurePriorityToQualityBytes(resource.fields?.['Microsoft.VSTS.Common.Priority']?.newValue) || 'medium';
+      const severity = this.mapAzureSeverityToQualityBytes(resource.fields?.['Microsoft.VSTS.Common.Severity']?.newValue) || 'medium';
+
+      return {
+        defectId,
+        title,
+        description,
+        status,
+        priority,
+        severity,
+        projectId: 2, // Default to a project - you might want to make this configurable
+        stepsToReproduce: description,
+        environment: 'Azure DevOps Import',
+        attachments: null
+      };
+
+    } catch (error) {
+      console.error("❌ Error extracting defect data from work item:", error);
+      return null;
     }
   }
 
