@@ -1500,10 +1500,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get test run results for pass rate calculation
+      const allTestRunResults = [];
+      for (const testRun of testRuns) {
+        const results = await storage.getTestRunResults(testRun.id);
+        allTestRunResults.push(...results);
+      }
+      
+      // Filter test run results by date if specified
+      let filteredTestRunResults = allTestRunResults;
+      if (startDate) {
+        filteredTestRunResults = allTestRunResults.filter(result => {
+          const executedAt = new Date(result.executedAt || result.createdAt);
+          return executedAt >= startDate! && executedAt <= endDate;
+        });
+      }
+      
+      // Calculate pass rate from actual test executions
+      const executedResults = filteredTestRunResults.filter(result => 
+        result.status && result.status !== "not_executed"
+      );
+      const passedResults = filteredTestRunResults.filter(result => 
+        result.status === "passed"
+      );
+      
       const totalTestCases = testCases.length;
-      const passedTestCases = testCases.filter(tc => tc.status === "passed").length;
       const openDefects = defects.filter(d => d.status === "open").length;
-      const passRate = totalTestCases > 0 ? (passedTestCases / totalTestCases * 100).toFixed(1) : "0";
+      const passRate = executedResults.length > 0 ? 
+        (passedResults.length / executedResults.length * 100).toFixed(1) : "0";
       
       res.json({
         totalTestCases,
