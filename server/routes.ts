@@ -804,10 +804,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
+      const moduleFilter = req.query.module as string;
+      const componentFilter = req.query.component as string;
+      const priorityFilter = req.query.priority as string;
+      const statusFilter = req.query.status as string;
+      const searchQuery = req.query.search as string;
       
       // Pagination parameters
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const limit = parseInt(req.query.limit as string) || 5;
       const offset = (page - 1) * limit;
       
       let testCases = await storage.getTestCases(testSuiteId);
@@ -847,6 +852,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return createdAt >= startDate! && createdAt <= endDate;
           });
         }
+      }
+      
+      // Apply additional filters
+      if (moduleFilter && moduleFilter !== "all") {
+        const moduleId = parseInt(moduleFilter);
+        testCases = testCases.filter(tc => tc.moduleId === moduleId);
+      }
+      
+      if (componentFilter && componentFilter !== "all") {
+        const componentId = parseInt(componentFilter);
+        testCases = testCases.filter(tc => tc.componentId === componentId);
+      }
+      
+      if (priorityFilter && priorityFilter !== "all") {
+        testCases = testCases.filter(tc => tc.priority === priorityFilter);
+      }
+      
+      if (statusFilter && statusFilter !== "all") {
+        testCases = testCases.filter(tc => tc.status === statusFilter);
+      }
+      
+      // Apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        testCases = testCases.filter(tc => 
+          tc.title?.toLowerCase().includes(query) ||
+          tc.testCaseId?.toLowerCase().includes(query) ||
+          tc.description?.toLowerCase().includes(query)
+        );
       }
       
       // Get total count before pagination

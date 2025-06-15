@@ -49,7 +49,7 @@ export default function TestCases() {
     status: "all",
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
 
   // Reset module and component filters when header project changes
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function TestCases() {
   });
 
   const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id, currentPage, pageSize],
+    queryKey: ["/api/test-cases", selectedProject?.id, currentPage, pageSize, filters, searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -125,6 +125,27 @@ export default function TestCases() {
       
       if (selectedProject?.id) {
         params.append('projectId', selectedProject.id.toString());
+      }
+      
+      // Add filter parameters
+      if (filters.module !== "all") {
+        params.append('module', filters.module);
+      }
+      
+      if (filters.component !== "all") {
+        params.append('component', filters.component);
+      }
+      
+      if (filters.priority !== "all") {
+        params.append('priority', filters.priority);
+      }
+      
+      if (filters.status !== "all") {
+        params.append('status', filters.status);
+      }
+      
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
       }
       
       const response = await fetch(`/api/test-cases?${params}`);
