@@ -69,7 +69,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
 
   // Load initial test cases
   const { data: testCasesResponse, isLoading: isLoadingTestCases } = useQuery({
-    queryKey: ["/api/test-cases", testCasesPage, selectedProjectId],
+    queryKey: ["/api/test-cases", "modal", selectedProjectId],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
@@ -86,15 +86,16 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
       }
       return response.json();
     },
+    enabled: open && selectedProjectId !== null,
   });
 
   // Initialize loaded test cases when data arrives
   useEffect(() => {
-    if (testCasesResponse?.data && testCasesPage === 1) {
+    if (testCasesResponse?.data) {
       setAllLoadedTestCases(testCasesResponse.data);
       setHasMoreTestCases(testCasesResponse.data.length === 5);
     }
-  }, [testCasesResponse, testCasesPage]);
+  }, [testCasesResponse]);
 
   // Load more test cases function
   const loadMoreTestCases = async () => {
@@ -234,6 +235,13 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
+      // Reset pagination state first
+      setTestCasesPage(1);
+      setAllLoadedTestCases([]);
+      setHasMoreTestCases(true);
+      setIsLoadingMoreTestCases(false);
+      
+      // Then reset form
       resetForm();
     }
   }, [open]);
