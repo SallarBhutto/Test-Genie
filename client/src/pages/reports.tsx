@@ -191,14 +191,28 @@ export default function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Automation</p>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">75%</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {filteredTestCases.length > 0 
+                    ? Math.round((filteredTestCases.filter((tc: any) => tc.isAutomated).length / filteredTestCases.length) * 100)
+                    : 0}%
+                </p>
               </div>
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
             <div className="mt-4">
-              <Progress value={75} className="h-2" />
+              <Progress 
+                value={filteredTestCases.length > 0 
+                  ? (filteredTestCases.filter((tc: any) => tc.isAutomated).length / filteredTestCases.length) * 100
+                  : 0} 
+                className="h-2" 
+              />
+            </div>
+            <div className="mt-2">
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                {filteredTestCases.filter((tc: any) => tc.isAutomated).length} of {filteredTestCases.length} automated
+              </div>
             </div>
           </CardContent>
         </Card>
