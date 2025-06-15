@@ -283,10 +283,25 @@ export class AzureWebhookService {
       // Generate a unique defect ID
       const defectId = `AZ-${resource.workItemId}`;
 
-      // Extract title (required)
-      const title = resource.fields?.['System.Title']?.newValue;
+      // Extract title (required) - handle both create and update scenarios
+      let title = resource.fields?.['System.Title']?.newValue;
+      
+      // For created items, the title might be in a different structure
+      if (!title && resource.fields?.['System.Title']) {
+        // Try getting the value directly if newValue is not available
+        title = resource.fields['System.Title'];
+      }
+      
+      // Log the title extraction process for debugging
+      console.log("🔍 Title extraction debug:", {
+        titleField: resource.fields?.['System.Title'],
+        extractedTitle: title,
+        allFields: Object.keys(resource.fields || {})
+      });
+      
       if (!title) {
-        console.warn("⚠️ No title found in created work item");
+        console.warn("⚠️ No title found in work item");
+        console.warn("Available fields:", Object.keys(resource.fields || {}));
         return null;
       }
 
@@ -298,10 +313,23 @@ export class AzureWebhookService {
         description = this.extractDescriptionFromReproSteps(resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue) || description;
       }
 
-      // Extract other fields with defaults
-      const status = this.mapAzureStatusToQualityBytes(resource.fields?.['System.State']?.newValue) || 'open';
-      const priority = this.mapAzurePriorityToQualityBytes(resource.fields?.['Microsoft.VSTS.Common.Priority']?.newValue) || 'medium';
-      const severity = this.mapAzureSeverityToQualityBytes(resource.fields?.['Microsoft.VSTS.Common.Severity']?.newValue) || 'medium';
+      // Extract other fields with defaults - handle both create and update scenarios
+      const statusValue = resource.fields?.['System.State']?.newValue || resource.fields?.['System.State'];
+      const priorityValue = resource.fields?.['Microsoft.VSTS.Common.Priority']?.newValue || resource.fields?.['Microsoft.VSTS.Common.Priority'];
+      const severityValue = resource.fields?.['Microsoft.VSTS.Common.Severity']?.newValue || resource.fields?.['Microsoft.VSTS.Common.Severity'];
+      
+      const status = this.mapAzureStatusToQualityBytes(statusValue) || 'open';
+      const priority = this.mapAzurePriorityToQualityBytes(priorityValue) || 'medium';
+      const severity = this.mapAzureSeverityToQualityBytes(severityValue) || 'medium';
+      
+      console.log("🔍 Field extraction debug:", {
+        statusValue,
+        priorityValue,
+        severityValue,
+        mappedStatus: status,
+        mappedPriority: priority,
+        mappedSeverity: severity
+      });
 
       return {
         defectId,
@@ -342,14 +370,18 @@ export class AzureWebhookService {
     const changes: Record<string, any> = {};
     const fields = payload.resource?.fields || {};
 
-    // Map Azure DevOps field changes to QualityBytes fields
+    // Map Azure DevOps field changes to QualityBytes fields - handle both create and update
     if (fields['System.Title']) {
-      changes.title = fields['System.Title'].newValue;
+      const titleValue = fields['System.Title'].newValue || fields['System.Title'];
+      if (titleValue) {
+        changes.title = titleValue;
+      }
     }
 
     if (fields['System.Description']) {
       // Extract description from HTML content if needed
-      const description = this.extractDescriptionFromHtml(fields['System.Description'].newValue);
+      const descriptionValue = fields['System.Description'].newValue || fields['System.Description'];
+      const description = this.extractDescriptionFromHtml(descriptionValue);
       if (description) {
         changes.description = description;
       }
@@ -357,14 +389,15 @@ export class AzureWebhookService {
 
     if (fields['Microsoft.VSTS.TCM.ReproSteps']) {
       // Extract description from repro steps as backup
-      const description = this.extractDescriptionFromReproSteps(fields['Microsoft.VSTS.TCM.ReproSteps'].newValue);
+      const reproStepsValue = fields['Microsoft.VSTS.TCM.ReproSteps'].newValue || fields['Microsoft.VSTS.TCM.ReproSteps'];
+      const description = this.extractDescriptionFromReproSteps(reproStepsValue);
       if (description && !changes.description) {
         changes.description = description;
       }
     }
 
     if (fields['System.State']) {
-      const azureStatus = fields['System.State'].newValue;
+      const azureStatus = fields['System.State'].newValue || fields['System.State'];
       const mappedStatus = this.mapAzureStatusToQualityBytes(azureStatus);
       if (mappedStatus) {
         changes.status = mappedStatus;
@@ -372,7 +405,7 @@ export class AzureWebhookService {
     }
 
     if (fields['Microsoft.VSTS.Common.Priority']) {
-      const azurePriority = fields['Microsoft.VSTS.Common.Priority'].newValue;
+      const azurePriority = fields['Microsoft.VSTS.Common.Priority'].newValue || fields['Microsoft.VSTS.Common.Priority'];
       const mappedPriority = this.mapAzurePriorityToQualityBytes(azurePriority);
       if (mappedPriority) {
         changes.priority = mappedPriority;
@@ -380,7 +413,7 @@ export class AzureWebhookService {
     }
 
     if (fields['Microsoft.VSTS.Common.Severity']) {
-      const azureSeverity = fields['Microsoft.VSTS.Common.Severity'].newValue;
+      const azureSeverity = fields['Microsoft.VSTS.Common.Severity'].newValue || fields['Microsoft.VSTS.Common.Severity'];
       const mappedSeverity = this.mapAzureSeverityToQualityBytes(azureSeverity);
       if (mappedSeverity) {
         changes.severity = mappedSeverity;
