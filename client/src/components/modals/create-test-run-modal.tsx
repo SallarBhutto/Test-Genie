@@ -58,18 +58,27 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   const [selectedTestSuites, setSelectedTestSuites] = useState<number[]>([]);
   const [selectionOrder, setSelectionOrder] = useState<Array<{type: 'suite' | 'case', id: number}>>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [testCasesPage, setTestCasesPage] = useState(1);
+  const [allLoadedTestCases, setAllLoadedTestCases] = useState<any[]>([]);
+  const [hasMoreTestCases, setHasMoreTestCases] = useState(true);
+  const [isLoadingMoreTestCases, setIsLoadingMoreTestCases] = useState(false);
 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
   });
 
-  const { data: testCasesResponse } = useQuery({
-    queryKey: ["/api/test-cases-all"],
+  // Load initial test cases
+  const { data: testCasesResponse, isLoading: isLoadingTestCases } = useQuery({
+    queryKey: ["/api/test-cases", testCasesPage, selectedProjectId],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
-        limit: '1000', // Large limit to get all test cases
+        limit: '5', // Start with 5 test cases
       });
+      
+      if (selectedProjectId) {
+        params.append('projectId', selectedProjectId.toString());
+      }
       
       const response = await fetch(`/api/test-cases?${params}`);
       if (!response.ok) {
@@ -79,7 +88,48 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     },
   });
 
-  const testCases = testCasesResponse?.data || [];
+  // Initialize loaded test cases when data arrives
+  useEffect(() => {
+    if (testCasesResponse?.data && testCasesPage === 1) {
+      setAllLoadedTestCases(testCasesResponse.data);
+      setHasMoreTestCases(testCasesResponse.data.length === 5);
+    }
+  }, [testCasesResponse, testCasesPage]);
+
+  // Load more test cases function
+  const loadMoreTestCases = async () => {
+    if (isLoadingMoreTestCases || !hasMoreTestCases) return;
+    
+    setIsLoadingMoreTestCases(true);
+    try {
+      const params = new URLSearchParams({
+        page: (testCasesPage + 1).toString(),
+        limit: '5',
+      });
+      
+      if (selectedProjectId) {
+        params.append('projectId', selectedProjectId.toString());
+      }
+      
+      const response = await fetch(`/api/test-cases?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch more test cases');
+      }
+      
+      const newData = await response.json();
+      const newTestCases = newData.data || [];
+      
+      setAllLoadedTestCases(prev => [...prev, ...newTestCases]);
+      setTestCasesPage(prev => prev + 1);
+      setHasMoreTestCases(newTestCases.length === 5);
+    } catch (error) {
+      console.error('Error loading more test cases:', error);
+    } finally {
+      setIsLoadingMoreTestCases(false);
+    }
+  };
+
+  const testCases = allLoadedTestCases;
 
   const { data: testSuites } = useQuery({
     queryKey: ["/api/test-suites"],
@@ -153,11 +203,14 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     return orderedTestCaseIds;
   })();
 
-  // Reset selections when project changes
+  // Reset selections and pagination when project changes
   useEffect(() => {
     setSelectedTestSuites([]);
     setSelectedTestCases([]);
     setSelectionOrder([]);
+    setTestCasesPage(1);
+    setAllLoadedTestCases([]);
+    setHasMoreTestCases(true);
   }, [selectedProjectId]);
 
   const form = useForm<FormData>({
@@ -177,6 +230,13 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
       form.setValue('createdBy', user.id);
     }
   }, [user?.id, form]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open]);
 
   const createTestRunMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -207,6 +267,10 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     setSelectedTestSuites([]);
     setSelectionOrder([]);
     setSelectedProjectId(null);
+    setTestCasesPage(1);
+    setAllLoadedTestCases([]);
+    setHasMoreTestCases(true);
+    setIsLoadingMoreTestCases(false);
   };
 
   // Handler for test suite selection that tracks order
@@ -442,7 +506,20 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                     <div className="text-sm text-gray-600">
                       Manually select individual test cases (in addition to those from selected test suites)
                     </div>
-                    <ScrollArea className="h-48 border rounded-md p-3">
+                    <ScrollArea 
+                      className="h-48 border rounded-md p-3"
+                      onScrollCapture={(e) => {
+                        const target = e.currentTarget.querySelector('[data-radix-scroll-area-viewport]');
+                        if (target) {
+                          const { scrollTop, scrollHeight, clientHeight } = target;
+                          
+                          // Load more when scrolled to bottom
+                          if (scrollHeight - scrollTop - clientHeight < 10 && hasMoreTestCases && !isLoadingMoreTestCases) {
+                            loadMoreTestCases();
+                          }
+                        }
+                      }}
+                    >
                       {projectTestCases.length > 0 ? (
                         <div className="space-y-2">
                           {projectTestCases.map((testCase) => {
@@ -483,6 +560,28 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                               </div>
                             );
                           })}
+                          
+                          {/* Loading indicator for infinite scroll */}
+                          {isLoadingMoreTestCases && (
+                            <div className="flex justify-center py-2">
+                              <div className="text-sm text-gray-500">Loading more test cases...</div>
+                            </div>
+                          )}
+                          
+                          {/* Load more button as fallback */}
+                          {hasMoreTestCases && !isLoadingMoreTestCases && (
+                            <div className="flex justify-center py-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={loadMoreTestCases}
+                              >
+                                Load More Test Cases
+                              </Button>
+                            </div>
+                          )}
+                          
                           <div className="flex gap-2 pt-2">
                             <Button
                               type="button"
