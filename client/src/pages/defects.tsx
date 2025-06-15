@@ -321,15 +321,17 @@ export default function Defects() {
                 <Filter className="w-8 h-8 text-neutral-400" />
               </div>
               <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-                No defects found
+                {isLoading ? "Loading defects..." : "No defects found"}
               </h3>
               <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-                {pagination?.total === 0 
+                {isLoading 
+                  ? "Please wait while we fetch your defects."
+                  : pagination?.total === 0 
                   ? "No defects have been reported yet. Create your first defect to get started."
                   : "No defects match your current filters. Try adjusting your search criteria."
                 }
               </p>
-              {pagination?.total === 0 && (
+              {!isLoading && pagination?.total === 0 && (
                 <Button onClick={() => setShowCreateDefect(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Report First Defect
