@@ -61,9 +61,27 @@ export default function Dashboard() {
 
   const testCases = testCasesResponse?.data || [];
 
-  const { data: defects } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id],
+  const { data: defectsResponse } = useQuery({
+    queryKey: ["/api/defects", selectedProject?.id, 1, 100], // Get more defects for chart
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '100', // Get enough for dashboard overview
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defects');
+      }
+      return response.json();
+    },
   });
+
+  const defects = defectsResponse?.data || [];
 
   const { data: testRuns } = useQuery({
     queryKey: ["/api/test-runs", selectedProject?.id],
