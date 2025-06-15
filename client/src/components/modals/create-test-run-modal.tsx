@@ -53,6 +53,7 @@ interface CreateTestRunModalProps {
 export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRunModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [selectedTestSuites, setSelectedTestSuites] = useState<number[]>([]);
   const [selectionOrder, setSelectionOrder] = useState<Array<{type: 'suite' | 'case', id: number}>>([]);
@@ -166,7 +167,7 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
       description: "",
       projectId: 0,
       status: "not_started",
-      createdBy: 1,
+      createdBy: user?.id || 1,
     },
   });
 
