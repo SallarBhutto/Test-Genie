@@ -1540,6 +1540,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports Statistics with pre-calculated distributions
+  app.get("/api/reports/stats", licenseMiddleware, async (req, res) => {
+    try {
+      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+      
+      let testCases = await storage.getTestCases();
+      let defects = await storage.getDefects();
+      let testRuns = await storage.getTestRuns();
+      
+      // Filter by project if projectId is provided
+      if (projectId) {
+        testCases = testCases.filter(tc => tc.projectId === projectId);
+        defects = defects.filter(d => d.projectId === projectId);
+        testRuns = testRuns.filter(tr => tr.projectId === projectId);
+      }
+      
+      // Apply date filtering
+      const now = new Date();
+      let startDate: Date | null = null;
+      let endDate: Date = now;
+      
+      if (dateRange === "custom" && dateFrom && dateTo) {
+        startDate = new Date(dateFrom);
+        endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (dateRange) {
+        switch (dateRange) {
+          case "last7days":
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "last30days":
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "last90days":
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+        }
+      }
+      
+      // Filter data by date range if specified
+      if (startDate) {
+        testCases = testCases.filter(tc => {
+          const createdAt = new Date(tc.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
+        
+        defects = defects.filter(d => {
+          const createdAt = new Date(d.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
+        
+        testRuns = testRuns.filter(tr => {
+          const createdAt = new Date(tr.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
+      }
+      
+      // Calculate Test Cases by Status
+      const testCasesByStatus = testCases.reduce((acc: any, testCase: any) => {
+        acc[testCase.status] = (acc[testCase.status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Calculate Test Cases by Priority
+      const testCasesByPriority = testCases.reduce((acc: any, testCase: any) => {
+        acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Calculate Defect Status Distribution (by severity)
+      const defectsBySeverity = defects.reduce((acc: any, defect: any) => {
+        acc[defect.severity] = (acc[defect.severity] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Calculate other metrics
+      const executedTestCases = testCases.filter(tc => tc.status !== "draft").length;
+      const defectResolutionRate = defects.length > 0 
+        ? Math.round((defects.filter(d => d.status === "resolved" || d.status === "closed").length / defects.length) * 100)
+        : 0;
+      
+      // Calculate test automation percentage
+      const automationRate = testCases.length > 0 
+        ? Math.round((testCases.filter(tc => tc.isAutomated).length / testCases.length) * 100)
+        : 0;
+      
+      res.json({
+        // Basic counts
+        totalTestCases: testCases.length,
+        totalDefects: defects.length,
+        totalTestRuns: testRuns.length,
+        executedTestCases,
+        
+        // Calculated metrics
+        defectResolutionRate,
+        automationRate,
+        
+        // Distributions
+        testCasesByStatus,
+        testCasesByPriority,
+        defectsBySeverity,
+        
+        // Additional breakdowns
+        automatedTestCases: testCases.filter(tc => tc.isAutomated).length,
+        resolvedDefects: defects.filter(d => d.status === "resolved" || d.status === "closed").length,
+      });
+    } catch (error) {
+      console.error("Error fetching reports statistics:", error);
+      res.status(500).json({ message: "Failed to fetch reports statistics" });
+    }
+  });
+
   // Azure DevOps Webhook endpoint
   app.post("/api/webhooks/azure-devops", async (req, res) => {
     try {

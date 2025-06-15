@@ -27,14 +27,8 @@ export default function Reports() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const { data: stats } = useQuery({
-    queryKey: ["/api/dashboard/stats", selectedProject?.id, dateRange, dateFrom, dateTo],
-    refetchOnMount: true,
-    staleTime: 0,
-  });
-
-  const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id, dateRange, dateFrom, dateTo],
+  const { data: reportStats } = useQuery({
+    queryKey: ["/api/reports/stats", selectedProject?.id, dateRange, dateFrom, dateTo],
     refetchOnMount: true,
     staleTime: 0,
   });
@@ -45,46 +39,18 @@ export default function Reports() {
     staleTime: 0,
   });
 
-  const { data: testRuns } = useQuery({
-    queryKey: ["/api/test-runs", selectedProject?.id, dateRange, dateFrom, dateTo],
-    refetchOnMount: true,
-    staleTime: 0,
-  });
-
-  // Filter data based on selected project
-  const filteredTestCases = testCases?.filter((tc: any) => !selectedProject || tc.projectId === selectedProject.id) || [];
+  // Filter defects for the chart component
   const filteredDefects = defects?.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) || [];
-  const filteredTestRuns = testRuns?.filter((tr: any) => !selectedProject || tr.projectId === selectedProject.id) || [];
 
-  // Calculate dynamic metrics
-  const executedTestCases = filteredTestCases.filter((tc: any) => tc.status !== "draft").length;
-  
-  // Calculate average execution time from test runs
+  // Calculate average execution time from test runs (mock calculation)
   const calculateAvgExecutionTime = () => {
-    if (!filteredTestRuns || filteredTestRuns.length === 0) return "0h";
+    if (!reportStats?.totalTestRuns || reportStats.totalTestRuns === 0) return "0h";
     
     // Mock calculation - in real scenario this would come from actual execution times
-    const totalRuns = filteredTestRuns.length;
+    const totalRuns = reportStats.totalTestRuns;
     const avgHours = Math.round((totalRuns * 2.5) / totalRuns * 10) / 10; // Mock calculation
     return `${avgHours}h`;
   };
-
-  // Calculate test case distribution by status
-  const testCasesByStatus = filteredTestCases?.reduce((acc: any, testCase: any) => {
-    acc[testCase.status] = (acc[testCase.status] || 0) + 1;
-    return acc;
-  }, {}) || {};
-
-  // Calculate test case distribution by priority
-  const testCasesByPriority = filteredTestCases?.reduce((acc: any, testCase: any) => {
-    acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
-    return acc;
-  }, {}) || {};
-
-  // Calculate defect resolution rate
-  const defectResolutionRate = filteredDefects.length > 0 
-    ? Math.round((filteredDefects.filter((d: any) => d.status === "resolved" || d.status === "closed").length / filteredDefects.length) * 100)
-    : 0;
 
   // Handle date range change
   const handleDateRangeChange = (value: string) => {
@@ -150,7 +116,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Cases Executed</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {executedTestCases}
+                  {reportStats?.executedTestCases || 0}
                 </p>
               </div>
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -159,7 +125,7 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                Total Active: {executedTestCases} / {filteredTestCases.length}
+                Total Active: {reportStats?.executedTestCases || 0} / {reportStats?.totalTestCases || 0}
               </div>
             </div>
           </CardContent>
@@ -171,7 +137,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Defect Resolution Rate</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defectResolutionRate}%
+                  {reportStats?.defectResolutionRate || 0}%
                 </p>
               </div>
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
@@ -180,7 +146,7 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                {filteredDefects?.filter((d: any) => d.status === "resolved" || d.status === "closed").length || 0} of {filteredDefects?.length || 0} resolved
+                {reportStats?.resolvedDefects || 0} of {reportStats?.totalDefects || 0} resolved
               </div>
             </div>
           </CardContent>
@@ -192,9 +158,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Automation</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {filteredTestCases.length > 0 
-                    ? Math.round((filteredTestCases.filter((tc: any) => tc.isAutomated).length / filteredTestCases.length) * 100)
-                    : 0}%
+                  {reportStats?.automationRate || 0}%
                 </p>
               </div>
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
@@ -203,15 +167,13 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <Progress 
-                value={filteredTestCases.length > 0 
-                  ? (filteredTestCases.filter((tc: any) => tc.isAutomated).length / filteredTestCases.length) * 100
-                  : 0} 
+                value={reportStats?.automationRate || 0} 
                 className="h-2" 
               />
             </div>
             <div className="mt-2">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                {filteredTestCases.filter((tc: any) => tc.isAutomated).length} of {filteredTestCases.length} automated
+                {reportStats?.automatedTestCases || 0} of {reportStats?.totalTestCases || 0} automated
               </div>
             </div>
           </CardContent>
@@ -230,7 +192,7 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                Based on {filteredTestRuns.length} test runs
+                Based on {reportStats?.totalTestRuns || 0} test runs
               </div>
             </div>
           </CardContent>
@@ -250,7 +212,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(testCasesByStatus).map(([status, count]: [string, any]) => (
+              {Object.entries(reportStats?.testCasesByStatus || {}).map(([status, count]: [string, any]) => (
                 <div key={status} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${
@@ -265,7 +227,7 @@ export default function Reports() {
                   <div className="flex items-center space-x-2">
                     <div className="w-24">
                       <Progress 
-                        value={filteredTestCases.length > 0 ? (count / filteredTestCases.length) * 100 : 0} 
+                        value={reportStats?.totalTestCases > 0 ? (count / reportStats.totalTestCases) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
@@ -285,7 +247,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(testCasesByPriority).map(([priority, count]: [string, any]) => (
+              {Object.entries(reportStats?.testCasesByPriority || {}).map(([priority, count]: [string, any]) => (
                 <div key={priority} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${
@@ -298,7 +260,7 @@ export default function Reports() {
                   <div className="flex items-center space-x-2">
                     <div className="w-24">
                       <Progress 
-                        value={filteredTestCases.length > 0 ? (count / filteredTestCases.length) * 100 : 0} 
+                        value={reportStats?.totalTestCases > 0 ? (count / reportStats.totalTestCases) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
