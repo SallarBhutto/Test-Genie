@@ -67,9 +67,9 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     queryKey: ["/api/projects"],
   });
 
-  // Load initial test cases
-  const { data: testCasesResponse, isLoading: isLoadingTestCases } = useQuery({
-    queryKey: ["/api/test-cases", "modal", selectedProjectId],
+  // Load initial test cases with proper state management
+  const { data: testCasesResponse, isLoading: isLoadingTestCases, refetch: refetchTestCases } = useQuery({
+    queryKey: ["/api/test-cases", "modal", selectedProjectId, open],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: '1',
@@ -89,13 +89,14 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     enabled: open && selectedProjectId !== null,
   });
 
-  // Initialize loaded test cases when data arrives
+  // Initialize loaded test cases when query succeeds or project changes
   useEffect(() => {
-    if (testCasesResponse?.data) {
+    if (testCasesResponse?.data && open && selectedProjectId) {
       setAllLoadedTestCases(testCasesResponse.data);
       setHasMoreTestCases(testCasesResponse.data.length === 5);
+      setTestCasesPage(1);
     }
-  }, [testCasesResponse]);
+  }, [testCasesResponse, open, selectedProjectId]);
 
   // Load more test cases function
   const loadMoreTestCases = async () => {
@@ -209,9 +210,11 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     setSelectedTestSuites([]);
     setSelectedTestCases([]);
     setSelectionOrder([]);
-    setTestCasesPage(1);
+    // Clear test cases immediately when project changes
     setAllLoadedTestCases([]);
+    setTestCasesPage(1);
     setHasMoreTestCases(true);
+    setIsLoadingMoreTestCases(false);
   }, [selectedProjectId]);
 
   const form = useForm<FormData>({
@@ -235,14 +238,18 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
-      // Reset pagination state first
-      setTestCasesPage(1);
+      // Clear everything immediately when modal opens
       setAllLoadedTestCases([]);
+      setTestCasesPage(1);
       setHasMoreTestCases(true);
       setIsLoadingMoreTestCases(false);
-      
-      // Then reset form
       resetForm();
+    } else {
+      // Also clear when modal closes to prevent stale data
+      setAllLoadedTestCases([]);
+      setTestCasesPage(1);
+      setHasMoreTestCases(true);
+      setIsLoadingMoreTestCases(false);
     }
   }, [open]);
 
