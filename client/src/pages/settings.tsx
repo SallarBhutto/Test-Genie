@@ -334,7 +334,8 @@ export default function Settings() {
                       type="button"
                       variant="outline"
                       onClick={() => testConnectionMutation.mutate()}
-                      disabled={testConnectionMutation.isPending || !form.getValues("enabled")}
+                      disabled={testConnectionMutation.isPending || !form.getValues().enabled}
+                      className="flex-1"
                     >
                       {testConnectionMutation.isPending ? "Testing..." : "Test Connection"}
                     </Button>
@@ -342,18 +343,72 @@ export default function Settings() {
                 </form>
               </Form>
 
-              {/* Integration Info */}
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  How it works:
-                </h4>
-                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• When a bug is reported in QualityBytes, a work item is automatically created in Azure DevOps</li>
-                  <li>• Bug details (title, description, priority, severity) are transferred to the work item</li>
-                  <li>• Test case information is included if the bug is related to a specific test</li>
-                  <li>• A clickable link appears in the defects table linking to the Azure DevOps work item</li>
-                </ul>
-              </div>
+              {/* Webhook Configuration Instructions */}
+              {settings?.azureDevOps.enabled && (
+                <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mt-0.5">
+                      <Link className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-3">
+                        Configure Azure DevOps Webhook (Optional)
+                      </h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                        Set up a webhook to automatically sync changes from Azure DevOps back to QualityBytes when work items are created or updated.
+                      </p>
+
+                      <div className="space-y-4">
+                        <div>
+                          <h5 className="font-medium text-blue-900 dark:text-blue-200 mb-2">
+                            Step 1: Get Your Webhook URL
+                          </h5>
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded border font-mono text-sm">
+                            <code className="text-green-600 dark:text-green-400">
+                              {window.location.origin}/api/webhooks/azure-devops
+                            </code>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="font-medium text-blue-900 dark:text-blue-200 mb-2">
+                            Step 2: Configure in Azure DevOps
+                          </h5>
+                          <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+                            <li>Go to your Azure DevOps project settings</li>
+                            <li>Navigate to <strong>Service hooks</strong></li>
+                            <li>Click <strong>+ Create subscription</strong></li>
+                            <li>Select <strong>Web Hooks</strong> as the service type</li>
+                            <li>Choose trigger: <strong>Work item created</strong> or <strong>Work item updated</strong></li>
+                            <li>Filter by work item type: <strong>Bug</strong> (recommended)</li>
+                            <li>Set the URL to the webhook URL above</li>
+                            <li>Set HTTP method to <strong>POST</strong></li>
+                            <li>Add your webhook secret (if configured above) in the <strong>Basic authentication</strong> section</li>
+                            <li>Test the subscription and finish setup</li>
+                          </ol>
+                        </div>
+
+                        <div>
+                          <h5 className="font-medium text-blue-900 dark:text-blue-200 mb-2">
+                            Supported Events
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                            <li><strong>Work item created:</strong> Creates a new defect in QualityBytes</li>
+                            <li><strong>Work item updated:</strong> Syncs changes to existing defects</li>
+                          </ul>
+                        </div>
+
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded">
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                            <strong>Note:</strong> You may need to create separate webhook subscriptions for "Work item created" and "Work item updated" events, 
+                            as Azure DevOps typically allows one event type per subscription.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
