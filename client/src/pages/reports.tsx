@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 import TestExecutionChart from "@/components/charts/test-execution-chart";
 import DefectStatusChart from "@/components/charts/defect-status-chart";
+import { useProject } from "@/providers/project-provider";
 
 export default function Reports() {
+  const { project } = useProject();
+
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
   });
@@ -33,14 +36,17 @@ export default function Reports() {
     queryKey: ["/api/test-runs"],
   });
 
+  const filteredTestCases = testCases?.filter((tc: any) => tc.projectId === project?.id) || [];
+  const filteredDefects = defects?.filter((defect: any) => defect.projectId === project?.id) || [];
+
   // Calculate test case distribution by status
-  const testCasesByStatus = testCases?.reduce((acc: any, testCase: any) => {
+  const testCasesByStatus = filteredTestCases?.reduce((acc: any, testCase: any) => {
     acc[testCase.status] = (acc[testCase.status] || 0) + 1;
     return acc;
   }, {}) || {};
 
   // Calculate test case distribution by priority
-  const testCasesByPriority = testCases?.reduce((acc: any, testCase: any) => {
+  const testCasesByPriority = filteredTestCases?.reduce((acc: any, testCase: any) => {
     acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
     return acc;
   }, {}) || {};
@@ -103,7 +109,7 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Cases Executed</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {testCases?.filter((tc: any) => tc.status !== "draft").length || 0}
+                  {filteredTestCases?.filter((tc: any) => tc.status !== "draft").length || 0}
                 </p>
               </div>
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -124,8 +130,8 @@ export default function Reports() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Defect Resolution Rate</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.length > 0 
-                    ? Math.round((defects.filter((d: any) => d.status === "resolved" || d.status === "closed").length / defects.length) * 100)
+                  {filteredDefects?.length > 0 
+                    ? Math.round((filteredDefects.filter((d: any) => d.status === "resolved" || d.status === "closed").length / filteredDefects.length) * 100)
                     : 0
                   }%
                 </p>
@@ -136,7 +142,7 @@ export default function Reports() {
             </div>
             <div className="mt-4">
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                {defects?.filter((d: any) => d.status === "resolved" || d.status === "closed").length || 0} of {defects?.length || 0} resolved
+                {filteredDefects?.filter((d: any) => d.status === "resolved" || d.status === "closed").length || 0} of {filteredDefects?.length || 0} resolved
               </div>
             </div>
           </CardContent>
@@ -182,7 +188,7 @@ export default function Reports() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TestExecutionChart />
-        <DefectStatusChart defects={defects || []} />
+        <DefectStatusChart defects={filteredDefects || []} />
       </div>
 
       {/* Test Case Analysis */}
@@ -207,7 +213,7 @@ export default function Reports() {
                   <div className="flex items-center space-x-2">
                     <div className="w-24">
                       <Progress 
-                        value={testCases?.length > 0 ? (count / testCases.length) * 100 : 0} 
+                        value={filteredTestCases.length > 0 ? (count / filteredTestCases.length) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
@@ -240,7 +246,7 @@ export default function Reports() {
                   <div className="flex items-center space-x-2">
                     <div className="w-24">
                       <Progress 
-                        value={testCases?.length > 0 ? (count / testCases.length) * 100 : 0} 
+                        value={filteredTestCases.length > 0 ? (count / filteredTestCases.length) * 100 : 0} 
                         className="h-2" 
                       />
                     </div>
