@@ -810,12 +810,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const statusFilter = req.query.status as string;
       const searchQuery = req.query.search as string;
       
-      // Pagination parameters
+      let testCases = await storage.getTestCases(testSuiteId);
+      
+      // If filtering by testSuiteId, return all test cases without pagination
+      if (testSuiteId) {
+        return res.json({
+          data: testCases,
+          pagination: {
+            page: 1,
+            limit: testCases.length,
+            totalCount: testCases.length,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false
+          }
+        });
+      }
+      
+      // Pagination parameters (only applied when not filtering by testSuiteId)
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 5;
       const offset = (page - 1) * limit;
-      
-      let testCases = await storage.getTestCases(testSuiteId);
       
       // Filter by project if projectId is provided
       if (projectId) {
