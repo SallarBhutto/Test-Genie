@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,14 @@ import EditDefectModal from "@/components/modals/edit-defect-modal";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSorting } from "@/hooks/useSorting";
 import { cn } from "@/lib/utils";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function Defects() {
   const [showCreateDefect, setShowCreateDefect] = useState(false);
@@ -25,13 +33,55 @@ export default function Defects() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { selectedProject } = useProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: defects, isLoading } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id],
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, severityFilter, projectFilter, searchQuery, selectedProject]);
+
+  const { data: defectsResponse, isLoading } = useQuery({
+    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, projectFilter, searchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      if (statusFilter !== "all") {
+        params.append('status', statusFilter);
+      }
+      
+      if (severityFilter !== "all") {
+        params.append('severity', severityFilter);
+      }
+      
+      if (projectFilter !== "all") {
+        params.append('filterProjectId', projectFilter);
+      }
+      
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defects');
+      }
+      return response.json();
+    },
   });
+
+  const defects = defectsResponse?.data || [];
+  const pagination = defectsResponse?.pagination;
 
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
@@ -58,17 +108,7 @@ export default function Defects() {
     },
   });
 
-  const filteredDefects = defects?.filter((defect: any) => {
-    const matchesSearch = defect.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         defect.defectId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || defect.status === statusFilter;
-    const matchesSeverity = severityFilter === "all" || defect.severity === severityFilter;
-    const matchesProject = projectFilter === "all" || defect.projectId?.toString() === projectFilter;
-    
-    return matchesSearch && matchesStatus && matchesSeverity && matchesProject;
-  }) || [];
-
-  const { sortedData: sortedDefects, sortConfig, requestSort } = useSorting(filteredDefects, "defectId");
+  const { sortedData: sortedDefects, sortConfig, requestSort } = useSorting(defects, "defectId");
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -144,7 +184,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Defects</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.length || 0}
+                  {pagination?.total || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
@@ -275,7 +315,7 @@ export default function Defects() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredDefects.length === 0 ? (
+          {defects.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Filter className="w-8 h-8 text-neutral-400" />
@@ -284,12 +324,12 @@ export default function Defects() {
                 No defects found
               </h3>
               <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-                {defects?.length === 0 
+                {pagination?.total === 0 
                   ? "No defects have been reported yet. Create your first defect to get started."
                   : "No defects match your current filters. Try adjusting your search criteria."
                 }
               </p>
-              {defects?.length === 0 && (
+              {pagination?.total === 0 && (
                 <Button onClick={() => setShowCreateDefect(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Report First Defect
