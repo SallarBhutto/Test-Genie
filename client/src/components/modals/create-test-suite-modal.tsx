@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -78,9 +78,16 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
       name: "",
       description: "",
       projectId: 0,
-      createdBy: user?.id || 1,
+      createdBy: 1,
     },
   });
+
+  // Update createdBy when user data becomes available
+  useEffect(() => {
+    if (user?.id) {
+      form.setValue('createdBy', user.id);
+    }
+  }, [user?.id, form]);
 
   const selectedProjectId = form.watch("projectId");
 
@@ -136,7 +143,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
     : [];
 
   // Group test cases by module and component for hierarchical display
-  const hierarchicalData = React.useMemo(() => {
+  const hierarchicalData = useMemo(() => {
     if (!projectTestCases || !modules || !components) return {};
     
     const grouped: { 
@@ -174,7 +181,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
   }, [projectTestCases, modules, components]);
 
   // Filter by search query
-  const filteredHierarchicalData = React.useMemo(() => {
+  const filteredHierarchicalData = useMemo(() => {
     if (!searchQuery) return hierarchicalData;
     
     const filtered: typeof hierarchicalData = {};

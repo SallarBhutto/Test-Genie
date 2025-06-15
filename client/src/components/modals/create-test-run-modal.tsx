@@ -167,9 +167,16 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
       description: "",
       projectId: 0,
       status: "not_started",
-      createdBy: user?.id || 1,
+      createdBy: 1,
     },
   });
+
+  // Update createdBy when user data becomes available
+  useEffect(() => {
+    if (user?.id) {
+      form.setValue('createdBy', user.id);
+    }
+  }, [user?.id, form]);
 
   const createTestRunMutation = useMutation({
     mutationFn: async (data: any) => {
