@@ -1212,11 +1212,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/defects", async (req, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const filterProjectId = req.query.filterProjectId ? parseInt(req.query.filterProjectId as string) : undefined;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const status = req.query.status as string;
+      const severity = req.query.severity as string;
+      const search = req.query.search as string;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
       
       let defects = await storage.getDefects(projectId);
+      
+      // Apply additional project filter if specified
+      if (filterProjectId) {
+        defects = defects.filter(d => d.projectId === filterProjectId);
+      }
+      
+      // Apply status filter
+      if (status && status !== "all") {
+        defects = defects.filter(d => d.status === status);
+      }
+      
+      // Apply severity filter
+      if (severity && severity !== "all") {
+        defects = defects.filter(d => d.severity === severity);
+      }
+      
+      // Apply search filter
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase();
+        defects = defects.filter(d => 
+          d.title.toLowerCase().includes(searchLower) ||
+          d.defectId.toLowerCase().includes(searchLower) ||
+          (d.description && d.description.toLowerCase().includes(searchLower))
+        );
+      }
       
       // Apply date filtering
       if (dateRange || (dateFrom && dateTo)) {
@@ -1250,15 +1281,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Calculate total count before pagination
+      const total = defects.length;
+      
+      // Apply pagination
+      const offset = (page - 1) * limit;
+      const paginatedDefects = defects.slice(offset, offset + limit);
+      
       // Populate with user data
       const users = await storage.getUsers();
-      const defectsWithUsers = defects.map(defect => ({
+      const defectsWithUsers = paginatedDefects.map(defect => ({
         ...defect,
         assignee: users.find(user => user.id === defect.assignedTo),
         reporter: users.find(user => user.id === defect.reportedBy),
       }));
       
-      res.json(defectsWithUsers);
+      res.json({
+        data: defectsWithUsers,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch defects" });
     }
