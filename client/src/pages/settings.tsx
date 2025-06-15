@@ -14,8 +14,6 @@ import {
   Settings as SettingsIcon, 
   Link, 
   Shield, 
-  Bell, 
-  Palette,
   CheckCircle,
   XCircle,
   AlertTriangle
@@ -167,18 +165,10 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="integrations" className="flex items-center space-x-2">
             <Link className="w-4 h-4" />
             <span>Integrations</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center space-x-2">
-            <Bell className="w-4 h-4" />
-            <span>Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex items-center space-x-2">
-            <Palette className="w-4 h-4" />
-            <span>Appearance</span>
           </TabsTrigger>
         </TabsList>
 
@@ -412,56 +402,6 @@ export default function Settings() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications Tab */}
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Configure how and when you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Receive email updates for test results and defects
-                    </p>
-                  </div>
-                  <Switch defaultChecked={settings?.emailNotifications} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Appearance Tab */}
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
-              <CardDescription>
-                Customize the look and feel of QualityBytes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Dark Mode</Label>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Toggle between light and dark themes
-                    </p>
-                  </div>
-                  <Switch defaultChecked={settings?.darkMode} />
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
