@@ -43,18 +43,28 @@ export default function AddTestCasesModal({
   });
 
   // Fetch all test cases with fresh data
-  const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases"],
+  const { data: testCasesResponse } = useQuery({
+    queryKey: ["/api/test-cases-modal-all"],
     queryFn: async () => {
-      const response = await fetch("/api/test-cases", {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Large limit to get all test cases
+      });
+      
+      const response = await fetch(`/api/test-cases?${params}`, {
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
+      if (!response.ok) {
+        throw new Error('Failed to fetch test cases');
+      }
       return response.json();
     },
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   // Fetch modules and components with fresh data
   const { data: modules } = useQuery({
