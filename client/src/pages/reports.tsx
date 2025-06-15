@@ -29,18 +29,26 @@ export default function Reports() {
 
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats", selectedProject?.id, dateRange, dateFrom, dateTo],
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id],
+    queryKey: ["/api/test-cases", selectedProject?.id, dateRange, dateFrom, dateTo],
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: defects } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id],
+    queryKey: ["/api/defects", selectedProject?.id, dateRange, dateFrom, dateTo],
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: testRuns } = useQuery({
-    queryKey: ["/api/test-runs", selectedProject?.id],
+    queryKey: ["/api/test-runs", selectedProject?.id, dateRange, dateFrom, dateTo],
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   // Filter data based on selected project
