@@ -801,12 +801,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testSuiteId = req.query.testSuiteId ? parseInt(req.query.testSuiteId as string) : undefined;
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
       
       let testCases = await storage.getTestCases(testSuiteId);
       
       // Filter by project if projectId is provided
       if (projectId) {
         testCases = testCases.filter(tc => tc.projectId === projectId);
+      }
+      
+      // Apply date filtering
+      if (dateRange || (dateFrom && dateTo)) {
+        const now = new Date();
+        let startDate: Date | null = null;
+        let endDate: Date = now;
+        
+        if (dateRange === "custom" && dateFrom && dateTo) {
+          startDate = new Date(dateFrom);
+          endDate = new Date(dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (dateRange) {
+          switch (dateRange) {
+            case "last7days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "last30days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "last90days":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+        
+        if (startDate) {
+          testCases = testCases.filter(tc => {
+            const createdAt = new Date(tc.createdAt);
+            return createdAt >= startDate! && createdAt <= endDate;
+          });
+        }
       }
       
       // Populate with user data
@@ -978,7 +1013,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test-runs", async (req, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
-      const testRuns = await storage.getTestRuns(projectId);
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+      
+      let testRuns = await storage.getTestRuns(projectId);
+      
+      // Apply date filtering
+      if (dateRange || (dateFrom && dateTo)) {
+        const now = new Date();
+        let startDate: Date | null = null;
+        let endDate: Date = now;
+        
+        if (dateRange === "custom" && dateFrom && dateTo) {
+          startDate = new Date(dateFrom);
+          endDate = new Date(dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (dateRange) {
+          switch (dateRange) {
+            case "last7days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "last30days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "last90days":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+        
+        if (startDate) {
+          testRuns = testRuns.filter(tr => {
+            const createdAt = new Date(tr.createdAt);
+            return createdAt >= startDate! && createdAt <= endDate;
+          });
+        }
+      }
+      
       res.json(testRuns);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch test runs" });
@@ -1069,7 +1141,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/defects", async (req, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
-      const defects = await storage.getDefects(projectId);
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+      
+      let defects = await storage.getDefects(projectId);
+      
+      // Apply date filtering
+      if (dateRange || (dateFrom && dateTo)) {
+        const now = new Date();
+        let startDate: Date | null = null;
+        let endDate: Date = now;
+        
+        if (dateRange === "custom" && dateFrom && dateTo) {
+          startDate = new Date(dateFrom);
+          endDate = new Date(dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (dateRange) {
+          switch (dateRange) {
+            case "last7days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "last30days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "last90days":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+        
+        if (startDate) {
+          defects = defects.filter(d => {
+            const createdAt = new Date(d.createdAt);
+            return createdAt >= startDate! && createdAt <= endDate;
+          });
+        }
+      }
       
       // Populate with user data
       const users = await storage.getUsers();
@@ -1336,6 +1444,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/stats", licenseMiddleware, async (req, res) => {
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
       
       let testCases = await storage.getTestCases();
       let testRuns = await storage.getTestRuns();
@@ -1346,6 +1457,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         testCases = testCases.filter(tc => tc.projectId === projectId);
         testRuns = testRuns.filter(tr => tr.projectId === projectId);
         defects = defects.filter(d => d.projectId === projectId);
+      }
+      
+      // Apply date filtering
+      const now = new Date();
+      let startDate: Date | null = null;
+      let endDate: Date = now;
+      
+      if (dateRange === "custom" && dateFrom && dateTo) {
+        startDate = new Date(dateFrom);
+        endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999); // Include the entire end date
+      } else if (dateRange) {
+        switch (dateRange) {
+          case "last7days":
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case "last30days":
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case "last90days":
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+        }
+      }
+      
+      // Filter data by date range if specified
+      if (startDate) {
+        testCases = testCases.filter(tc => {
+          const createdAt = new Date(tc.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
+        
+        testRuns = testRuns.filter(tr => {
+          const createdAt = new Date(tr.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
+        
+        defects = defects.filter(d => {
+          const createdAt = new Date(d.createdAt);
+          return createdAt >= startDate! && createdAt <= endDate;
+        });
       }
       
       const totalTestCases = testCases.length;

@@ -41,13 +41,30 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     let url = queryKey[0] as string;
+    const urlParams = new URLSearchParams();
     
     // Handle project filtering for endpoints that support it
-    // Only add projectId parameter if it's explicitly provided and not null/undefined
     if (queryKey.length > 1 && queryKey[1] !== undefined && queryKey[1] !== null) {
-      const projectId = queryKey[1];
-      const separator = url.includes('?') ? '&' : '?';
-      url = `${url}${separator}projectId=${projectId}`;
+      urlParams.append('projectId', queryKey[1].toString());
+    }
+    
+    // Handle date filtering parameters
+    if (queryKey.length > 2 && queryKey[2] !== undefined && queryKey[2] !== null) {
+      urlParams.append('dateRange', queryKey[2].toString());
+    }
+    
+    if (queryKey.length > 3 && queryKey[3] !== undefined && queryKey[3] !== null && queryKey[3] !== '') {
+      urlParams.append('dateFrom', queryKey[3].toString());
+    }
+    
+    if (queryKey.length > 4 && queryKey[4] !== undefined && queryKey[4] !== null && queryKey[4] !== '') {
+      urlParams.append('dateTo', queryKey[4].toString());
+    }
+    
+    // Append parameters to URL if any exist
+    const paramString = urlParams.toString();
+    if (paramString) {
+      url = `${url}?${paramString}`;
     }
     
     const token = localStorage.getItem("authToken");
