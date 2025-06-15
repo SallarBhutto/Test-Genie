@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 import TestExecutionChart from "@/components/charts/test-execution-chart";
 import DefectStatusChart from "@/components/charts/defect-status-chart";
-import { useProject } from "@/providers/project-provider";
+import { useProject } from "@/contexts/ProjectContext";
 
 export default function Reports() {
-  const { project } = useProject();
+  const { selectedProject } = useProject();
 
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -36,8 +36,8 @@ export default function Reports() {
     queryKey: ["/api/test-runs"],
   });
 
-  const filteredTestCases = testCases?.filter((tc: any) => tc.projectId === project?.id) || [];
-  const filteredDefects = defects?.filter((defect: any) => defect.projectId === project?.id) || [];
+  const filteredTestCases = testCases?.filter((tc: any) => !selectedProject || tc.projectId === selectedProject.id) || [];
+  const filteredDefects = defects?.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) || [];
 
   // Calculate test case distribution by status
   const testCasesByStatus = filteredTestCases?.reduce((acc: any, testCase: any) => {
