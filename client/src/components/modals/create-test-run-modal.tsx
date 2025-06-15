@@ -67,13 +67,18 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
     queryKey: ["/api/projects"],
   });
 
-  // Load initial test cases with proper state management
-  const { data: testCasesResponse, isLoading: isLoadingTestCases, refetch: refetchTestCases } = useQuery({
-    queryKey: ["/api/test-cases", "modal", selectedProjectId, open],
-    queryFn: async () => {
+  // Load initial test cases manually without React Query caching issues
+  const loadInitialTestCases = async () => {
+    if (!selectedProjectId || !open) return;
+    
+    // Clear existing data first
+    setAllLoadedTestCases([]);
+    setIsLoadingMoreTestCases(true);
+    
+    try {
       const params = new URLSearchParams({
         page: '1',
-        limit: '5', // Start with 5 test cases
+        limit: '5',
       });
       
       if (selectedProjectId) {
@@ -84,19 +89,26 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
       if (!response.ok) {
         throw new Error('Failed to fetch test cases');
       }
-      return response.json();
-    },
-    enabled: open && selectedProjectId !== null,
-  });
-
-  // Initialize loaded test cases when query succeeds or project changes
-  useEffect(() => {
-    if (testCasesResponse?.data && open && selectedProjectId) {
-      setAllLoadedTestCases(testCasesResponse.data);
-      setHasMoreTestCases(testCasesResponse.data.length === 5);
+      
+      const result = await response.json();
+      setAllLoadedTestCases(result.data || []);
+      setHasMoreTestCases((result.data || []).length === 5);
       setTestCasesPage(1);
+    } catch (error) {
+      console.error('Error loading initial test cases:', error);
+      setAllLoadedTestCases([]);
+      setHasMoreTestCases(false);
+    } finally {
+      setIsLoadingMoreTestCases(false);
     }
-  }, [testCasesResponse, open, selectedProjectId]);
+  };
+
+  // Load initial test cases when modal opens and project is selected
+  useEffect(() => {
+    if (open && selectedProjectId) {
+      loadInitialTestCases();
+    }
+  }, [open, selectedProjectId]);
 
   // Load more test cases function
   const loadMoreTestCases = async () => {
@@ -535,7 +547,11 @@ export default function CreateTestRunModal({ open, onOpenChange }: CreateTestRun
                         }
                       }}
                     >
-                      {projectTestCases.length > 0 ? (
+                      {isLoadingMoreTestCases && projectTestCases.length === 0 ? (
+                        <div className="flex justify-center py-4">
+                          <div className="text-sm text-gray-500">Loading test cases...</div>
+                        </div>
+                      ) : projectTestCases.length > 0 ? (
                         <div className="space-y-2">
                           {projectTestCases.map((testCase) => {
                             const isFromSuite = (testSuiteTestCases as any[])?.some(tc => tc.id === testCase.id);
