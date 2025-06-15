@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { insertTestSuiteSchema, type InsertTestSuite } from "@shared/schema";
 import {
   Dialog,
@@ -36,6 +37,7 @@ interface CreateTestSuiteModalProps {
 export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestSuiteModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set());
@@ -76,7 +78,7 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
       name: "",
       description: "",
       projectId: 0,
-      createdBy: 1,
+      createdBy: user?.id || 1,
     },
   });
 
