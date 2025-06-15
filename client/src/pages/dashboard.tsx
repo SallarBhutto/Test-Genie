@@ -39,9 +39,27 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/stats", selectedProject?.id],
   });
 
-  const { data: testCases, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id],
+  const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
+    queryKey: ["/api/test-cases", selectedProject?.id, 1, 5], // Show only 5 recent test cases
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '5',
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/test-cases?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch test cases');
+      }
+      return response.json();
+    },
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   const { data: defects } = useQuery({
     queryKey: ["/api/defects", selectedProject?.id],

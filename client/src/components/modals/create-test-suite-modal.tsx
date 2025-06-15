@@ -44,9 +44,23 @@ export default function CreateTestSuiteModal({ open, onOpenChange }: CreateTestS
     queryKey: ["/api/projects"],
   });
 
-  const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases"],
+  const { data: testCasesResponse } = useQuery({
+    queryKey: ["/api/test-cases-all"],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Large limit to get all test cases
+      });
+      
+      const response = await fetch(`/api/test-cases?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch test cases');
+      }
+      return response.json();
+    },
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   const { data: modules } = useQuery({
     queryKey: ["/api/modules"],
