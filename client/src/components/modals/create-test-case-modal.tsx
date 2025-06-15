@@ -196,8 +196,21 @@ export default function CreateTestCaseModal({ open, onOpenChange, editingTestCas
       }
     },
     onSuccess: () => {
+      // Invalidate all test case related queries
       queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-cases-all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      // Invalidate test suite queries that might show test cases
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
+      
+      // Invalidate any test suite test cases queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return query.queryKey[0] === "/api/test-suites" && 
+                 query.queryKey.includes("test-cases");
+        }
+      });
       toast({
         title: editingTestCase ? "Test case updated" : "Test case created",
         description: editingTestCase 

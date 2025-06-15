@@ -168,7 +168,21 @@ export default function TestCases() {
     mutationFn: (id: number) =>
       fetch(`/api/test-cases/${id}`, { method: "DELETE" }),
     onSuccess: () => {
+      // Invalidate all test case related queries
       queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-cases-all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      // Invalidate test suite queries that might show test cases
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
+      
+      // Invalidate any test suite test cases queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return query.queryKey[0] === "/api/test-suites" && 
+                 query.queryKey.includes("test-cases");
+        }
+      });
       toast({
         title: "Success",
         description: "Test case deleted successfully",
@@ -192,7 +206,21 @@ export default function TestCases() {
         body: JSON.stringify({ status }),
       }),
     onSuccess: () => {
+      // Invalidate all test case related queries
       queryClient.invalidateQueries({ queryKey: ["/api/test-cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/test-cases-all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      // Invalidate test suite queries that might show test cases
+      queryClient.invalidateQueries({ queryKey: ["/api/test-suites"] });
+      
+      // Invalidate any test suite test cases queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return query.queryKey[0] === "/api/test-suites" && 
+                 query.queryKey.includes("test-cases");
+        }
+      });
       toast({
         title: "Status Updated",
         description: "Test case status has been updated successfully",
