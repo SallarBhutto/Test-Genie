@@ -59,6 +59,16 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
   const { data: testCases } = useQuery({
     queryKey: ["/api/test-cases", { projectId: selectedProjectId }],
     enabled: !!selectedProjectId && selectedProjectId > 0,
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        projectId: selectedProjectId.toString(),
+      });
+      const response = await fetch(`/api/test-cases?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch test cases');
+      }
+      return response.json();
+    },
   });
 
   const form = useForm<FormData>({
