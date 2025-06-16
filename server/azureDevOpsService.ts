@@ -128,6 +128,7 @@ export class AzureDevOpsService {
 
       // Add Area Path - use team name if provided, otherwise use project name
       const areaPath = projectTeamName ? `${this.config.project}\\${projectTeamName}` : this.config.project;
+      console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}" (project: ${this.config.project}, teamName: ${projectTeamName})`);
       workItemFields.push({
         op: 'add',
         path: '/fields/System.AreaPath',
