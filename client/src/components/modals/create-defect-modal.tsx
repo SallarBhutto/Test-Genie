@@ -32,7 +32,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDefectSchema } from "@shared/schema";
 import { z } from "zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const formSchema = insertDefectSchema;
 type FormData = z.infer<typeof formSchema>;
@@ -46,17 +46,19 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(0);
 
   const { data: users } = useQuery({
     queryKey: ["/api/users"],
   });
 
-  const { data: testCases } = useQuery({
-    queryKey: ["/api/test-cases"],
-  });
-
   const { data: projects } = useQuery({
     queryKey: ["/api/projects"],
+  });
+
+  const { data: testCases } = useQuery({
+    queryKey: ["/api/test-cases", { projectId: selectedProjectId }],
+    enabled: !!selectedProjectId && selectedProjectId > 0,
   });
 
   const form = useForm<FormData>({
@@ -80,6 +82,13 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
       form.setValue("reportedBy", user.id);
     }
   }, [user?.id, form]);
+
+  // Clear test case selection when project changes
+  useEffect(() => {
+    if (selectedProjectId > 0) {
+      form.setValue("testCaseId", undefined);
+    }
+  }, [selectedProjectId, form]);
 
   const createDefectMutation = useMutation({
     mutationFn: async (data: FormData) => {
