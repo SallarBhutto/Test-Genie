@@ -309,13 +309,40 @@ export class AzureWebhookService {
         return null;
       }
 
-      // Extract description
+      // Extract description - try multiple field sources and structures
       let description = "Imported from Azure DevOps";
+      
+      // Try System.Description with newValue
       if (resource.fields?.['System.Description']?.newValue) {
         description = this.extractDescriptionFromHtml(resource.fields['System.Description'].newValue) || description;
-      } else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']?.newValue) {
+      }
+      // Try System.Description direct value (for created items)
+      else if (resource.fields?.['System.Description']) {
+        const descField = resource.fields['System.Description'];
+        const descValue = typeof descField === 'string' ? descField : descField?.newValue || descField?.value;
+        if (descValue) {
+          description = this.extractDescriptionFromHtml(descValue) || description;
+        }
+      }
+      // Try ReproSteps with newValue
+      else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']?.newValue) {
         description = this.extractDescriptionFromReproSteps(resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue) || description;
       }
+      // Try ReproSteps direct value
+      else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']) {
+        const reproField = resource.fields['Microsoft.VSTS.TCM.ReproSteps'];
+        const reproValue = typeof reproField === 'string' ? reproField : reproField?.newValue || reproField?.value;
+        if (reproValue) {
+          description = this.extractDescriptionFromReproSteps(reproValue) || description;
+        }
+      }
+
+      console.log("🔍 Description extraction debug:", {
+        systemDescription: resource.fields?.['System.Description'],
+        reproSteps: resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'],
+        extractedDescription: description,
+        availableFields: Object.keys(resource.fields || {})
+      });
 
       // Extract other fields with defaults - handle both create and update scenarios
       const statusValue = resource.fields?.['System.State']?.newValue || resource.fields?.['System.State'];
@@ -432,25 +459,40 @@ export class AzureWebhookService {
    */
   private extractDescriptionFromHtml(htmlContent: string): string | null {
     if (!htmlContent) return null;
+    
+    // If it's already plain text, return it directly
+    if (!htmlContent.includes('<')) {
+      return htmlContent.trim();
+    }
 
     // Simple HTML to text conversion for description
     const textContent = htmlContent
+      .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
+      .replace(/<\/p>/gi, '\n\n') // Convert </p> to double newlines
       .replace(/<[^>]*>/g, ' ') // Remove HTML tags
       .replace(/&nbsp;/g, ' ') // Replace &nbsp; with spaces
       .replace(/&lt;/g, '<') // Decode HTML entities
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
       .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .replace(/\n\s+/g, '\n') // Clean up newlines
       .trim();
 
-    // Look for description pattern in QualityBytes format
+    // Skip if content is too short to be meaningful
+    if (textContent.length < 3) {
+      return null;
+    }
+
+    // Look for description pattern in QualityBytes format first
     const descriptionMatch = textContent.match(/Description:\s*(.+?)(?:\s*Related Test Case:|$)/i);
     if (descriptionMatch) {
       return descriptionMatch[1].trim();
     }
 
-    // If no pattern found, return the cleaned text (first 500 characters)
-    return textContent.length > 500 ? textContent.substring(0, 500) + '...' : textContent;
+    // Return the cleaned text (first 1000 characters for better content capture)
+    return textContent.length > 1000 ? textContent.substring(0, 1000) + '...' : textContent;
   }
 
   /**
