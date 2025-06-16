@@ -126,18 +126,18 @@ export class AzureDevOpsService {
         }
       ];
 
-      // Only add Area Path if explicitly provided in project settings
-      // Azure DevOps will use default area path if not specified
-      if (azureAreaPath) {
-        console.log(`🔍 Azure DevOps Area Path being set: "${azureAreaPath}"`);
+      // Construct Area Path from Azure project name and team name
+      if (teamName) {
+        const areaPath = `${this.config.project}/${teamName}`;
+        console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}"`);
         
         workItemFields.push({
           op: 'add',
           path: '/fields/System.AreaPath',
-          value: azureAreaPath
+          value: areaPath
         });
       } else {
-        console.log(`🔍 Azure DevOps Area Path: Using default (not specified)`);
+        console.log(`🔍 Azure DevOps Area Path: Using default (project only)`);
       }
 
       // Add repro steps with description and test case reference
@@ -381,7 +381,7 @@ export class AzureDevOpsService {
     return this.updateWorkItem(workItemId, { status });
   }
 
-  async getWorkItemUrl(workItemId: number): string {
+  async getWorkItemUrl(workItemId: number): Promise<string> {
     return `https://dev.azure.com/${this.config.organization}/${this.config.project}/_workitems/edit/${workItemId}`;
   }
 

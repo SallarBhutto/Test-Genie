@@ -1385,16 +1385,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             testCaseTitle = testCase?.title;
           }
 
-          // Get project Azure Area Path
+          // Get project team name for Azure Area Path
           const project = await storage.getProject(defect.projectId);
-          const azureAreaPath = project?.azureAreaPath || undefined;
+          const teamName = project?.teamName || undefined;
 
           // Create Azure DevOps work item
           const azureResult = await azureDevOpsService.createBugWorkItem(
             defect, 
             reporterName, 
             testCaseTitle,
-            azureAreaPath
+            teamName
           );
 
           if (azureResult.success && azureResult.workItemId) {

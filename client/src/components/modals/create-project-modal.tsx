@@ -36,7 +36,6 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
       name: "",
       description: "",
       teamName: "",
-      azureAreaPath: "",
       status: "Active",
       createdBy: 1,
     },
@@ -49,7 +48,6 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
         name: editingProject.name || "",
         description: editingProject.description || "",
         teamName: editingProject.teamName || "",
-        azureAreaPath: editingProject.azureAreaPath || "",
         status: editingProject.status || "Active",
         createdBy: editingProject.createdBy || 1,
       });
@@ -58,7 +56,6 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
         name: "",
         description: "",
         teamName: "",
-        azureAreaPath: "",
         status: "Active",
         createdBy: 1,
       });
@@ -158,23 +155,7 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="azureAreaPath"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Azure Area Path</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g., ZDP-PIM\\Frontend, ZDP-PIM\\Backend" 
-                      {...field} 
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="status"
