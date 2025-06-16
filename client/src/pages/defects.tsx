@@ -32,6 +32,7 @@ export default function Defects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -42,10 +43,10 @@ export default function Defects() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, severityFilter, projectFilter, searchQuery, selectedProject]);
+  }, [statusFilter, severityFilter, priorityFilter, projectFilter, searchQuery, selectedProject]);
 
   const { data: defectsResponse, isLoading } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, projectFilter, searchQuery],
+    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, priorityFilter, projectFilter, searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -62,6 +63,10 @@ export default function Defects() {
       
       if (severityFilter !== "all") {
         params.append('severity', severityFilter);
+      }
+      
+      if (priorityFilter !== "all") {
+        params.append('priority', priorityFilter);
       }
       
       if (projectFilter !== "all") {
@@ -292,6 +297,18 @@ export default function Defects() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Severity</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>

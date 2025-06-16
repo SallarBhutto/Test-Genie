@@ -44,13 +44,13 @@ async function requireAuth(req: any, res: any, next: any) {
         return next();
       }
     }
-    
+
     // Fallback to Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       const sessionData = activeSessions.get(token);
-      
+
       if (sessionData && sessionData.expiresAt > new Date()) {
         const user = await storage.getUser(sessionData.userId);
         if (user) {
@@ -59,7 +59,7 @@ async function requireAuth(req: any, res: any, next: any) {
         }
       }
     }
-    
+
     return res.status(401).json({ message: "Authentication required" });
   } catch (error) {
     console.error("Authentication error:", error);
@@ -68,15 +68,15 @@ async function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
   // Initialize default admin user
   await initializeDefaultUser();
-  
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password required" });
       }
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/verify-email", async (req, res) => {
     try {
       const { token } = req.query;
-      
+
       if (!token || typeof token !== 'string') {
         return res.status(400).send(`
           <html>
@@ -180,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find user by verification token
       const user = await storage.getUserByVerificationToken(token);
-      
+
       if (!user) {
         return res.status(400).send(`
           <html>
@@ -303,13 +303,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/license/info", async (req, res) => {
     try {
       const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
-      
+
       if (!licenseKey) {
         return res.status(403).json({ message: "License key required" });
       }
 
       const licenseInfo = await getLicenseInfo(licenseKey);
-      
+
       if (!licenseInfo || !licenseInfo.valid) {
         return res.status(403).json({ message: "Invalid license key" });
       }
@@ -356,10 +356,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", async (req, res) => {
     try {
       console.log("POST /api/users called with body:", req.body);
-      
+
       // Get license key from header or environment
       const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
-      
+
       if (!licenseKey) {
         return res.status(403).json({ 
           message: "License key required to add team members" 
@@ -368,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get license information to check user limits
       const licenseInfo = await getLicenseInfo(licenseKey);
-      
+
       if (!licenseInfo || !licenseInfo.valid) {
         return res.status(403).json({ 
           message: "Invalid license key" 
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentUsers = await storage.getUsers();
       const currentUserCount = currentUsers.length;
       const maxUsers = licenseInfo.subscription?.userCount || 0;
-      
+
       // Check if adding a new user would exceed the limit
       if (currentUserCount >= maxUsers) {
         return res.status(400).json({ 
@@ -394,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Validated data:", validatedData);
       const user = await storage.createUser(validatedData);
       console.log("Created user:", user);
-      
+
       // Return success response with updated counts
       res.status(201).json({
         ...user,
@@ -418,26 +418,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { currentPassword, ...updateData } = req.body;
       const currentUser = req.user;
-      
+
       // Allow users to update their own profile, or admins to update any user
       if (currentUser.id !== id && currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Permission denied. Only admins can update other users." });
       }
-      
+
       // If password is being changed, verify current password
       if (updateData.password && currentPassword) {
         const existingUser = await storage.getUser(id);
         if (!existingUser) {
           return res.status(404).json({ message: "User not found" });
         }
-        
+
         // In a real app, you would hash and compare passwords
         // For this demo, we'll do a simple comparison
         if (existingUser.password !== currentPassword) {
           return res.status(400).json({ message: "Current password is incorrect" });
         }
       }
-      
+
       const validatedData = insertUserSchema.partial().parse(updateData);
       const user = await storage.updateUser(id, validatedData);
       if (!user) {
@@ -456,17 +456,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const currentUser = req.user;
-      
+
       // Only admins can delete users
       if (currentUser.role !== 'admin') {
         return res.status(403).json({ message: "Permission denied. Only administrators can delete users." });
       }
-      
+
       // Prevent self-deletion
       if (currentUser.id === id) {
         return res.status(400).json({ message: "Cannot delete your own account." });
       }
-      
+
       const success = await storage.deleteUser(id);
       if (!success) {
         return res.status(404).json({ message: "User not found" });
@@ -506,20 +506,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects", async (req, res) => {
     console.log("=== PROJECT CREATION START ===");
     console.log("Raw request body:", req.body);
-    
+
     try {
       const validatedData = insertProjectSchema.parse(req.body);
       console.log("Validated data:", validatedData);
-      
+
       const project = await storage.createProject(validatedData);
       console.log("Project created successfully:", project);
-      
+
       res.status(201).json(project);
     } catch (error) {
       console.error("=== PROJECT CREATION ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      
+
       res.status(400).json({ 
         message: "Invalid project data", 
         error: error instanceof Error ? error.message : "Unknown error" 
@@ -531,24 +531,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("=== PROJECT UPDATE START ===");
     console.log("Project ID:", req.params.id);
     console.log("Raw request body:", req.body);
-    
+
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertProjectSchema.parse(req.body);
       console.log("Validated data:", validatedData);
-      
+
       const project = await storage.updateProject(id, validatedData);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       console.log("Project updated successfully:", project);
       res.json(project);
     } catch (error) {
       console.error("=== PROJECT UPDATE ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      
+
       res.status(400).json({ 
         message: "Invalid project data", 
         error: error instanceof Error ? error.message : "Unknown error" 
@@ -582,14 +582,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/modules", async (req, res) => {
     console.log("=== MODULE CREATION START ===");
     console.log("Raw request body:", req.body);
-    
+
     try {
       // Validate required fields
       if (!req.body.name || !req.body.projectId) {
         console.log("Validation failed: missing name or projectId");
         return res.status(400).json({ message: "Name and project are required" });
       }
-      
+
       // Create module data
       const moduleData = {
         name: String(req.body.name).trim(),
@@ -597,19 +597,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId: Number(req.body.projectId),
         createdBy: Number(req.body.createdBy || 1)
       };
-      
+
       console.log("Creating module with processed data:", moduleData);
-      
+
       const module = await storage.createModule(moduleData);
       console.log("Module created successfully:", module);
-      
+
       res.status(201).json(module);
     } catch (error) {
       console.error("=== MODULE CREATION ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
       console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
-      
+
       res.status(500).json({ 
         message: "Failed to create module", 
         error: error instanceof Error ? error.message : "Unknown error" 
@@ -665,21 +665,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/test-suites", async (req, res) => {
     console.log("=== TEST SUITE CREATION START ===");
     console.log("Raw request body:", req.body);
-    
+
     try {
       const { testCaseIds, ...testSuiteData } = req.body;
       const validatedData = insertTestSuiteSchema.parse(testSuiteData);
-      
+
       // Create the test suite
       const testSuite = await storage.createTestSuite(validatedData);
       console.log("Test suite created:", testSuite);
-      
+
       // Add test cases to the suite if provided
       if (testCaseIds && testCaseIds.length > 0) {
         await storage.addTestCasesToSuite(testSuite.id, testCaseIds);
         console.log(`Added ${testCaseIds.length} test cases to test suite ${testSuite.id}`);
       }
-      
+
       res.status(201).json(testSuite);
     } catch (error) {
       console.error("Test suite creation error:", error);
@@ -727,21 +727,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testSuiteId = parseInt(req.params.id);
       const { testCaseIds } = req.body;
-      
+
       console.log("=== ADD TEST CASES TO SUITE START ===");
       console.log("Test Suite ID:", testSuiteId);
       console.log("Test Case IDs:", testCaseIds);
-      
+
       await storage.addTestCasesToSuite(testSuiteId, testCaseIds);
       console.log("Test cases added successfully");
-      
+
       res.status(200).json({ message: "Test cases added successfully" });
     } catch (error) {
       console.error("=== ADD TEST CASES TO SUITE ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
       console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
-      
+
       res.status(500).json({ 
         message: "Failed to add test cases to suite",
         error: error instanceof Error ? error.message : "Unknown error"
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const testSuiteId = parseInt(req.params.id);
       const testCaseId = parseInt(req.params.testCaseId);
-      
+
       const removed = await storage.removeTestCaseFromSuite(testSuiteId, testCaseId);
       if (removed) {
         res.status(200).json({ message: "Test case removed successfully" });
@@ -809,9 +809,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priorityFilter = req.query.priority as string;
       const statusFilter = req.query.status as string;
       const searchQuery = req.query.search as string;
-      
+
       let testCases = await storage.getTestCases(testSuiteId);
-      
+
       // If filtering by testSuiteId, return all test cases without pagination
       if (testSuiteId) {
         return res.json({
@@ -826,23 +826,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      
+
       // Pagination parameters (only applied when not filtering by testSuiteId)
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 5;
       const offset = (page - 1) * limit;
-      
+
       // Filter by project if projectId is provided
       if (projectId) {
         testCases = testCases.filter(tc => tc.projectId === projectId);
       }
-      
+
       // Apply date filtering
       if (dateRange || (dateFrom && dateTo)) {
         const now = new Date();
         let startDate: Date | null = null;
         let endDate: Date = now;
-        
+
         if (dateRange === "custom" && dateFrom && dateTo) {
           startDate = new Date(dateFrom);
           endDate = new Date(dateTo);
@@ -860,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
         }
-        
+
         if (startDate) {
           testCases = testCases.filter(tc => {
             const createdAt = new Date(tc.createdAt);
@@ -868,26 +868,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       // Apply additional filters
       if (moduleFilter && moduleFilter !== "all") {
         const moduleId = parseInt(moduleFilter);
         testCases = testCases.filter(tc => tc.moduleId === moduleId);
       }
-      
+
       if (componentFilter && componentFilter !== "all") {
         const componentId = parseInt(componentFilter);
         testCases = testCases.filter(tc => tc.componentId === componentId);
       }
-      
+
       if (priorityFilter && priorityFilter !== "all") {
         testCases = testCases.filter(tc => tc.priority === priorityFilter);
       }
-      
+
       if (statusFilter && statusFilter !== "all") {
         testCases = testCases.filter(tc => tc.status === statusFilter);
       }
-      
+
       // Apply search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -897,13 +897,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tc.description?.toLowerCase().includes(query)
         );
       }
-      
+
       // Get total count before pagination
       const totalCount = testCases.length;
-      
+
       // Apply pagination
       const paginatedTestCases = testCases.slice(offset, offset + limit);
-      
+
       // Populate with user data
       const users = await storage.getUsers();
       const testCasesWithUsers = paginatedTestCases.map(testCase => ({
@@ -911,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignee: users.find(user => user.id === testCase.assignedTo),
         createdByUser: users.find(user => user.id === testCase.createdBy),
       }));
-      
+
       // Return paginated response
       res.json({
         data: testCasesWithUsers,
@@ -935,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("=== GENERATING TEST CASE ID ===");
       const testCases = await storage.getTestCases();
       console.log("Fetched test cases count:", testCases.length);
-      
+
       const maxId = testCases.reduce((max, tc) => {
         const match = tc.testCaseId?.match(/TC-(\d+)/);
         if (match) {
@@ -945,11 +945,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return max;
       }, 0);
-      
+
       console.log("Max ID found:", maxId);
       const nextId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
       console.log("Generated next ID:", nextId);
-      
+
       res.json({ testCaseId: nextId });
     } catch (error) {
       console.error("Error generating test case ID:", error);
@@ -972,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/test-cases", licenseMiddleware, async (req, res) => {
     console.log("=== TEST CASE CREATION START ===");
     console.log("Raw request body:", req.body);
-    
+
     try {
       // Auto-generate test case ID
       const existingTestCases = await storage.getTestCases();
@@ -984,29 +984,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return max;
       }, 0);
-      
+
       const generatedTestCaseId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
       console.log("Generated test case ID:", generatedTestCaseId);
-      
+
       // Add the generated ID to the request data and ensure steps is a proper array
       const dataWithId = {
         ...req.body,
         testCaseId: generatedTestCaseId,
         steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
       };
-      
+
       const validatedData = insertTestCaseSchema.parse(dataWithId);
       console.log("Validated data:", validatedData);
-      
+
       const testCase = await storage.createTestCase(validatedData);
       console.log("Test case created successfully:", testCase);
-      
+
       res.status(201).json(testCase);
     } catch (error) {
       console.error("=== TEST CASE CREATION ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      
+
       res.status(400).json({ 
         message: "Invalid test case data", 
         error: error instanceof Error ? error.message : "Unknown error" 
@@ -1018,14 +1018,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("=== TEST CASE UPDATE START ===");
     console.log("Test case ID:", req.params.id);
     console.log("Raw request body:", req.body);
-    
+
     try {
       const id = parseInt(req.params.id);
-      
+
       // Check if this is a partial update (like status change)
       const isPartialUpdate = Object.keys(req.body).length === 1 && 
         ['status', 'priority', 'assignedTo'].includes(Object.keys(req.body)[0]);
-      
+
       if (isPartialUpdate) {
         // For partial updates, just validate the specific fields
         console.log("Processing partial update");
@@ -1043,15 +1043,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...req.body,
           steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
         };
-        
+
         const validatedData = updateTestCaseSchema.parse(dataWithFixedSteps);
         console.log("Validated data:", validatedData);
-        
+
         const testCase = await storage.updateTestCase(id, validatedData);
         if (!testCase) {
           return res.status(404).json({ message: "Test case not found" });
         }
-        
+
         console.log("Test case updated successfully:", testCase);
         res.json(testCase);
       }
@@ -1059,7 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("=== TEST CASE UPDATE ERROR ===");
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      
+
       res.status(400).json({ 
         message: "Failed to update test case", 
         error: error instanceof Error ? error.message : "Unknown error" 
@@ -1087,15 +1087,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
-      
+
       let testRuns = await storage.getTestRuns(projectId);
-      
+
       // Apply date filtering
       if (dateRange || (dateFrom && dateTo)) {
         const now = new Date();
         let startDate: Date | null = null;
         let endDate: Date = now;
-        
+
         if (dateRange === "custom" && dateFrom && dateTo) {
           startDate = new Date(dateFrom);
           endDate = new Date(dateTo);
@@ -1113,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
         }
-        
+
         if (startDate) {
           testRuns = testRuns.filter(tr => {
             const createdAt = new Date(tr.createdAt);
@@ -1121,7 +1121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json(testRuns);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch test runs" });
@@ -1132,10 +1132,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { testCaseIds, ...testRunData } = req.body;
       const validatedData = insertTestRunSchema.parse(testRunData);
-      
+
       // Create the test run first
       const testRun = await storage.createTestRun(validatedData);
-      
+
       // Create test run results for all selected test cases (order preserved by creation sequence)
       if (testCaseIds && Array.isArray(testCaseIds) && testCaseIds.length > 0) {
         for (const testCaseId of testCaseIds) {
@@ -1148,7 +1148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.status(201).json(testRun);
     } catch (error) {
       console.error("Error creating test run:", error);
@@ -1217,28 +1217,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 10;
       const status = req.query.status as string;
       const severity = req.query.severity as string;
+      const priority = req.query.priority as string;
       const search = req.query.search as string;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
-      
+
       let defects = await storage.getDefects(projectId);
-      
+
       // Apply additional project filter if specified
       if (filterProjectId) {
         defects = defects.filter(d => d.projectId === filterProjectId);
       }
-      
+
       // Apply status filter
       if (status && status !== "all") {
         defects = defects.filter(d => d.status === status);
       }
-      
+
       // Apply severity filter
       if (severity && severity !== "all") {
         defects = defects.filter(d => d.severity === severity);
       }
-      
+
+      // Apply priority filter
+      if (priority && priority !== "all") {
+        defects = defects.filter(d => d.priority === priority);
+      }
+
       // Apply search filter
       if (search && search.trim()) {
         const searchLower = search.toLowerCase();
@@ -1248,13 +1254,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (d.description && d.description.toLowerCase().includes(searchLower))
         );
       }
-      
+
       // Apply date filtering
       if (dateRange || (dateFrom && dateTo)) {
         const now = new Date();
         let startDate: Date | null = null;
         let endDate: Date = now;
-        
+
         if (dateRange === "custom" && dateFrom && dateTo) {
           startDate = new Date(dateFrom);
           endDate = new Date(dateTo);
@@ -1272,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
         }
-        
+
         if (startDate) {
           defects = defects.filter(d => {
             const createdAt = new Date(d.createdAt);
@@ -1280,14 +1286,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       // Calculate total count before pagination
       const total = defects.length;
-      
+
       // Apply pagination
       const offset = (page - 1) * limit;
       const paginatedDefects = defects.slice(offset, offset + limit);
-      
+
       // Populate with user data
       const users = await storage.getUsers();
       const defectsWithUsers = paginatedDefects.map(defect => ({
@@ -1295,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignee: users.find(user => user.id === defect.assignedTo),
         reporter: users.find(user => user.id === defect.reportedBy),
       }));
-      
+
       res.json({
         data: defectsWithUsers,
         pagination: {
@@ -1337,23 +1343,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return max;
       }, 0);
-      
+
       const generatedDefectId = `DEF-${(maxId + 1).toString().padStart(4, '0')}`;
-      
+
       // Add the generated ID to the request data
       const dataWithId = {
         ...req.body,
         defectId: generatedDefectId
       };
-      
+
       const validatedData = insertDefectWithIdSchema.parse(dataWithId);
-      
+
       // Create the defect in QualityBytes
       const defect = await storage.createDefect(validatedData);
-      
+
       // Try to create corresponding Azure DevOps work item
       console.log('🔍 About to check if Azure DevOps is configured...');
-      
+
       // Get settings directly to debug
       const debugSettings = await settingsService.getSettings();
       console.log('🔍 Direct settings check:', {
@@ -1362,27 +1368,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project: debugSettings.azureDevOps?.project,
         hasToken: !!debugSettings.azureDevOps?.personalAccessToken
       });
-      
+
       const isConfigured = await azureDevOpsService.isConfigured();
       console.log('🔍 Azure DevOps configuration check result:', isConfigured);
-      
+
       if (isConfigured) {
         try {
           // Get user information for the reporter
           const reporter = await storage.getUser(defect.reportedBy);
           const reporterName = reporter ? reporter.fullName : 'QualityBytes User';
-          
+
           // Get test case title if available
           let testCaseTitle;
           if (defect.testCaseId) {
             const testCase = await storage.getTestCase(defect.testCaseId);
             testCaseTitle = testCase?.title;
           }
-          
+
           // Get project team name for Area Path
           const project = await storage.getProject(defect.projectId);
           const projectTeamName = project?.teamName ? project.teamName : undefined;
-          
+
           // Create Azure DevOps work item
           const azureResult = await azureDevOpsService.createBugWorkItem(
             defect, 
@@ -1390,7 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             testCaseTitle,
             projectTeamName
           );
-          
+
           if (azureResult.success && azureResult.workItemId) {
             // Update defect with Azure DevOps information
             const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(azureResult.workItemId);
@@ -1398,9 +1404,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               azureWorkItemId: azureResult.workItemId,
               azureWorkItemUrl: azureWorkItemUrl
             });
-            
+
             console.log(`✅ Azure DevOps work item created: ${azureResult.workItemId} for defect ${defect.defectId}`);
-            
+
             // Return defect with Azure DevOps information
             return res.status(201).json({
               ...defect,
@@ -1418,7 +1424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.log('ℹ️ Azure DevOps not configured - skipping work item creation');
       }
-      
+
       res.status(201).json(defect);
     } catch (error) {
       console.error('Error creating defect:', error);
@@ -1429,24 +1435,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/defects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       // Get the original defect to check if it has Azure DevOps integration
       const originalDefect = await storage.getDefect(id);
       if (!originalDefect) {
         return res.status(404).json({ message: "Defect not found" });
       }
-      
+
       // Update the defect in QualityBytes
       const updatedDefect = await storage.updateDefect(id, req.body);
       if (!updatedDefect) {
         return res.status(404).json({ message: "Defect not found" });
       }
-      
+
       // If this defect was synced to Azure DevOps, update it there too
       if (originalDefect.azureWorkItemId && await azureDevOpsService.isConfigured()) {
         try {
           console.log(`🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`);
-          
+
           // Get test case title - check if testCaseId is being updated or use existing
           let testCaseTitle;
           const testCaseId = req.body.testCaseId !== undefined ? req.body.testCaseId : updatedDefect.testCaseId;
@@ -1454,7 +1460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const testCase = await storage.getTestCase(testCaseId);
             testCaseTitle = testCase?.title;
           }
-          
+
           // Create update data that includes both new values and context needed for Azure DevOps
           const updateData = {
             ...req.body,
@@ -1466,14 +1472,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             severity: req.body.severity || originalDefect.severity,
             status: req.body.status || originalDefect.status
           };
-          
+
           // Update all changed fields in Azure DevOps
           const azureResult = await azureDevOpsService.updateWorkItem(
             originalDefect.azureWorkItemId,
             updateData,
             testCaseTitle
           );
-          
+
           if (azureResult.success) {
             console.log(`✅ Azure DevOps work item ${originalDefect.azureWorkItemId} updated successfully`);
           } else {
@@ -1484,7 +1490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the defect update if Azure DevOps fails
         }
       }
-      
+
       res.json(updatedDefect);
     } catch (error) {
       console.error('Error updating defect:', error);
@@ -1540,7 +1546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!result) {
         return res.status(404).json({ error: "Test run result not found" });
       }
-      
+
       // If status is being updated (not just notes), change test run status to "in progress"
       if (req.body.status && req.body.status !== "not_executed") {
         const testRun = await storage.getTestRun(result.testRunId);
@@ -1552,7 +1558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Auto-updated test run ${result.testRunId} status to "in progress"`);
         }
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error("Error updating test run result:", error);
@@ -1567,23 +1573,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
-      
+
       let testCases = await storage.getTestCases();
       let testRuns = await storage.getTestRuns();
       let defects = await storage.getDefects();
-      
+
       // Filter by project if projectId is provided
       if (projectId) {
         testCases = testCases.filter(tc => tc.projectId === projectId);
         testRuns = testRuns.filter(tr => tr.projectId === projectId);
         defects = defects.filter(d => d.projectId === projectId);
       }
-      
+
       // Apply date filtering
       const now = new Date();
       let startDate: Date | null = null;
       let endDate: Date = now;
-      
+
       if (dateRange === "custom" && dateFrom && dateTo) {
         startDate = new Date(dateFrom);
         endDate = new Date(dateTo);
@@ -1601,32 +1607,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
         }
       }
-      
+
       // Filter data by date range if specified
       if (startDate) {
         testCases = testCases.filter(tc => {
           const createdAt = new Date(tc.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
-        
+
         testRuns = testRuns.filter(tr => {
           const createdAt = new Date(tr.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
-        
+
         defects = defects.filter(d => {
           const createdAt = new Date(d.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
       }
-      
+
       // Get test run results for pass rate calculation
       const allTestRunResults = [];
       for (const testRun of testRuns) {
         const results = await storage.getTestRunResults(testRun.id);
         allTestRunResults.push(...results);
       }
-      
+
       // Filter test run results by date if specified
       let filteredTestRunResults = allTestRunResults;
       if (startDate) {
@@ -1635,7 +1641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return executedAt >= startDate! && executedAt <= endDate;
         });
       }
-      
+
       // Calculate pass rate from actual test executions
       const executedResults = filteredTestRunResults.filter(result => 
         result.status && result.status !== "not_executed"
@@ -1643,12 +1649,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const passedResults = filteredTestRunResults.filter(result => 
         result.status === "passed"
       );
-      
+
       const totalTestCases = testCases.length;
       const openDefects = defects.filter(d => d.status === "open").length;
       const passRate = executedResults.length > 0 ? 
         (passedResults.length / executedResults.length * 100).toFixed(1) : "0";
-      
+
       res.json({
         totalTestCases,
         testRuns: testRuns.length,
@@ -1667,23 +1673,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
-      
+
       let testCases = await storage.getTestCases();
       let defects = await storage.getDefects();
       let testRuns = await storage.getTestRuns();
-      
+
       // Filter by project if projectId is provided
       if (projectId) {
         testCases = testCases.filter(tc => tc.projectId === projectId);
         defects = defects.filter(d => d.projectId === projectId);
         testRuns = testRuns.filter(tr => tr.projectId === projectId);
       }
-      
+
       // Apply date filtering
       const now = new Date();
       let startDate: Date | null = null;
       let endDate: Date = now;
-      
+
       if (dateRange === "custom" && dateFrom && dateTo) {
         startDate = new Date(dateFrom);
         endDate = new Date(dateTo);
@@ -1701,70 +1707,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
         }
       }
-      
+
       // Filter data by date range if specified
       if (startDate) {
         testCases = testCases.filter(tc => {
           const createdAt = new Date(tc.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
-        
+
         defects = defects.filter(d => {
           const createdAt = new Date(d.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
-        
+
         testRuns = testRuns.filter(tr => {
           const createdAt = new Date(tr.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
       }
-      
+
       // Calculate Test Cases by Status
       const testCasesByStatus = testCases.reduce((acc: any, testCase: any) => {
         acc[testCase.status] = (acc[testCase.status] || 0) + 1;
         return acc;
       }, {});
-      
+
       // Calculate Test Cases by Priority
       const testCasesByPriority = testCases.reduce((acc: any, testCase: any) => {
         acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
         return acc;
       }, {});
-      
+
       // Calculate Defect Status Distribution (by severity)
       const defectsBySeverity = defects.reduce((acc: any, defect: any) => {
         acc[defect.severity] = (acc[defect.severity] || 0) + 1;
         return acc;
       }, {});
-      
+
       // Calculate other metrics
       const executedTestCases = testCases.filter(tc => tc.status !== "draft").length;
       const defectResolutionRate = defects.length > 0 
         ? Math.round((defects.filter(d => d.status === "resolved" || d.status === "closed").length / defects.length) * 100)
         : 0;
-      
+
       // Calculate test automation percentage
       const automationRate = testCases.length > 0 
         ? Math.round((testCases.filter(tc => tc.isAutomated).length / testCases.length) * 100)
         : 0;
-      
+
       res.json({
         // Basic counts
         totalTestCases: testCases.length,
         totalDefects: defects.length,
         totalTestRuns: testRuns.length,
         executedTestCases,
-        
+
         // Calculated metrics
         defectResolutionRate,
         automationRate,
-        
+
         // Distributions
         testCasesByStatus,
         testCasesByPriority,
         defectsBySeverity,
-        
+
         // Additional breakdowns
         automatedTestCases: testCases.filter(tc => tc.isAutomated).length,
         resolvedDefects: defects.filter(d => d.status === "resolved" || d.status === "closed").length,
@@ -1780,7 +1786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const signature = req.headers['x-vss-signature'] as string;
       const payload = JSON.stringify(req.body);
-      
+
       console.log("📥 Received Azure DevOps webhook:", {
         eventType: req.body.eventType,
         workItemId: req.body.resource?.workItemId,
@@ -1804,7 +1810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Process the webhook
       const result = await azureWebhookService.processWebhook(req.body);
-      
+
       if (result.success) {
         res.json(result);
       } else {
@@ -1836,9 +1842,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const azureSettings = req.body;
       const updatedSettings = await settingsService.updateAzureDevOpsSettings(azureSettings);
-      
+
       console.log(`🔧 Azure DevOps settings updated: enabled=${azureSettings.enabled}, org=${azureSettings.organization}, project=${azureSettings.project}`);
-      
+
       res.json(updatedSettings);
     } catch (error) {
       console.error("Error updating Azure DevOps settings:", error);
@@ -1885,7 +1891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Generate unique client ID
     const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Import and add client to SSE service
     import("./sseService").then(({ sseService }) => {
       sseService.addClient(clientId, res);
