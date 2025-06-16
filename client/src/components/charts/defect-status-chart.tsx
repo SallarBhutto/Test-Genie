@@ -6,41 +6,48 @@ interface DefectStatusChartProps {
 }
 
 export default function DefectStatusChart({ defects }: DefectStatusChartProps) {
-  const defectsBySeverity = defects.reduce((acc, defect) => {
-    acc[defect.severity] = (acc[defect.severity] || 0) + 1;
+  const defectsByStatus = defects.reduce((acc, defect) => {
+    acc[defect.status] = (acc[defect.status] || 0) + 1;
     return acc;
   }, {});
 
   const total = defects.length || 1;
-  const critical = defectsBySeverity.critical || 0;
-  const high = defectsBySeverity.high || 0;
-  const medium = defectsBySeverity.medium || 0;
-  const low = defectsBySeverity.low || 0;
+  const open = defectsByStatus.open || 0;
+  const inProgress = defectsByStatus.in_progress || 0;
+  const resolved = defectsByStatus.resolved || 0;
+  const closed = defectsByStatus.closed || 0;
+  const reopened = defectsByStatus.reopened || 0;
 
-  const severityData = [
+  const statusData = [
     { 
-      name: "Critical", 
-      count: critical, 
-      percentage: (critical / total) * 100,
+      name: "Open", 
+      count: open, 
+      percentage: (open / total) * 100,
       color: "bg-red-500"
     },
     { 
-      name: "High", 
-      count: high, 
-      percentage: (high / total) * 100,
-      color: "bg-orange-500"
+      name: "In Progress", 
+      count: inProgress, 
+      percentage: (inProgress / total) * 100,
+      color: "bg-blue-500"
     },
     { 
-      name: "Medium", 
-      count: medium, 
-      percentage: (medium / total) * 100,
-      color: "bg-yellow-500"
-    },
-    { 
-      name: "Low", 
-      count: low, 
-      percentage: (low / total) * 100,
+      name: "Resolved", 
+      count: resolved, 
+      percentage: (resolved / total) * 100,
       color: "bg-green-500"
+    },
+    { 
+      name: "Closed", 
+      count: closed, 
+      percentage: (closed / total) * 100,
+      color: "bg-gray-500"
+    },
+    { 
+      name: "Reopened", 
+      count: reopened, 
+      percentage: (reopened / total) * 100,
+      color: "bg-yellow-500"
     },
   ];
 
@@ -51,7 +58,7 @@ export default function DefectStatusChart({ defects }: DefectStatusChartProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {severityData.map((item) => (
+          {statusData.map((item) => (
             <div key={item.name} className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className={`w-4 h-4 ${item.color} rounded-full`}></div>
