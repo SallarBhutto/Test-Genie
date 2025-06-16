@@ -36,6 +36,7 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
       name: "",
       description: "",
       teamName: "",
+      azureAreaPath: "",
       status: "Active",
       createdBy: 1,
     },

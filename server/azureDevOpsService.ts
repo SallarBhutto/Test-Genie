@@ -69,7 +69,7 @@ export class AzureDevOpsService {
     return statusMap[status] || 'New';
   }
 
-  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, projectTeamName?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
+  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, azureAreaPath?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
     try {
       // Get settings from database
       const settings = await settingsService.getSettings();
@@ -126,16 +126,15 @@ export class AzureDevOpsService {
         }
       ];
 
-      // Only add Area Path if team name is explicitly provided
+      // Only add Area Path if explicitly provided in project settings
       // Azure DevOps will use default area path if not specified
-      if (projectTeamName) {
-        const areaPath = `${this.config.project}\\${projectTeamName}`;
-        console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}"`);
+      if (azureAreaPath) {
+        console.log(`🔍 Azure DevOps Area Path being set: "${azureAreaPath}"`);
         
         workItemFields.push({
           op: 'add',
           path: '/fields/System.AreaPath',
-          value: areaPath
+          value: azureAreaPath
         });
       } else {
         console.log(`🔍 Azure DevOps Area Path: Using default (not specified)`);
