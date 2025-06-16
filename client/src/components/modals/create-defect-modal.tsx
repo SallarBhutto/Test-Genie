@@ -254,14 +254,18 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                    <Select onValueChange={(value) => {
+                      const projectId = parseInt(value);
+                      field.onChange(projectId);
+                      setSelectedProjectId(projectId);
+                    }}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select project" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {projects?.map((project: any) => (
+                        {Array.isArray(projects) && projects?.map((project: any) => (
                           <SelectItem key={project.id} value={project.id.toString()}>
                             {project.name}
                           </SelectItem>
@@ -285,7 +289,7 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {users?.map((user: any) => (
+                        {Array.isArray(users) && users?.map((user: any) => (
                           <SelectItem key={user.id} value={user.id.toString()}>
                             {user.fullName}
                           </SelectItem>
@@ -304,10 +308,17 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Related Test Case (Optional)</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                  <Select 
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    disabled={!selectedProjectId || selectedProjectId === 0}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select test case" />
+                        <SelectValue placeholder={
+                          !selectedProjectId || selectedProjectId === 0 
+                            ? "First select a project" 
+                            : "Select test case"
+                        } />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
