@@ -126,14 +126,16 @@ export class AzureDevOpsService {
         }
       ];
 
-      // Add Area Path if team name is provided
-      if (projectTeamName) {
-        workItemFields.push({
-          op: 'add',
-          path: '/fields/System.AreaPath',
-          value: `${this.config.project}\\${projectTeamName}`
-        });
-      }
+      // Always add Area Path - use team name if available, otherwise use project name
+      const areaPath = projectTeamName 
+        ? `${this.config.project}\\${projectTeamName}`
+        : this.config.project;
+      
+      workItemFields.push({
+        op: 'add',
+        path: '/fields/System.AreaPath',
+        value: areaPath
+      });
 
       // Add repro steps with description and test case reference
       let reproSteps = `**Defect Description:**\n${defect.description}\n\n**Defect ID:** ${defect.defectId}`;
