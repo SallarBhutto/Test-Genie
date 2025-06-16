@@ -309,43 +309,44 @@ export class AzureWebhookService {
         return null;
       }
 
-      // Extract description - try multiple field sources and structures
+      // Extract description from repro steps as primary source
       let description = "Imported from Azure DevOps";
       
+      // Check what fields are available for description
+      const hasReproSteps = resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'];
+      const hasSystemDesc = resource.fields?.['System.Description'];
+      
       console.log("🔍 Starting description extraction from:", {
-        systemDescription: resource.fields?.['System.Description'],
-        reproSteps: resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'],
+        hasReproSteps: !!hasReproSteps,
+        hasSystemDesc: !!hasSystemDesc,
+        reproStepsValue: hasReproSteps,
+        systemDescValue: hasSystemDesc,
         availableFields: Object.keys(resource.fields || {})
       });
 
-      // Try System.Description with newValue
-      if (resource.fields?.['System.Description']?.newValue) {
-        console.log("🔍 Trying System.Description.newValue:", resource.fields['System.Description'].newValue);
-        description = this.extractDescriptionFromHtml(resource.fields['System.Description'].newValue) || description;
-      }
-      // Try System.Description direct value (for created items)
-      else if (resource.fields?.['System.Description']) {
-        const descField = resource.fields['System.Description'];
-        console.log("🔍 Trying System.Description direct:", descField);
-        const descValue = typeof descField === 'string' ? descField : descField?.newValue;
-        if (descValue) {
-          console.log("🔍 Processing description value:", descValue);
-          description = this.extractDescriptionFromHtml(descValue) || description;
+      // Priority 1: Use ReproSteps if available (highest priority)
+      if (hasReproSteps) {
+        const reproValue = typeof hasReproSteps === 'string' ? hasReproSteps : hasReproSteps?.newValue;
+        if (reproValue) {
+          console.log("🔍 Using ReproSteps as description source:", reproValue);
+          const reproContent = this.extractDescriptionFromHtml(reproValue);
+          if (reproContent && reproContent.length > 3) {
+            description = reproContent;
+            console.log("🔍 Successfully extracted from ReproSteps");
+          }
         }
       }
-      // Try ReproSteps with newValue
-      else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']?.newValue) {
-        console.log("🔍 Trying ReproSteps.newValue:", resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue);
-        description = this.extractDescriptionFromReproSteps(resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue) || description;
-      }
-      // Try ReproSteps direct value
-      else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']) {
-        const reproField = resource.fields['Microsoft.VSTS.TCM.ReproSteps'];
-        console.log("🔍 Trying ReproSteps direct:", reproField);
-        const reproValue = typeof reproField === 'string' ? reproField : reproField?.newValue;
-        if (reproValue) {
-          console.log("🔍 Processing repro value:", reproValue);
-          description = this.extractDescriptionFromReproSteps(reproValue) || description;
+      
+      // Priority 2: Use System.Description only if ReproSteps didn't work
+      if (description === "Imported from Azure DevOps" && hasSystemDesc) {
+        const descValue = typeof hasSystemDesc === 'string' ? hasSystemDesc : hasSystemDesc?.newValue;
+        if (descValue) {
+          console.log("🔍 Falling back to System.Description:", descValue);
+          const sysDescContent = this.extractDescriptionFromHtml(descValue);
+          if (sysDescContent && sysDescContent.length > 3) {
+            description = sysDescContent;
+            console.log("🔍 Successfully extracted from System.Description");
+          }
         }
       }
 
