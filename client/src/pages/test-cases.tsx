@@ -713,7 +713,8 @@ export default function TestCases() {
               
               {/* Only show page navigation when there are multiple pages */}
               {pagination.totalPages > 1 && (
-                <Pagination>
+                <div className="flex items-center">
+                  <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious 
@@ -756,6 +757,7 @@ export default function TestCases() {
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
+                </div>
               )}
             </div>
           )}

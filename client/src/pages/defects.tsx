@@ -170,8 +170,8 @@ export default function Defects() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Defects</h1>
-           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Defects</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             Manage and organize your application defects
           </p>
         </div>
@@ -553,48 +553,50 @@ export default function Defects() {
             <span className="text-sm text-neutral-600 dark:text-neutral-400">per page</span>
           </div>
           
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => pagination.hasPrev && setCurrentPage(currentPage - 1)}
-                  className={!pagination.hasPrev ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-              
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                let pageNum;
-                if (pagination.totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (pagination.page <= 3) {
-                  pageNum = i + 1;
-                } else if (pagination.page >= pagination.totalPages - 2) {
-                  pageNum = pagination.totalPages - 4 + i;
-                } else {
-                  pageNum = pagination.page - 2 + i;
-                }
+          <div className="flex items-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => pagination.hasPrev && setCurrentPage(currentPage - 1)}
+                    className={!pagination.hasPrev ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
                 
-                return (
-                  <PaginationItem key={pageNum}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(pageNum)}
-                      isActive={pageNum === pagination.page}
-                      className="cursor-pointer"
-                    >
-                      {pageNum}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => pagination.hasNext && setCurrentPage(currentPage + 1)}
-                  className={!pagination.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (pagination.totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (pagination.page <= 3) {
+                    pageNum = i + 1;
+                  } else if (pagination.page >= pagination.totalPages - 2) {
+                    pageNum = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNum = pagination.page - 2 + i;
+                  }
+                  
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(pageNum)}
+                        isActive={pageNum === pagination.page}
+                        className="cursor-pointer"
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => pagination.hasNext && setCurrentPage(currentPage + 1)}
+                    className={!pagination.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </div>
       )}
 
