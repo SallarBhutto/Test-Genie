@@ -1527,7 +1527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/defects/bulk", async (req, res) => {
+  app.delete("/api/defects/bulk", requireAuth, async (req, res) => {
     try {
       console.log('🔍 Bulk delete request received:', req.body);
       const { ids } = req.body;
