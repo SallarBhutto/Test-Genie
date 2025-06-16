@@ -158,9 +158,9 @@ export default function Components() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedComponents.map((component) => {
-          const componentTestCases = (testCases as TestCase[]).filter(
-            tc => tc.componentId === component.id
-          );
+          const componentTestCases = Array.isArray(testCases) 
+            ? (testCases as TestCase[]).filter(tc => tc.componentId === component.id)
+            : [];
 
           return (
             <Link key={component.id} href={`/components/${component.id}/test-cases`}>
