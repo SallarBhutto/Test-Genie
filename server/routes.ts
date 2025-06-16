@@ -1529,27 +1529,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/defects/bulk", async (req, res) => {
     try {
+      console.log('🔍 Bulk delete request received:', req.body);
       const { ids } = req.body;
       
       if (!Array.isArray(ids) || ids.length === 0) {
+        console.log('❌ Invalid IDs array:', ids);
         return res.status(400).json({ message: "Invalid or empty IDs array" });
       }
 
+      console.log('🔍 Processing bulk delete for IDs:', ids);
       let deletedCount = 0;
       const errors = [];
 
       for (const id of ids) {
         try {
+          console.log(`🔍 Attempting to delete defect ${id}`);
           const success = await storage.deleteDefect(parseInt(id));
           if (success) {
             deletedCount++;
+            console.log(`✅ Successfully deleted defect ${id}`);
           } else {
-            errors.push(`Defect ${id} not found`);
+            const errorMsg = `Defect ${id} not found`;
+            console.log(`❌ ${errorMsg}`);
+            errors.push(errorMsg);
           }
         } catch (error) {
-          errors.push(`Failed to delete defect ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMsg = `Failed to delete defect ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          console.log(`❌ ${errorMsg}`);
+          errors.push(errorMsg);
         }
       }
+
+      console.log(`🔍 Bulk delete completed. Deleted: ${deletedCount}, Errors: ${errors.length}`);
 
       if (deletedCount === 0) {
         return res.status(404).json({ 
@@ -1565,7 +1576,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete defects" });
+      console.error('❌ Bulk delete error:', error);
+      res.status(500).json({ message: `Failed to delete defects: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
 
