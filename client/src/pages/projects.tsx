@@ -18,9 +18,11 @@ export default function Projects() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const { data: testCases = [] } = useQuery({
+  const { data: testCasesResponse } = useQuery({
     queryKey: ["/api/test-cases"],
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
@@ -28,9 +30,7 @@ export default function Projects() {
 
   // Calculate project-specific statistics
   const getProjectStats = (projectId: number) => {
-    const projectTestCases = Array.isArray(testCases) 
-      ? testCases.filter((tc: any) => tc.projectId === projectId)
-      : [];
+    const projectTestCases = testCases.filter((tc: any) => tc.projectId === projectId);
     const projectMembers = Array.isArray(users)
       ? users.filter((user: any) => user.role !== "admin").length
       : 0; // Basic member count

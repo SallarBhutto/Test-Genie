@@ -71,13 +71,16 @@ export default function Team() {
     retry: false,
   });
 
-  const { data: testCases = [] } = useQuery({
+  const { data: testCasesResponse } = useQuery({
     queryKey: ["/api/test-cases"],
   });
 
-  const { data: defects = [] } = useQuery({
+  const { data: defectsResponse } = useQuery({
     queryKey: ["/api/defects"],
   });
+
+  const testCases = testCasesResponse?.data || [];
+  const defects = defectsResponse?.data || [];
 
   const filteredUsers = users.filter((user: User) =>
     user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||

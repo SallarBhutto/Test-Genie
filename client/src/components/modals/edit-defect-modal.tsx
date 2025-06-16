@@ -34,17 +34,20 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: projects } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
   });
 
-  const { data: users } = useQuery({
+  const { data: users = [] } = useQuery({
     queryKey: ["/api/users"],
   });
 
-  const { data: testCases } = useQuery({
+  const { data: testCasesResponse } = useQuery({
     queryKey: ["/api/test-cases"],
   });
+
+  // Extract the actual test cases array from the response
+  const testCases = testCasesResponse?.data || [];
 
   const { data: defect } = useQuery({
     queryKey: ["/api/defects", defectId],
