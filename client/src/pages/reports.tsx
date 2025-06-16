@@ -47,7 +47,7 @@ export default function Reports() {
 
   // Filter defects for the chart component (use chartDefects for always showing data)
   const filteredDefects = Array.isArray(chartDefects) 
-    ? chartDefects.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) 
+    ? (selectedProject ? chartDefects.filter((defect: any) => defect.projectId === selectedProject.id) : chartDefects)
     : [];
 
   // Calculate average execution time from test runs (mock calculation)
