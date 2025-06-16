@@ -534,8 +534,8 @@ export default function Defects() {
 
       {/* Pagination Controls */}
       {pagination && pagination.total > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-t bg-white dark:bg-neutral-900">
+          <div className="flex items-center space-x-2">
             <span className="text-sm text-neutral-600 dark:text-neutral-400">
               Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} defects
             </span>

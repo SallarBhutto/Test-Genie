@@ -690,12 +690,12 @@ export default function TestCases() {
           
           {/* Pagination Controls */}
           {pagination && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
+            <div className="flex items-center justify-between px-6 py-4 border-t bg-white dark:bg-neutral-900">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
                   Showing {((pagination.page - 1) * pagination.limit) + 1} to{" "}
                   {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of{" "}
-                  {pagination.totalCount} entries
+                  {pagination.totalCount} test cases
                 </span>
                 <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
                   <SelectTrigger className="w-20">
@@ -708,7 +708,7 @@ export default function TestCases() {
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span className="text-sm text-gray-700">per page</span>
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">per page</span>
               </div>
               
               {/* Only show page navigation when there are multiple pages */}
