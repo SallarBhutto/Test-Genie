@@ -36,13 +36,15 @@ export default function Defects() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedDefects, setSelectedDefects] = useState<Set<number>>(new Set());
   const { selectedProject } = useProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Reset page when filters change
+  // Reset page and selections when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedDefects(new Set());
   }, [statusFilter, severityFilter, priorityFilter, projectFilter, searchQuery, selectedProject]);
 
   const { data: defectsResponse, isLoading } = useQuery({
@@ -113,7 +115,63 @@ export default function Defects() {
     },
   });
 
+  const bulkDeleteDefectsMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      await apiRequest("DELETE", "/api/defects/bulk", { ids });
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/defects"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setSelectedDefects(new Set());
+      toast({
+        title: "Defects deleted",
+        description: `${ids.length} defect${ids.length > 1 ? 's' : ''} deleted successfully.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete defects. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const { sortedData: sortedDefects, sortConfig, requestSort } = useSorting(defects, "defectId");
+
+  // Selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allDefectIds = new Set(sortedDefects.map((defect: any) => defect.id));
+      setSelectedDefects(allDefectIds);
+    } else {
+      setSelectedDefects(new Set());
+    }
+  };
+
+  const handleSelectDefect = (defectId: number, checked: boolean) => {
+    const newSelected = new Set(selectedDefects);
+    if (checked) {
+      newSelected.add(defectId);
+    } else {
+      newSelected.delete(defectId);
+    }
+    setSelectedDefects(newSelected);
+  };
+
+  const isAllSelected = sortedDefects.length > 0 && selectedDefects.size === sortedDefects.length;
+  const isIndeterminate = selectedDefects.size > 0 && selectedDefects.size < sortedDefects.length;
+
+  const handleBulkDelete = () => {
+    if (selectedDefects.size === 0) return;
+    
+    const selectedCount = selectedDefects.size;
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} defect${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`;
+    
+    if (window.confirm(confirmMessage)) {
+      bulkDeleteDefectsMutation.mutate(Array.from(selectedDefects));
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -361,7 +419,16 @@ export default function Defects() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
-                      <Checkbox />
+                      <Checkbox 
+                        checked={isAllSelected}
+                        onCheckedChange={handleSelectAll}
+                        className={isIndeterminate ? "data-[state=checked]:bg-primary/50" : ""}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = isIndeterminate;
+                          }
+                        }}
+                      />
                     </TableHead>
                     <SortableTableHead
                       sortKey="defectId"
