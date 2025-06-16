@@ -69,7 +69,7 @@ export class AzureDevOpsService {
     return statusMap[status] || 'New';
   }
 
-  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, projectTeamName?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
+  async createBugWorkItem(defect: Defect, reportedBy: string, testCaseTitle?: string, azureAreaPath?: string): Promise<{ success: boolean; workItemId?: number; error?: string }> {
     try {
       // Get settings from database
       const settings = await settingsService.getSettings();
@@ -126,26 +126,18 @@ export class AzureDevOpsService {
         }
       ];
 
-      // Add Area Path - try with team name first, fall back to project only if that fails
-      // For now, just use the project name to avoid area path validation issues
-      const areaPath = this.config.project;
-      console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}" (project: ${this.config.project}, teamName: ${projectTeamName})`);
-      console.log(`📝 Note: Using project-only area path to avoid validation issues. Team name can be added as a tag instead.`);
-      
-      workItemFields.push({
-        op: 'add',
-        path: '/fields/System.AreaPath',
-        value: areaPath
-      });
-
-      // Add team name as additional tag if provided
-      if (projectTeamName) {
-        const existingTags = `QualityBytes; ${defect.defectId}; Test-Management; Team-${projectTeamName.replace(/\s+/g, '-')}`;
-        // Update the tags field to include team name
-        const tagsField = workItemFields.find(field => field.path === '/fields/System.Tags');
-        if (tagsField) {
-          tagsField.value = existingTags;
-        }
+      // Only add Area Path if explicitly provided in project settings
+      // Azure DevOps will use default area path if not specified
+      if (azureAreaPath) {
+        console.log(`🔍 Azure DevOps Area Path being set: "${azureAreaPath}"`);
+        
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.AreaPath',
+          value: azureAreaPath
+        });
+      } else {
+        console.log(`🔍 Azure DevOps Area Path: Using default (not specified)`);
       }
 
       // Add repro steps with description and test case reference
