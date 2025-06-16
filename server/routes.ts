@@ -1514,19 +1514,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/defects/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteDefect(id);
-      if (!success) {
-        return res.status(404).json({ message: "Defect not found" });
-      }
-      res.json({ message: "Defect deleted successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete defect" });
-    }
-  });
-
   app.delete("/api/defects/bulk", requireAuth, async (req, res) => {
     try {
       console.log('🔍 Bulk delete request received:', req.body);
@@ -1581,7 +1568,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
+  app.delete("/api/defects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDefect(id);
+      if (!success) {
+        return res.status(404).json({ message: "Defect not found" });
+      }
+      res.json({ message: "Defect deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete defect" });
+    }
+  });
 
   // Test Run Results
   app.get("/api/test-run-results/:testRunId", async (req, res) => {
