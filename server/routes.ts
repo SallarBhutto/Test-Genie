@@ -825,11 +825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priorityFilter = req.query.priority as string;
       const statusFilter = req.query.status as string;
       const searchQuery = req.query.search as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
 
-      let testCases = await storage.getTestCases(testSuiteId);
-
-      // If filtering by testSuiteId, return all test cases without pagination
+      // Handle test suite filtering separately (backwards compatibility)
       if (testSuiteId) {
+        const testCases = await storage.getTestCases(testSuiteId);
         return res.json({
           data: testCases,
           pagination: {
@@ -843,86 +844,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Pagination parameters (only applied when not filtering by testSuiteId)
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 5;
-      const offset = (page - 1) * limit;
+      // Handle date range filtering
+      let finalDateFrom = dateFrom;
+      let finalDateTo = dateTo;
 
-      // Filter by project if projectId is provided
-      if (projectId) {
-        testCases = testCases.filter(tc => tc.projectId === projectId);
-      }
-
-      // Apply date filtering
-      if (dateRange || (dateFrom && dateTo)) {
+      if (dateRange && dateRange !== "custom") {
         const now = new Date();
-        let startDate: Date | null = null;
-        let endDate: Date = now;
-
-        if (dateRange === "custom" && dateFrom && dateTo) {
-          startDate = new Date(dateFrom);
-          endDate = new Date(dateTo);
-          endDate.setHours(23, 59, 59, 999);
-        } else if (dateRange) {
-          switch (dateRange) {
-            case "last7days":
-              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              break;
-            case "last30days":
-              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-              break;
-            case "last90days":
-              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-              break;
-          }
-        }
-
-        if (startDate) {
-          testCases = testCases.filter(tc => {
-            const createdAt = new Date(tc.createdAt);
-            return createdAt >= startDate! && createdAt <= endDate;
-          });
+        switch (dateRange) {
+          case "last7days":
+            finalDateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateTo = now.toISOString();
+            break;
+          case "last30days":
+            finalDateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateTo = now.toISOString();
+            break;
+          case "last90days":
+            finalDateFrom = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateTo = now.toISOString();
+            break;
         }
       }
 
-      // Apply additional filters
-      if (moduleFilter && moduleFilter !== "all") {
-        const moduleId = parseInt(moduleFilter);
-        testCases = testCases.filter(tc => tc.moduleId === moduleId);
-      }
-
-      if (componentFilter && componentFilter !== "all") {
-        const componentId = parseInt(componentFilter);
-        testCases = testCases.filter(tc => tc.componentId === componentId);
-      }
-
-      if (priorityFilter && priorityFilter !== "all") {
-        testCases = testCases.filter(tc => tc.priority === priorityFilter);
-      }
-
-      if (statusFilter && statusFilter !== "all") {
-        testCases = testCases.filter(tc => tc.status === statusFilter);
-      }
-
-      // Apply search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        testCases = testCases.filter(tc => 
-          tc.title?.toLowerCase().includes(query) ||
-          tc.testCaseId?.toLowerCase().includes(query) ||
-          tc.description?.toLowerCase().includes(query)
-        );
-      }
-
-      // Get total count before pagination
-      const totalCount = testCases.length;
-
-      // Apply pagination
-      const paginatedTestCases = testCases.slice(offset, offset + limit);
+      // Use database-level pagination and filtering
+      const result = await storage.getTestCasesPaginated({
+        projectId,
+        moduleId: moduleFilter && moduleFilter !== "all" ? parseInt(moduleFilter) : undefined,
+        componentId: componentFilter && componentFilter !== "all" ? parseInt(componentFilter) : undefined,
+        priority: priorityFilter && priorityFilter !== "all" ? priorityFilter : undefined,
+        status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+        search: searchQuery,
+        dateFrom: finalDateFrom,
+        dateTo: finalDateTo,
+        page,
+        limit
+      });
 
       // Populate with user data
       const users = await storage.getUsers();
-      const testCasesWithUsers = paginatedTestCases.map(testCase => ({
+      const testCasesWithUsers = result.data.map(testCase => ({
         ...testCase,
         assignee: users.find(user => user.id === testCase.assignedTo),
         createdByUser: users.find(user => user.id === testCase.createdBy),
@@ -932,15 +892,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         data: testCasesWithUsers,
         pagination: {
-          page,
-          limit,
-          totalCount,
-          totalPages: Math.ceil(totalCount / limit),
-          hasNextPage: offset + limit < totalCount,
-          hasPreviousPage: page > 1
+          page: result.page,
+          limit: result.limit,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+          hasNextPage: result.hasNextPage,
+          hasPreviousPage: result.hasPreviousPage
         }
       });
     } catch (error) {
+      console.error("Error fetching test cases:", error);
       res.status(500).json({ message: "Failed to fetch test cases" });
     }
   });

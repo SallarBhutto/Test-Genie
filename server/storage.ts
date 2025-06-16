@@ -65,6 +65,27 @@ export interface IStorage {
 
   // Test Cases
   getTestCases(testSuiteId?: number): Promise<TestCase[]>;
+  getTestCasesPaginated(options: {
+    testSuiteId?: number;
+    projectId?: number;
+    moduleId?: number;
+    componentId?: number;
+    priority?: string;
+    status?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: TestCase[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }>;
   getTestCase(id: number): Promise<TestCase | undefined>;
   createTestCase(testCase: InsertTestCase): Promise<TestCase>;
   updateTestCase(id: number, testCase: Partial<TestCase>): Promise<TestCase | undefined>;
@@ -496,6 +517,48 @@ export class MemStorage implements IStorage {
 
   async deleteTestCase(id: number): Promise<boolean> {
     return this.testCases.delete(id);
+  }
+
+  async getTestCasesPaginated(options: {
+    testSuiteId?: number;
+    projectId?: number;
+    moduleId?: number;
+    componentId?: number;
+    priority?: string;
+    status?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: TestCase[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    // This is a fallback implementation for MemStorage
+    // In practice, DatabaseStorage should be used for production
+    const allTestCases = Array.from(this.testCases.values());
+    const { page = 1, limit = 5 } = options;
+    const offset = (page - 1) * limit;
+    
+    const totalCount = allTestCases.length;
+    const data = allTestCases.slice(offset, offset + limit);
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    return {
+      data,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
   }
 
   // Test Runs
@@ -986,6 +1049,119 @@ export class DatabaseStorage implements IStorage {
       return result;
     }
     return await db.select().from(testCases);
+  }
+
+  async getTestCasesPaginated(options: {
+    testSuiteId?: number;
+    projectId?: number;
+    moduleId?: number;
+    componentId?: number;
+    priority?: string;
+    status?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: TestCase[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    const {
+      testSuiteId,
+      projectId,
+      moduleId,
+      componentId,
+      priority,
+      status,
+      search,
+      dateFrom,
+      dateTo,
+      page = 1,
+      limit = 5
+    } = options;
+
+    const offset = (page - 1) * limit;
+
+    // Start building the query
+    let query = db.select().from(testCases);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(testCases);
+
+    // Build WHERE conditions
+    const conditions = [];
+
+    if (testSuiteId) {
+      query = query.innerJoin(testSuiteTestCases, eq(testCases.id, testSuiteTestCases.testCaseId));
+      countQuery = countQuery.innerJoin(testSuiteTestCases, eq(testCases.id, testSuiteTestCases.testCaseId));
+      conditions.push(eq(testSuiteTestCases.testSuiteId, testSuiteId));
+    }
+
+    if (projectId) {
+      conditions.push(eq(testCases.projectId, projectId));
+    }
+
+    if (moduleId) {
+      conditions.push(eq(testCases.moduleId, moduleId));
+    }
+
+    if (componentId) {
+      conditions.push(eq(testCases.componentId, componentId));
+    }
+
+    if (priority && priority !== "all") {
+      conditions.push(eq(testCases.priority, priority));
+    }
+
+    if (status && status !== "all") {
+      conditions.push(eq(testCases.status, status));
+    }
+
+    if (search) {
+      conditions.push(
+        sql`(${testCases.title} ILIKE ${'%' + search + '%'} OR ${testCases.description} ILIKE ${'%' + search + '%'})`
+      );
+    }
+
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      conditions.push(
+        sql`${testCases.createdAt} >= ${startDate} AND ${testCases.createdAt} <= ${endDate}`
+      );
+    }
+
+    // Apply WHERE conditions if any
+    if (conditions.length > 0) {
+      const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+      query = query.where(whereCondition);
+      countQuery = countQuery.where(whereCondition);
+    }
+
+    // Execute count query to get total records
+    const [{ count: totalCount }] = await countQuery;
+
+    // Add pagination to main query
+    const data = await query.limit(limit).offset(offset);
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      data,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
+    };
   }
 
   async getTestCase(id: number): Promise<TestCase | undefined> {
