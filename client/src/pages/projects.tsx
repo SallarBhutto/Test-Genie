@@ -28,16 +28,57 @@ export default function Projects() {
     queryKey: ["/api/users"],
   });
 
+  const { data: defectsResponse } = useQuery({
+    queryKey: ["/api/defects"],
+  });
+
+  const { data: testRuns = [] } = useQuery({
+    queryKey: ["/api/test-runs"],
+  });
+
+  const defects = defectsResponse?.data || [];
+
   // Calculate project-specific statistics
   const getProjectStats = (projectId: number) => {
     const projectTestCases = testCases.filter((tc: any) => tc.projectId === projectId);
-    const projectMembers = Array.isArray(users)
-      ? users.filter((user: any) => user.role !== "admin").length
-      : 0; // Basic member count
+    
+    // Calculate unique members who have contributed to this project
+    const contributorIds = new Set();
+    
+    // Add users who created test cases for this project
+    testCases.forEach((tc: any) => {
+      if (tc.projectId === projectId && tc.createdBy) {
+        contributorIds.add(tc.createdBy);
+      }
+      if (tc.projectId === projectId && tc.assignedTo) {
+        contributorIds.add(tc.assignedTo);
+      }
+    });
+
+    // Add users who worked on defects for this project
+    defects.forEach((defect: any) => {
+      if (defect.projectId === projectId) {
+        if (defect.reportedBy) contributorIds.add(defect.reportedBy);
+        if (defect.assignedTo) contributorIds.add(defect.assignedTo);
+      }
+    });
+
+    // Add users who worked on test runs for this project
+    testRuns.forEach((testRun: any) => {
+      if (testRun.projectId === projectId && testRun.createdBy) {
+        contributorIds.add(testRun.createdBy);
+      }
+    });
+    
+    // Add the project creator
+    const project = Array.isArray(projects) ? projects.find((p: any) => p.id === projectId) : null;
+    if (project?.createdBy) {
+      contributorIds.add(project.createdBy);
+    }
 
     return {
       testCases: projectTestCases.length,
-      members: projectMembers,
+      members: contributorIds.size,
     };
   };
 
