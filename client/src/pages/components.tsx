@@ -41,9 +41,12 @@ export default function Components() {
     queryKey: ["/api/components"],
   });
 
-  const { data: testCases = [], isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases"],
+  const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
+    queryKey: ["/api/test-cases", { limit: 1000 }], // Get more test cases for counting
+    queryFn: () => fetch(`/api/test-cases?limit=1000`).then(res => res.json())
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   // Filter modules by selected project
   const filteredModules = selectedProjectId === "all" ? 

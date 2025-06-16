@@ -22,9 +22,12 @@ export default function ComponentDetail() {
     queryKey: ["/api/projects"],
   });
 
-  const { data: testCases = [], isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases"],
+  const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
+    queryKey: ["/api/test-cases", { limit: 1000 }],
+    queryFn: () => fetch(`/api/test-cases?limit=1000`).then(res => res.json())
   });
+
+  const testCases = testCasesResponse?.data || [];
 
   if (componentLoading || modulesLoading || projectsLoading || testCasesLoading) {
     return (
