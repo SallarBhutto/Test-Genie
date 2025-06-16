@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +44,7 @@ export default function Reports() {
   // Calculate average execution time from test runs (mock calculation)
   const calculateAvgExecutionTime = () => {
     if (!reportStats?.totalTestRuns || reportStats.totalTestRuns === 0) return "0h";
-    
+
     // Mock calculation - in real scenario this would come from actual execution times
     const totalRuns = reportStats.totalTestRuns;
     const avgHours = Math.round((totalRuns * 2.5) / totalRuns * 10) / 10; // Mock calculation
@@ -101,7 +100,7 @@ export default function Reports() {
               </div>
             </>
           )}
-          
+
         </div>
       </div>
 
