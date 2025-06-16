@@ -126,16 +126,20 @@ export class AzureDevOpsService {
         }
       ];
 
-      // Always add Area Path - use team name if available, otherwise use project name
-      const areaPath = projectTeamName 
-        ? `${this.config.project}\\${projectTeamName}`
-        : this.config.project;
-      
-      workItemFields.push({
-        op: 'add',
-        path: '/fields/System.AreaPath',
-        value: areaPath
-      });
+      // Only add Area Path if team name is explicitly provided
+      // Azure DevOps will use default area path if not specified
+      if (projectTeamName) {
+        const areaPath = `${this.config.project}\\${projectTeamName}`;
+        console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}"`);
+        
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.AreaPath',
+          value: areaPath
+        });
+      } else {
+        console.log(`🔍 Azure DevOps Area Path: Using default (not specified)`);
+      }
 
       // Add repro steps with description and test case reference
       let reproSteps = `**Defect Description:**\n${defect.description}\n\n**Defect ID:** ${defect.defectId}`;
