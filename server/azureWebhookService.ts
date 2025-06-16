@@ -312,36 +312,46 @@ export class AzureWebhookService {
       // Extract description - try multiple field sources and structures
       let description = "Imported from Azure DevOps";
       
+      console.log("🔍 Starting description extraction from:", {
+        systemDescription: resource.fields?.['System.Description'],
+        reproSteps: resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'],
+        availableFields: Object.keys(resource.fields || {})
+      });
+
       // Try System.Description with newValue
       if (resource.fields?.['System.Description']?.newValue) {
+        console.log("🔍 Trying System.Description.newValue:", resource.fields['System.Description'].newValue);
         description = this.extractDescriptionFromHtml(resource.fields['System.Description'].newValue) || description;
       }
       // Try System.Description direct value (for created items)
       else if (resource.fields?.['System.Description']) {
         const descField = resource.fields['System.Description'];
-        const descValue = typeof descField === 'string' ? descField : descField?.newValue || descField?.value;
+        console.log("🔍 Trying System.Description direct:", descField);
+        const descValue = typeof descField === 'string' ? descField : descField?.newValue;
         if (descValue) {
+          console.log("🔍 Processing description value:", descValue);
           description = this.extractDescriptionFromHtml(descValue) || description;
         }
       }
       // Try ReproSteps with newValue
       else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']?.newValue) {
+        console.log("🔍 Trying ReproSteps.newValue:", resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue);
         description = this.extractDescriptionFromReproSteps(resource.fields['Microsoft.VSTS.TCM.ReproSteps'].newValue) || description;
       }
       // Try ReproSteps direct value
       else if (resource.fields?.['Microsoft.VSTS.TCM.ReproSteps']) {
         const reproField = resource.fields['Microsoft.VSTS.TCM.ReproSteps'];
-        const reproValue = typeof reproField === 'string' ? reproField : reproField?.newValue || reproField?.value;
+        console.log("🔍 Trying ReproSteps direct:", reproField);
+        const reproValue = typeof reproField === 'string' ? reproField : reproField?.newValue;
         if (reproValue) {
+          console.log("🔍 Processing repro value:", reproValue);
           description = this.extractDescriptionFromReproSteps(reproValue) || description;
         }
       }
 
-      console.log("🔍 Description extraction debug:", {
-        systemDescription: resource.fields?.['System.Description'],
-        reproSteps: resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'],
+      console.log("🔍 Final description extraction result:", {
         extractedDescription: description,
-        availableFields: Object.keys(resource.fields || {})
+        originalDefault: "Imported from Azure DevOps"
       });
 
       // Extract other fields with defaults - handle both create and update scenarios
