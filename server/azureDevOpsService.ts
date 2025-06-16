@@ -382,6 +382,15 @@ export class AzureDevOpsService {
   }
 
   async getWorkItemUrl(workItemId: number): Promise<string> {
+    // Get fresh settings from database to ensure correct organization and project
+    const settings = await settingsService.getSettings();
+    const azureConfig = settings.azureDevOps;
+    
+    if (azureConfig?.organization && azureConfig?.project) {
+      return `https://dev.azure.com/${azureConfig.organization}/${azureConfig.project}/_workitems/edit/${workItemId}`;
+    }
+    
+    // Fallback to instance config if database settings are unavailable
     return `https://dev.azure.com/${this.config.organization}/${this.config.project}/_workitems/edit/${workItemId}`;
   }
 
