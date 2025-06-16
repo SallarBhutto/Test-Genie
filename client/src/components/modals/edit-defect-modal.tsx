@@ -75,6 +75,14 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
     },
   });
 
+  // Watch the project selection to filter test cases
+  const selectedProjectId = form.watch("projectId");
+  
+  // Filter test cases based on selected project
+  const filteredTestCases = selectedProjectId 
+    ? testCases.filter((testCase: any) => testCase.projectId === selectedProjectId)
+    : [];
+
   // Update form when defect data is loaded
   useEffect(() => {
     if (defect && open) {
@@ -91,6 +99,19 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
       });
     }
   }, [defect, open, form]);
+
+  // Reset test case selection when project changes
+  useEffect(() => {
+    const currentTestCaseId = form.getValues("testCaseId");
+    if (currentTestCaseId && selectedProjectId) {
+      const isTestCaseInProject = testCases.some((tc: any) => 
+        tc.id === currentTestCaseId && tc.projectId === selectedProjectId
+      );
+      if (!isTestCaseInProject) {
+        form.setValue("testCaseId", undefined);
+      }
+    }
+  }, [selectedProjectId, testCases, form]);
 
   const updateDefectMutation = useMutation({
     mutationFn: async (data: InsertDefect) => {
@@ -200,7 +221,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {testCases?.map((testCase: any) => (
+                        {filteredTestCases.map((testCase: any) => (
                           <SelectItem key={testCase.id} value={testCase.id.toString()}>
                             {testCase.testCaseId} - {testCase.title}
                           </SelectItem>
