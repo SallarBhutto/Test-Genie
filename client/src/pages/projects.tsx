@@ -28,12 +28,12 @@ export default function Projects() {
 
   // Calculate project-specific statistics
   const getProjectStats = (projectId: number) => {
-    const projectTestCases = testCases.filter(
-      (tc: any) => tc.projectId === projectId,
-    );
-    const projectMembers = users.filter(
-      (user: any) => user.role !== "admin",
-    ).length; // Basic member count
+    const projectTestCases = Array.isArray(testCases) 
+      ? testCases.filter((tc: any) => tc.projectId === projectId)
+      : [];
+    const projectMembers = Array.isArray(users)
+      ? users.filter((user: any) => user.role !== "admin").length
+      : 0; // Basic member count
 
     return {
       testCases: projectTestCases.length,
