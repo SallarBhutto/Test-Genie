@@ -16,12 +16,16 @@ export default function TestRunExecute() {
   
   const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
     queryKey: [`/api/test-runs/${testRunId}`],
-    enabled: !!testRunId
+    enabled: !!testRunId,
+    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchOnWindowFocus: true
   });
 
   const { data: testRunResults, isLoading: testRunResultsLoading } = useQuery({
     queryKey: [`/api/test-run-results/${testRunId}`],
-    enabled: !!testRunId
+    enabled: !!testRunId,
+    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchOnWindowFocus: true
   });
 
   const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});

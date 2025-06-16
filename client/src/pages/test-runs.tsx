@@ -19,7 +19,9 @@ export default function TestRuns() {
   const { selectedProject } = useProject();
 
   const { data: testRuns = [], isLoading } = useQuery({
-    queryKey: ['/api/test-runs', selectedProject?.id]
+    queryKey: ['/api/test-runs', selectedProject?.id],
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true
   });
 
   const { sortedData: sortedTestRuns, sortConfig, requestSort } = useSorting(testRuns, "createdAt");

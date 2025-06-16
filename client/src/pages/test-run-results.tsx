@@ -13,20 +13,26 @@ export default function TestRunResults() {
 
   const { data: testRun, isLoading: testRunLoading } = useQuery<TestRun>({
     queryKey: [`/api/test-runs/${testRunId}`],
-    enabled: !!testRunId
+    enabled: !!testRunId,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true
   });
 
   const { data: results, isLoading: resultsLoading } = useQuery<TestRunResult[]>({
     queryKey: [`/api/test-run-results/${testRunId}`],
-    enabled: !!testRunId
+    enabled: !!testRunId,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true
   });
 
   const { data: testCases, isLoading: testCasesLoading } = useQuery<TestCase[]>({
-    queryKey: ['/api/test-cases']
+    queryKey: ['/api/test-cases'],
+    refetchInterval: 30000
   });
 
   const { data: users, isLoading: usersLoading } = useQuery({
-    queryKey: ['/api/users']
+    queryKey: ['/api/users'],
+    refetchInterval: 30000
   });
 
   const getStatusColor = (status: string) => {
