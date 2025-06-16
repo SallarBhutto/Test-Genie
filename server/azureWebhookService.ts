@@ -180,7 +180,7 @@ export class AzureWebhookService {
         ...defectData,
         azureWorkItemId: workItemId,
         azureWorkItemUrl: azureWorkItemUrl,
-        reportedBy: 9 // Admin user for Azure-created defects
+        reportedBy: 1 // Default to admin user for Azure-created defects
       });
 
       console.log(`✅ Created new defect ${newDefect.defectId} from Azure work item ${workItemId}`);
