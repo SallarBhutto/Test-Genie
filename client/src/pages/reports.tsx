@@ -38,9 +38,16 @@ export default function Reports() {
     staleTime: 0,
   });
 
-  // Filter defects for the chart component
-  const filteredDefects = Array.isArray(defects) 
-    ? defects.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) 
+  // Separate query for chart data without date filtering
+  const { data: chartDefects } = useQuery({
+    queryKey: ["/api/defects", selectedProject?.id],
+    refetchOnMount: true,
+    staleTime: 0,
+  });
+
+  // Filter defects for the chart component (use chartDefects for always showing data)
+  const filteredDefects = Array.isArray(chartDefects) 
+    ? chartDefects.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) 
     : [];
 
   // Calculate average execution time from test runs (mock calculation)
