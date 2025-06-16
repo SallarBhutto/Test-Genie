@@ -1093,7 +1093,7 @@ export class DatabaseStorage implements IStorage {
     let countQuery = db.select({ count: sql<number>`count(*)` }).from(testCases);
 
     // Build WHERE conditions
-    const conditions = [];
+    const conditions: any[] = [];
 
     if (testSuiteId) {
       query = query.innerJoin(testSuiteTestCases, eq(testCases.id, testSuiteTestCases.testCaseId));
