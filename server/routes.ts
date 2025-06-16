@@ -1527,6 +1527,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/defects/bulk", async (req, res) => {
+    try {
+      const { ids } = req.body;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Invalid or empty IDs array" });
+      }
+
+      let deletedCount = 0;
+      const errors = [];
+
+      for (const id of ids) {
+        try {
+          const success = await storage.deleteDefect(parseInt(id));
+          if (success) {
+            deletedCount++;
+          } else {
+            errors.push(`Defect ${id} not found`);
+          }
+        } catch (error) {
+          errors.push(`Failed to delete defect ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      if (deletedCount === 0) {
+        return res.status(404).json({ 
+          message: "No defects were deleted", 
+          errors,
+          deletedCount: 0
+        });
+      }
+
+      res.json({ 
+        message: `${deletedCount} defect${deletedCount > 1 ? 's' : ''} deleted successfully`,
+        deletedCount,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete defects" });
+    }
+  });
+
 
 
   // Test Run Results

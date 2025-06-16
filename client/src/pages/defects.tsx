@@ -233,10 +233,22 @@ export default function Defects() {
             Manage and organize your application defects
           </p>
         </div>
-        <Button className="ml-auto" onClick={() => setShowCreateDefect(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Report Defect
-        </Button>
+        <div className="flex items-center gap-2 ml-auto">
+          {selectedDefects.size > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteDefectsMutation.isPending}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete {selectedDefects.size} Selected
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateDefect(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Report Defect
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -423,11 +435,6 @@ export default function Defects() {
                         checked={isAllSelected}
                         onCheckedChange={handleSelectAll}
                         className={isIndeterminate ? "data-[state=checked]:bg-primary/50" : ""}
-                        ref={(el) => {
-                          if (el) {
-                            el.indeterminate = isIndeterminate;
-                          }
-                        }}
                       />
                     </TableHead>
                     <SortableTableHead
@@ -501,7 +508,10 @@ export default function Defects() {
                   {sortedDefects.map((defect: any) => (
                     <TableRow key={defect.id}>
                       <TableCell>
-                        <Checkbox />
+                        <Checkbox 
+                          checked={selectedDefects.has(defect.id)}
+                          onCheckedChange={(checked) => handleSelectDefect(defect.id, checked as boolean)}
+                        />
                       </TableCell>
                       <TableCell className="font-medium text-primary">
                         {defect.defectId}
