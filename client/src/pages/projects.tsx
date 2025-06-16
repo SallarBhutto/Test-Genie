@@ -27,10 +27,7 @@ export default function Projects() {
 
   // Calculate project-specific test case count
   const getProjectTestCaseCount = (projectId: number) => {
-    const filtered = testCases.filter((tc: any) => tc.projectId === projectId);
-    console.log(`Project ${projectId} test cases:`, filtered);
-    console.log(`All test cases:`, testCases);
-    return filtered.length;
+    return testCases.filter((tc: any) => tc.projectId === projectId).length;
   };
 
   const handleEditProject = (project: any, e: React.MouseEvent) => {
