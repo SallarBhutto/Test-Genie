@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,6 +117,19 @@ export default function Settings() {
       webhookSecret: settings?.azureDevOps.webhookSecret || "",
     },
   });
+
+  // Update form values when settings data loads
+  useEffect(() => {
+    if (settings?.azureDevOps) {
+      form.reset({
+        enabled: settings.azureDevOps.enabled || false,
+        organization: settings.azureDevOps.organization || "",
+        project: settings.azureDevOps.project || "",
+        personalAccessToken: settings.azureDevOps.personalAccessToken || "",
+        webhookSecret: settings.azureDevOps.webhookSecret || "",
+      });
+    }
+  }, [settings, form]);
 
   const handleAzureDevOpsSubmit = (data: z.infer<typeof azureDevOpsSchema>) => {
     azureDevOpsMutation.mutate(data);
