@@ -24,62 +24,9 @@ export default function Projects() {
 
   const testCases = testCasesResponse?.data || [];
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-  });
-
-  const { data: defectsResponse } = useQuery({
-    queryKey: ["/api/defects"],
-  });
-
-  const { data: testRuns = [] } = useQuery({
-    queryKey: ["/api/test-runs"],
-  });
-
-  const defects = defectsResponse?.data || [];
-
-  // Calculate project-specific statistics
-  const getProjectStats = (projectId: number) => {
-    const projectTestCases = testCases.filter((tc: any) => tc.projectId === projectId);
-    
-    // Calculate unique members who have contributed to this project
-    const contributorIds = new Set();
-    
-    // Add users who created test cases for this project
-    testCases.forEach((tc: any) => {
-      if (tc.projectId === projectId && tc.createdBy) {
-        contributorIds.add(tc.createdBy);
-      }
-      if (tc.projectId === projectId && tc.assignedTo) {
-        contributorIds.add(tc.assignedTo);
-      }
-    });
-
-    // Add users who worked on defects for this project
-    defects.forEach((defect: any) => {
-      if (defect.projectId === projectId) {
-        if (defect.reportedBy) contributorIds.add(defect.reportedBy);
-        if (defect.assignedTo) contributorIds.add(defect.assignedTo);
-      }
-    });
-
-    // Add users who worked on test runs for this project
-    testRuns.forEach((testRun: any) => {
-      if (testRun.projectId === projectId && testRun.createdBy) {
-        contributorIds.add(testRun.createdBy);
-      }
-    });
-    
-    // Add the project creator
-    const project = Array.isArray(projects) ? projects.find((p: any) => p.id === projectId) : null;
-    if (project?.createdBy) {
-      contributorIds.add(project.createdBy);
-    }
-
-    return {
-      testCases: projectTestCases.length,
-      members: contributorIds.size,
-    };
+  // Calculate project-specific test case count
+  const getProjectTestCaseCount = (projectId: number) => {
+    return testCases.filter((tc: any) => tc.projectId === projectId).length;
   };
 
   const handleEditProject = (project: any, e: React.MouseEvent) => {
@@ -168,15 +115,11 @@ export default function Projects() {
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2">
                   {project.description}
                 </p>
-                <div className="flex items-center justify-between text-sm text-neutral-500 dark:text-neutral-400">
-                  <div className="flex items-center space-x-1">
-                    <Users className="w-4 h-4" />
-                    <span>{getProjectStats(project.id).members} members</span>
-                  </div>
+                <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400">
                   <div className="flex items-center space-x-1">
                     <FileText className="w-4 h-4" />
                     <span>
-                      {getProjectStats(project.id).testCases} test cases
+                      {getProjectTestCaseCount(project.id)} test cases
                     </span>
                   </div>
                 </div>
