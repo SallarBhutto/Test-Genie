@@ -302,7 +302,7 @@ export default function CreateDefectModal({ open, onOpenChange }: CreateDefectMo
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {testCases?.map((testCase: any) => (
+                      {testCases?.data?.map((testCase: any) => (
                         <SelectItem key={testCase.id} value={testCase.id.toString()}>
                           {testCase.testCaseId} - {testCase.title}
                         </SelectItem>
