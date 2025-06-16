@@ -42,13 +42,6 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
     queryKey: ["/api/users"],
   });
 
-  const { data: testCasesResponse } = useQuery({
-    queryKey: ["/api/test-cases"],
-  });
-
-  // Extract the actual test cases array from the response
-  const testCases = testCasesResponse?.data || [];
-
   const { data: defect } = useQuery({
     queryKey: ["/api/defects", defectId],
     queryFn: async () => {
@@ -75,13 +68,22 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
     },
   });
 
-  // Watch the project selection to filter test cases
+  // Watch the project selection to get project-specific test cases
   const selectedProjectId = form.watch("projectId");
-  
-  // Filter test cases based on selected project
-  const filteredTestCases = selectedProjectId 
-    ? testCases.filter((testCase: any) => testCase.projectId === selectedProjectId)
-    : [];
+
+  const { data: testCasesResponse } = useQuery({
+    queryKey: ["/api/test-cases", { projectId: selectedProjectId }],
+    queryFn: async () => {
+      if (!selectedProjectId) return { data: [] };
+      const response = await fetch(`/api/test-cases?projectId=${selectedProjectId}`);
+      if (!response.ok) throw new Error('Failed to fetch test cases');
+      return response.json();
+    },
+    enabled: !!selectedProjectId,
+  });
+
+  // Extract the actual test cases array from the response
+  const testCases = testCasesResponse?.data || [];
 
   // Update form when defect data is loaded
   useEffect(() => {
@@ -105,7 +107,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
     const currentTestCaseId = form.getValues("testCaseId");
     if (currentTestCaseId && selectedProjectId) {
       const isTestCaseInProject = testCases.some((tc: any) => 
-        tc.id === currentTestCaseId && tc.projectId === selectedProjectId
+        tc.id === currentTestCaseId
       );
       if (!isTestCaseInProject) {
         form.setValue("testCaseId", undefined);
@@ -221,7 +223,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {filteredTestCases.map((testCase: any) => (
+                        {testCases.map((testCase: any) => (
                           <SelectItem key={testCase.id} value={testCase.id.toString()}>
                             {testCase.testCaseId} - {testCase.title}
                           </SelectItem>
