@@ -20,13 +20,17 @@ export default function Projects() {
 
   const { data: testCasesResponse } = useQuery({
     queryKey: ["/api/test-cases"],
+    queryFn: () => fetch("/api/test-cases?limit=1000").then(res => res.json()),
   });
 
   const testCases = testCasesResponse?.data || [];
 
   // Calculate project-specific test case count
   const getProjectTestCaseCount = (projectId: number) => {
-    return testCases.filter((tc: any) => tc.projectId === projectId).length;
+    const filtered = testCases.filter((tc: any) => tc.projectId === projectId);
+    console.log(`Project ${projectId} test cases:`, filtered);
+    console.log(`All test cases:`, testCases);
+    return filtered.length;
   };
 
   const handleEditProject = (project: any, e: React.MouseEvent) => {
