@@ -128,7 +128,7 @@ export class AzureDevOpsService {
 
       // Construct Area Path from Azure project name and team name
       if (teamName) {
-        const areaPath = `${this.config.project}/${teamName}`;
+        const areaPath = `${this.config.project}\\${teamName}`;
         console.log(`🔍 Azure DevOps Area Path being set: "${areaPath}"`);
         
         workItemFields.push({

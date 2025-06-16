@@ -280,8 +280,8 @@ export class AzureWebhookService {
     if (!resource) return null;
 
     try {
-      // Generate a unique defect ID
-      const defectId = `AZ-${resource.workItemId}`;
+      // Generate a unique defect ID - use resource.id since workItemId is undefined
+      const defectId = `AZ-${resource.id}`;
 
       // Extract title (required) - handle both create and update scenarios
       let title = resource.fields?.['System.Title']?.newValue;
