@@ -73,7 +73,10 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
         headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} project`);
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} project`);
+        error.status = response.status;
+        throw error;
       }
       return response.json();
     },
@@ -87,10 +90,21 @@ export default function CreateProjectModal({ open, onOpenChange, editingProject 
       form.reset();
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      let description = `Failed to ${isEditing ? 'update' : 'create'} project`;
+      
+      // Check for duplicate team name error
+      if (error.message && error.message.includes('duplicate key value violates unique constraint "projects_team_name_unique"')) {
+        description = "Team name already exists. Please choose a different team name.";
+      } else if (error.message && error.message.includes('team_name')) {
+        description = "Team name already exists. Please choose a different team name.";
+      } else if (error.message) {
+        description = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? 'update' : 'create'} project`,
+        description,
         variant: "destructive",
       });
     },

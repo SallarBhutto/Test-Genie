@@ -520,6 +520,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error details:", error);
       console.error("Error message:", error instanceof Error ? error.message : "Unknown");
 
+      // Check for unique constraint violation on team_name
+      if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "projects_team_name_unique"')) {
+        return res.status(400).json({ 
+          message: "Team name already exists. Please choose a different team name.",
+          error: "Duplicate team name"
+        });
+      }
+
       res.status(400).json({ 
         message: "Invalid project data", 
         error: error instanceof Error ? error.message : "Unknown error" 
