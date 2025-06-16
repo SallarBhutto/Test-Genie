@@ -28,6 +28,10 @@ export default function TestRunExecute() {
     refetchOnWindowFocus: true
   });
 
+  const { data: currentUser } = useQuery<{ id: number; username: string; fullName?: string }>({
+    queryKey: ['/api/auth/me']
+  });
+
   const [results, setResults] = useState<Record<number, { status: string; notes: string }>>({});
 
   // Initialize results state with existing data from database
@@ -82,7 +86,7 @@ export default function TestRunExecute() {
         await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
           status: status,
           notes: results[testCaseId]?.notes || '',
-          executedBy: 1,
+          executedBy: currentUser?.id || 1,
           executedAt: new Date().toISOString()
         });
         // Invalidate cache to refresh data
@@ -108,7 +112,7 @@ export default function TestRunExecute() {
         await apiRequest('PATCH', `/api/test-run-results/${testRunResult.id}`, {
           status: results[testCaseId]?.status || testRunResult.status,
           notes: notes,
-          executedBy: 1,
+          executedBy: currentUser?.id || 1,
           executedAt: new Date().toISOString()
         });
         // Invalidate cache to refresh data
