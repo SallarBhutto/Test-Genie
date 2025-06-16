@@ -32,23 +32,56 @@ export default function Reports() {
     staleTime: 0,
   });
 
-  const { data: defects } = useQuery({
+  const { data: defectsResponse } = useQuery({
     queryKey: ["/api/defects", selectedProject?.id, dateRange, dateFrom, dateTo],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Get all defects for reports
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defects');
+      }
+      return response.json();
+    },
     refetchOnMount: true,
     staleTime: 0,
   });
 
   // Separate query for chart data without date filtering
-  const { data: chartDefects } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id],
+  const { data: chartDefectsResponse } = useQuery({
+    queryKey: ["/api/defects/chart", selectedProject?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Get all defects for chart
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defects');
+      }
+      return response.json();
+    },
     refetchOnMount: true,
     staleTime: 0,
   });
 
-  // Filter defects for the chart component (use chartDefects for always showing data)
-  const filteredDefects = Array.isArray(chartDefects) 
-    ? (selectedProject ? chartDefects.filter((defect: any) => defect.projectId === selectedProject.id) : chartDefects)
-    : [];
+  const defects = defectsResponse?.data || [];
+  const chartDefects = chartDefectsResponse?.data || [];
+
+  // Filter defects for the chart component
+  const filteredDefects = Array.isArray(chartDefects) ? chartDefects : [];
 
   // Calculate average execution time from test runs (mock calculation)
   const calculateAvgExecutionTime = () => {

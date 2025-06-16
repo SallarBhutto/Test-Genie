@@ -6,14 +6,18 @@ interface DefectStatusChartProps {
 }
 
 export default function DefectStatusChart({ defects }: DefectStatusChartProps) {
-  const defectsByStatus = defects.reduce((acc, defect) => {
-    acc[defect.status] = (acc[defect.status] || 0) + 1;
+  // Ensure defects is an array and handle the paginated structure
+  const defectsArray = Array.isArray(defects) ? defects : [];
+  
+  const defectsByStatus = defectsArray.reduce((acc, defect) => {
+    const status = defect.status?.toLowerCase() || 'unknown';
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
-  }, {});
+  }, {} as Record<string, number>);
 
-  const total = defects.length || 1;
+  const total = defectsArray.length || 1;
   const open = defectsByStatus.open || 0;
-  const inProgress = defectsByStatus.in_progress || 0;
+  const inProgress = defectsByStatus.in_progress || defectsByStatus['in progress'] || 0;
   const resolved = defectsByStatus.resolved || 0;
   const closed = defectsByStatus.closed || 0;
   const reopened = defectsByStatus.reopened || 0;
