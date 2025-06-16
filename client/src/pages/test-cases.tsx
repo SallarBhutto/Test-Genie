@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSorting } from "@/hooks/useSorting";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   Pagination,
   PaginationContent,
@@ -48,6 +49,9 @@ export default function TestCases() {
     priority: "all",
     status: "all",
   });
+
+  // Debounced search query with 500ms delay
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
@@ -116,7 +120,7 @@ export default function TestCases() {
   });
 
   const { data: testCasesResponse, isLoading: testCasesLoading } = useQuery({
-    queryKey: ["/api/test-cases", selectedProject?.id, currentPage, pageSize, filters, searchQuery],
+    queryKey: ["/api/test-cases", selectedProject?.id, currentPage, pageSize, filters, debouncedSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -144,8 +148,8 @@ export default function TestCases() {
         params.append('status', filters.status);
       }
       
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim());
       }
       
       const response = await fetch(`/api/test-cases?${params}`);

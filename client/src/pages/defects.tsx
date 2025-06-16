@@ -15,6 +15,7 @@ import CreateDefectModal from "@/components/modals/create-defect-modal";
 import EditDefectModal from "@/components/modals/edit-defect-modal";
 import { useProject } from "@/contexts/ProjectContext";
 import { useSorting } from "@/hooks/useSorting";
+import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import {
   Pagination,
@@ -41,14 +42,17 @@ export default function Defects() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debounced search query with 500ms delay
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   // Reset page and selections when filters change
   useEffect(() => {
     setCurrentPage(1);
     setSelectedDefects(new Set());
-  }, [statusFilter, severityFilter, priorityFilter, projectFilter, searchQuery, selectedProject]);
+  }, [statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery, selectedProject]);
 
   const { data: defectsResponse, isLoading } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, priorityFilter, projectFilter, searchQuery],
+    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -75,8 +79,8 @@ export default function Defects() {
         params.append('filterProjectId', projectFilter);
       }
       
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim());
       }
       
       const response = await fetch(`/api/defects?${params}`);
