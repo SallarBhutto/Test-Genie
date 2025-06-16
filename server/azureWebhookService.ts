@@ -163,7 +163,7 @@ export class AzureWebhookService {
     }
 
     // Extract defect data from the created work item
-    const defectData = this.extractDefectDataFromWorkItem(payload);
+    const defectData = await this.extractDefectDataFromWorkItem(payload);
     if (!defectData) {
       console.log("ℹ️ Could not extract valid defect data from work item");
       return {
@@ -275,13 +275,17 @@ export class AzureWebhookService {
   /**
    * Extract defect data from newly created work item
    */
-  private extractDefectDataFromWorkItem(payload: AzureWebhookPayload): any | null {
+  private async extractDefectDataFromWorkItem(payload: AzureWebhookPayload): Promise<any | null> {
     const resource = payload.resource;
     if (!resource) return null;
 
     try {
       // Generate a unique defect ID - use resource.id since workItemId is undefined
       const defectId = `AZ-${resource.id}`;
+
+      // Extract area path to determine the correct project
+      const areaPath = resource.fields?.['System.AreaPath']?.newValue || resource.fields?.['System.AreaPath'];
+      const projectId = await this.mapAreaPathToProject(areaPath);
 
       // Extract title (required) - handle both create and update scenarios
       let title = resource.fields?.['System.Title']?.newValue;
@@ -338,7 +342,7 @@ export class AzureWebhookService {
         status,
         priority,
         severity,
-        projectId: 2, // Default to a project - you might want to make this configurable
+        projectId: projectId || 2, // Use mapped project or default to project 2
         stepsToReproduce: description,
         environment: 'Azure DevOps Import',
         attachments: null
@@ -490,6 +494,34 @@ export class AzureWebhookService {
     };
 
     return priorityMap[azurePriority.toString()] || null;
+  }
+
+  /**
+   * Map Azure DevOps area path to TestGenie project ID
+   */
+  private async mapAreaPathToProject(areaPath: string): Promise<number | null> {
+    if (!areaPath) return null;
+
+    try {
+      // Get all projects from storage
+      const projects = await storage.getProjects();
+      
+      // Extract team name from area path (e.g., "ZDP-PIM\Merch" -> "Merch")
+      const teamName = areaPath.split('\\').pop()?.trim();
+      if (!teamName) return null;
+
+      // Find project that matches the team name
+      const matchingProject = projects.find(project => 
+        project.teamName?.toLowerCase() === teamName.toLowerCase()
+      );
+
+      console.log(`🔍 Area path mapping: "${areaPath}" -> team "${teamName}" -> project ${matchingProject?.id || 'not found'}`);
+      
+      return matchingProject?.id || null;
+    } catch (error) {
+      console.error("❌ Error mapping area path to project:", error);
+      return null;
+    }
   }
 
   /**
