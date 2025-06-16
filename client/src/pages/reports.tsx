@@ -39,7 +39,9 @@ export default function Reports() {
   });
 
   // Filter defects for the chart component
-  const filteredDefects = defects?.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) || [];
+  const filteredDefects = Array.isArray(defects) 
+    ? defects.filter((defect: any) => !selectedProject || defect.projectId === selectedProject.id) 
+    : [];
 
   // Calculate average execution time from test runs (mock calculation)
   const calculateAvgExecutionTime = () => {
