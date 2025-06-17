@@ -6,6 +6,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { licenseMiddleware } from "./middleware/license";
 import { storage } from "./storage";
+import { runMigrations } from "./migrations";
 
 const app = express();
 app.use(express.json());
@@ -62,6 +63,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migrations on startup
+  await runMigrations();
+  
   // Register API routes FIRST before Vite middleware
   const server = await registerRoutes(app);
 
