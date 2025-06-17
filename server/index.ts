@@ -63,9 +63,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Run database migrations on startup
-  await runMigrations();
-  
   // Register API routes FIRST before Vite middleware
   const server = await registerRoutes(app);
 
