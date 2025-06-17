@@ -8,7 +8,7 @@ export async function validateLicense(licenseKey: string): Promise<boolean> {
     return false;
   }
 
-  const validateUrl = process.env.VALIDATE_LICENSE_URL;
+  const validateUrl = process.env.VALIDATE_LICENSE_URL || "http://16.170.223.216/api/validate-license";
   if (!validateUrl) {
     console.error('VALIDATE_LICENSE_URL environment variable not set');
     return false;
@@ -44,7 +44,7 @@ export async function getLicenseInfo(licenseKey: string): Promise<any> {
     return false;
   }
 
-  const validateUrl = process.env.VALIDATE_LICENSE_URL;
+  const validateUrl = process.env.VALIDATE_LICENSE_URL || "http://16.170.223.216/api/validate-license";
   if (!validateUrl) {
     console.error('VALIDATE_LICENSE_URL environment variable not set');
     return false;
