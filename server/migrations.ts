@@ -9,23 +9,30 @@ const isNeonDatabase = process.env.DATABASE_URL?.includes('neon.tech') || proces
 export async function runMigrations() {
   try {
     console.log('🔄 Running database migrations...');
+    console.log('🔍 Database type:', isNeonDatabase ? 'Neon' : 'PostgreSQL');
     
     const migrationsFolder = path.join(process.cwd(), 'migrations');
+    console.log('🔍 Migrations folder:', migrationsFolder);
     
     if (isNeonDatabase) {
-      // Use Neon serverless migrator
+      console.log('🔄 Using Neon serverless migrator...');
       await migrate(db, { migrationsFolder });
     } else {
-      // Use regular PostgreSQL migrator
+      console.log('🔄 Using PostgreSQL migrator...');
       await pgMigrate(db, { migrationsFolder });
     }
     
     console.log('✅ Database migrations completed successfully');
+    return true;
   } catch (error) {
     console.error('❌ Error running database migrations:', error);
+    console.error('❌ Migration details:', {
+      isNeonDatabase,
+      migrationsFolder: path.join(process.cwd(), 'migrations'),
+      databaseUrl: process.env.DATABASE_URL?.substring(0, 20) + '...'
+    });
     
-    // Don't exit the process, just log the error
-    // This allows the app to continue running even if migrations fail
-    console.warn('⚠️ App will continue running despite migration errors');
+    // In production, we should fail fast if migrations don't work
+    throw error;
   }
 }

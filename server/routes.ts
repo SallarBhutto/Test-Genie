@@ -70,10 +70,18 @@ async function requireAuth(req: any, res: any, next: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // Run database migrations on startup
-  const { runMigrations } = await import("./migrations");
-  await runMigrations();
+  console.log('🔄 Starting database migrations...');
+  try {
+    const { runMigrations } = await import("./migrations");
+    await runMigrations();
+    console.log('✅ Database migrations completed successfully');
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    throw error; // Stop execution if migrations fail
+  }
 
   // Initialize default admin user
+  console.log('🔄 Initializing default admin user...');
   await initializeDefaultUser();
 
   // Authentication routes
