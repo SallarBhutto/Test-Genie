@@ -72,7 +72,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Run database migrations on startup
   console.log('🔄 Starting database migrations...');
   try {
-    const { runMigrations } = await import("./migrations");
+    // Import migrations with explicit file extension for production compatibility
+    const migrationsModule = await import("./migrations.js").catch(() => import("./migrations"));
+    const { runMigrations } = migrationsModule;
     await runMigrations();
     console.log('✅ Database migrations completed successfully');
   } catch (error) {

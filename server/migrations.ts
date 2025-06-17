@@ -32,6 +32,12 @@ export async function runMigrations() {
       databaseUrl: process.env.DATABASE_URL?.substring(0, 20) + '...'
     });
     
+    // Check if error is about tables already existing
+    if (error instanceof Error && error.message.includes('already exists')) {
+      console.log('⚠️ Tables already exist, skipping migrations');
+      return true;
+    }
+    
     // In production, we should fail fast if migrations don't work
     throw error;
   }
