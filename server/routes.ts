@@ -14,6 +14,7 @@ import {
 } from "./emailService";
 import { licenseMiddleware } from "./middleware/license";
 import { getLicenseInfo } from "./utils/license";
+import { runMigrations } from "./migrations";
 
 // Extend Express session interface
 declare module "express-session" {
@@ -73,8 +74,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('🔄 Starting database migrations...');
   try {
     // Import migrations with explicit file extension for production compatibility
-    const migrationsModule = await import("./migrations.js").catch(() => import("./migrations"));
-    const { runMigrations } = migrationsModule;
     await runMigrations();
     console.log('✅ Database migrations completed successfully');
   } catch (error) {

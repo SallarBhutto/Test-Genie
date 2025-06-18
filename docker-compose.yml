@@ -38,6 +38,10 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    command:
+      - sh
+      - -c
+      - npx drizzle-kit push --config ./drizzle.config.ts && npm run start
     restart: unless-stopped
 
 volumes:
