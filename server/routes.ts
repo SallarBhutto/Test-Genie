@@ -69,16 +69,36 @@ async function requireAuth(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Skip database migrations temporarily to avoid startup hang
-  console.log('⚠️ Skipping database migrations to avoid startup issues');
+  // Run database migrations on startup (skip for Neon due to hanging issues)
+  const isNeonDatabase = process.env.DATABASE_URL?.includes('neon.tech') || process.env.DATABASE_URL?.includes('neon.database');
   
-  // TODO: Fix Neon database migration hanging issue
-  // The migration process is timing out with Neon database
-  // For now, we'll rely on existing schema or manual table creation
+  if (isNeonDatabase) {
+    console.log('⚠️ Skipping database migrations for Neon database to avoid startup hang');
+    console.log('💡 Neon database should already have tables created or use manual schema setup');
+  } else {
+    console.log('🔄 Starting database migrations...');
+    try {
+      const migrationsModule = await import("./migrations.js").catch(() => import("./migrations"));
+      const { runMigrations } = migrationsModule;
+      await runMigrations();
+      console.log('✅ Database migrations completed successfully');
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      throw error;
+    }
+  }
 
-  // Initialize default admin user
+  // Initialize default admin user (non-blocking for Neon database)
   console.log('🔄 Initializing default admin user...');
-  await initializeDefaultUser();
+  if (isNeonDatabase) {
+    // Don't await for Neon to avoid hanging - run in background
+    initializeDefaultUser().catch(error => {
+      console.error('Failed to initialize default user:', error);
+    });
+    console.log('✅ User initialization started in background');
+  } else {
+    await initializeDefaultUser();
+  }
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
