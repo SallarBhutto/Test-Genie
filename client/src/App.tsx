@@ -22,6 +22,7 @@ import TestRunResults from "@/pages/test-run-results";
 import Defects from "@/pages/defects";
 
 import Reports from "@/pages/reports";
+import WebhookLogs from "@/pages/webhook-logs";
 import Team from "@/pages/team";
 import Settings from "@/pages/settings";
 import Landing from "@/pages/landing";

@@ -14,7 +14,8 @@ import {
   Settings,
   TestTube,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Webhook
 } from "lucide-react";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const navigation = [
   { name: "Defects", href: "/defects", icon: Bug },
 
   { name: "Reports", href: "/reports", icon: TrendingUp },
+  { name: "Webhook Logs", href: "/webhook-logs", icon: Webhook },
   { name: "Team", href: "/team", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
