@@ -63,6 +63,7 @@ function AuthenticatedLayout() {
                 <Route path="/test-runs/:id/results" component={TestRunResults} />
                 <Route path="/defects" component={Defects} />
                 <Route path="/reports" component={Reports} />
+                <Route path="/webhook-logs" component={WebhookLogs} />
                 <Route path="/team" component={Team} />
                 <Route path="/settings" component={Settings} />
                 <Route component={NotFound} />

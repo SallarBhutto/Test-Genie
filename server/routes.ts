@@ -69,18 +69,12 @@ async function requireAuth(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Run database migrations on startup
-  console.log('🔄 Starting database migrations...');
-  try {
-    // Import migrations with explicit file extension for production compatibility
-    const migrationsModule = await import("./migrations.js").catch(() => import("./migrations"));
-    const { runMigrations } = migrationsModule;
-    await runMigrations();
-    console.log('✅ Database migrations completed successfully');
-  } catch (error) {
-    console.error('❌ Migration failed:', error);
-    throw error; // Stop execution if migrations fail
-  }
+  // Skip database migrations temporarily to avoid startup hang
+  console.log('⚠️ Skipping database migrations to avoid startup issues');
+  
+  // TODO: Fix Neon database migration hanging issue
+  // The migration process is timing out with Neon database
+  // For now, we'll rely on existing schema or manual table creation
 
   // Initialize default admin user
   console.log('🔄 Initializing default admin user...');

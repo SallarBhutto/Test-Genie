@@ -6,7 +6,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { licenseMiddleware } from "./middleware/license";
 import { storage } from "./storage";
-import { runMigrations } from "./migrations";
+// import { runMigrations } from "./migrations";
 
 const app = express();
 app.use(express.json());
