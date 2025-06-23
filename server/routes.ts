@@ -3,17 +3,30 @@ import { createServer, type Server } from "http";
 import { storage, initializeDefaultUser } from "./storage";
 import { azureDevOpsService } from "./azureDevOpsService";
 import { settingsService } from "./settingsService";
-import { insertTestCaseSchema, updateTestCaseSchema, insertDefectSchema, insertDefectWithIdSchema, insertProjectSchema, insertTestSuiteSchema, insertTestRunSchema, insertTestRunResultSchema, insertModuleSchema, insertComponentSchema, insertUserSchema } from "@shared/schema";
+import {
+  insertTestCaseSchema,
+  updateTestCaseSchema,
+  insertDefectSchema,
+  insertDefectWithIdSchema,
+  insertProjectSchema,
+  insertTestSuiteSchema,
+  insertTestRunSchema,
+  insertTestRunResultSchema,
+  insertModuleSchema,
+  insertComponentSchema,
+  insertUserSchema,
+} from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
-import { 
-  generateVerificationToken, 
-  generateVerificationExpiry, 
-  sendVerificationEmail, 
-  sendWelcomeEmail 
+import {
+  generateVerificationToken,
+  generateVerificationExpiry,
+  sendVerificationEmail,
+  sendWelcomeEmail,
 } from "./emailService";
 import { licenseMiddleware } from "./middleware/license";
 import { getLicenseInfo } from "./utils/license";
+import { runMigrations } from "./migrations";
 
 // Extend Express session interface
 declare module "express-session" {
@@ -47,7 +60,7 @@ async function requireAuth(req: any, res: any, next: any) {
 
     // Fallback to Authorization header
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.substring(7);
       const sessionData = activeSessions.get(token);
 
@@ -68,34 +81,41 @@ async function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-
   // Run database migrations on startup (skip for Neon due to hanging issues)
-  const isNeonDatabase = process.env.DATABASE_URL?.includes('neon.tech') || process.env.DATABASE_URL?.includes('neon.database');
-  
+  const isNeonDatabase =
+    process.env.DATABASE_URL?.includes("neon.tech") ||
+    process.env.DATABASE_URL?.includes("neon.database");
+
   if (isNeonDatabase) {
-    console.log('⚠️ Skipping database migrations for Neon database to avoid startup hang');
-    console.log('💡 Neon database should already have tables created or use manual schema setup');
+    console.log(
+      "⚠️ Skipping database migrations for Neon database to avoid startup hang",
+    );
+    console.log(
+      "💡 Neon database should already have tables created or use manual schema setup",
+    );
   } else {
-    console.log('🔄 Starting database migrations...');
+    console.log("🔄 Starting database migrations...");
     try {
-      const migrationsModule = await import("./migrations.js").catch(() => import("./migrations"));
+      const migrationsModule = await import("./migrations.js").catch(
+        () => import("./migrations"),
+      );
       const { runMigrations } = migrationsModule;
       await runMigrations();
-      console.log('✅ Database migrations completed successfully');
+      console.log("✅ Database migrations completed successfully");
     } catch (error) {
-      console.error('❌ Migration failed:', error);
+      console.error("❌ Migration failed:", error);
       throw error;
     }
   }
 
   // Initialize default admin user (non-blocking for Neon database)
-  console.log('🔄 Initializing default admin user...');
+  console.log("🔄 Initializing default admin user...");
   if (isNeonDatabase) {
     // Don't await for Neon to avoid hanging - run in background
-    initializeDefaultUser().catch(error => {
-      console.error('Failed to initialize default user:', error);
+    initializeDefaultUser().catch((error) => {
+      console.error("Failed to initialize default user:", error);
     });
-    console.log('✅ User initialization started in background');
+    console.log("✅ User initialization started in background");
   } else {
     await initializeDefaultUser();
   }
@@ -106,7 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        return res.status(400).json({ message: "Username and password required" });
+        return res
+          .status(400)
+          .json({ message: "Username and password required" });
       }
 
       const user = await storage.getUserByUsername(username);
@@ -128,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Generate backup token for fallback authentication
-      const token = crypto.randomBytes(32).toString('hex');
+      const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
       activeSessions.set(token, { userId: user.id, expiresAt });
 
@@ -160,7 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
-        return res.status(400).json({ message: "User with this email already exists" });
+        return res
+          .status(400)
+          .json({ message: "User with this email already exists" });
       }
 
       // Create user with email already verified (no verification needed)
@@ -183,9 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Signup error:", error);
-      res.status(400).json({ 
-        message: "Signup failed", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Signup failed",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -195,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token } = req.query;
 
-      if (!token || typeof token !== 'string') {
+      if (!token || typeof token !== "string") {
         return res.status(400).send(`
           <html>
             <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
@@ -222,7 +246,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if token has expired
-      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+      if (
+        user.emailVerificationExpires &&
+        new Date() > user.emailVerificationExpires
+      ) {
         return res.status(400).send(`
           <html>
             <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
@@ -330,7 +357,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // License info endpoint
   app.get("/api/license/info", async (req, res) => {
     try {
-      const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
+      const licenseKey =
+        (req.headers["x-license-key"] as string) || process.env.LICENSE_KEY;
 
       if (!licenseKey) {
         return res.status(403).json({ message: "License key required" });
@@ -351,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscription: licenseInfo.subscription,
         currentUserCount,
         maxUsers,
-        remainingSlots: Math.max(0, maxUsers - currentUserCount)
+        remainingSlots: Math.max(0, maxUsers - currentUserCount),
       });
     } catch (error) {
       console.error("Error fetching license info:", error);
@@ -386,11 +414,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("POST /api/users called with body:", req.body);
 
       // Get license key from header or environment
-      const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
+      const licenseKey =
+        (req.headers["x-license-key"] as string) || process.env.LICENSE_KEY;
 
       if (!licenseKey) {
-        return res.status(403).json({ 
-          message: "License key required to add team members" 
+        return res.status(403).json({
+          message: "License key required to add team members",
         });
       }
 
@@ -398,8 +427,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const licenseInfo = await getLicenseInfo(licenseKey);
 
       if (!licenseInfo || !licenseInfo.valid) {
-        return res.status(403).json({ 
-          message: "Invalid license key" 
+        return res.status(403).json({
+          message: "Invalid license key",
         });
       }
 
@@ -410,11 +439,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if adding a new user would exceed the limit
       if (currentUserCount >= maxUsers) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: `User limit reached. Your subscription allows ${maxUsers} users. You currently have ${currentUserCount} users.`,
           currentUserCount,
           maxUsers,
-          remainingSlots: 0
+          remainingSlots: 0,
         });
       }
 
@@ -429,14 +458,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         licenseInfo: {
           currentUserCount: currentUserCount + 1,
           maxUsers,
-          remainingSlots: maxUsers - (currentUserCount + 1)
-        }
+          remainingSlots: maxUsers - (currentUserCount + 1),
+        },
       });
     } catch (error) {
       console.error("Error creating user:", error);
-      res.status(400).json({ 
-        message: "Invalid user data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Invalid user data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -448,8 +477,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentUser = req.user;
 
       // Allow users to update their own profile, or admins to update any user
-      if (currentUser.id !== id && currentUser.role !== 'admin') {
-        return res.status(403).json({ message: "Permission denied. Only admins can update other users." });
+      if (currentUser.id !== id && currentUser.role !== "admin") {
+        return res
+          .status(403)
+          .json({
+            message: "Permission denied. Only admins can update other users.",
+          });
       }
 
       // If password is being changed, verify current password
@@ -462,7 +495,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // In a real app, you would hash and compare passwords
         // For this demo, we'll do a simple comparison
         if (existingUser.password !== currentPassword) {
-          return res.status(400).json({ message: "Current password is incorrect" });
+          return res
+            .status(400)
+            .json({ message: "Current password is incorrect" });
         }
       }
 
@@ -473,9 +508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(user);
     } catch (error) {
-      res.status(400).json({ 
-        message: "Invalid user data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Invalid user data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -486,13 +521,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentUser = req.user;
 
       // Only admins can delete users
-      if (currentUser.role !== 'admin') {
-        return res.status(403).json({ message: "Permission denied. Only administrators can delete users." });
+      if (currentUser.role !== "admin") {
+        return res
+          .status(403)
+          .json({
+            message: "Permission denied. Only administrators can delete users.",
+          });
       }
 
       // Prevent self-deletion
       if (currentUser.id === id) {
-        return res.status(400).json({ message: "Cannot delete your own account." });
+        return res
+          .status(400)
+          .json({ message: "Cannot delete your own account." });
       }
 
       const success = await storage.deleteUser(id);
@@ -501,7 +542,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(204).send();
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Cannot delete user')) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Cannot delete user")
+      ) {
         return res.status(400).json({ message: error.message });
       }
       console.error("Delete user error:", error);
@@ -546,19 +590,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== PROJECT CREATION ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
 
       // Check for unique constraint violation on team_name
-      if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "projects_team_name_unique"')) {
-        return res.status(400).json({ 
-          message: "Team name already exists. Please choose a different team name.",
-          error: "Duplicate team name"
+      if (
+        error instanceof Error &&
+        error.message.includes(
+          'duplicate key value violates unique constraint "projects_team_name_unique"',
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Team name already exists. Please choose a different team name.",
+          error: "Duplicate team name",
         });
       }
 
-      res.status(400).json({ 
-        message: "Invalid project data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Invalid project data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -583,19 +636,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== PROJECT UPDATE ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
 
       // Check for unique constraint violation on team_name
-      if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "projects_team_name_unique"')) {
-        return res.status(400).json({ 
-          message: "Team name already exists. Please choose a different team name.",
-          error: "Duplicate team name"
+      if (
+        error instanceof Error &&
+        error.message.includes(
+          'duplicate key value violates unique constraint "projects_team_name_unique"',
+        )
+      ) {
+        return res.status(400).json({
+          message:
+            "Team name already exists. Please choose a different team name.",
+          error: "Duplicate team name",
         });
       }
 
-      res.status(400).json({ 
-        message: "Invalid project data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Invalid project data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -603,7 +665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Modules
   app.get("/api/modules", async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const modules = await storage.getModules(projectId);
       res.json(modules);
     } catch (error) {
@@ -631,7 +695,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate required fields
       if (!req.body.name || !req.body.projectId) {
         console.log("Validation failed: missing name or projectId");
-        return res.status(400).json({ message: "Name and project are required" });
+        return res
+          .status(400)
+          .json({ message: "Name and project are required" });
       }
 
       // Create module data
@@ -639,7 +705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: String(req.body.name).trim(),
         description: String(req.body.description || "").trim(),
         projectId: Number(req.body.projectId),
-        createdBy: Number(req.body.createdBy || 1)
+        createdBy: Number(req.body.createdBy || 1),
       };
 
       console.log("Creating module with processed data:", moduleData);
@@ -651,12 +717,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== MODULE CREATION ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
+      console.error(
+        "Error stack:",
+        error instanceof Error ? error.stack : "No stack",
+      );
 
-      res.status(500).json({ 
-        message: "Failed to create module", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(500).json({
+        message: "Failed to create module",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -664,7 +736,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Components
   app.get("/api/components", async (req, res) => {
     try {
-      const moduleId = req.query.moduleId ? parseInt(req.query.moduleId as string) : undefined;
+      const moduleId = req.query.moduleId
+        ? parseInt(req.query.moduleId as string)
+        : undefined;
       const components = await storage.getComponents(moduleId);
       res.json(components);
     } catch (error) {
@@ -685,7 +759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test Suites
   app.get("/api/test-suites", async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const testSuites = await storage.getTestSuites(projectId);
       res.json(testSuites);
     } catch (error) {
@@ -721,7 +797,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add test cases to the suite if provided
       if (testCaseIds && testCaseIds.length > 0) {
         await storage.addTestCasesToSuite(testSuite.id, testCaseIds);
-        console.log(`Added ${testCaseIds.length} test cases to test suite ${testSuite.id}`);
+        console.log(
+          `Added ${testCaseIds.length} test cases to test suite ${testSuite.id}`,
+        );
       }
 
       res.status(201).json(testSuite);
@@ -752,7 +830,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const testCases = await storage.getTestSuiteTestCases(testSuiteId);
       res.json(testCases);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch test suite test cases" });
+      res
+        .status(500)
+        .json({ message: "Failed to fetch test suite test cases" });
     }
   });
 
@@ -763,7 +843,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(testCases);
     } catch (error) {
       console.error("Error fetching test suite test cases:", error);
-      res.status(500).json({ message: "Failed to fetch test suite test cases" });
+      res
+        .status(500)
+        .json({ message: "Failed to fetch test suite test cases" });
     }
   });
 
@@ -783,31 +865,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== ADD TEST CASES TO SUITE ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
+      console.error(
+        "Error stack:",
+        error instanceof Error ? error.stack : "No stack",
+      );
 
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to add test cases to suite",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
-  app.delete("/api/test-suites/:id/test-cases/:testCaseId", async (req, res) => {
-    try {
-      const testSuiteId = parseInt(req.params.id);
-      const testCaseId = parseInt(req.params.testCaseId);
+  app.delete(
+    "/api/test-suites/:id/test-cases/:testCaseId",
+    async (req, res) => {
+      try {
+        const testSuiteId = parseInt(req.params.id);
+        const testCaseId = parseInt(req.params.testCaseId);
 
-      const removed = await storage.removeTestCaseFromSuite(testSuiteId, testCaseId);
-      if (removed) {
-        res.status(200).json({ message: "Test case removed successfully" });
-      } else {
-        res.status(404).json({ message: "Test case not found in suite" });
+        const removed = await storage.removeTestCaseFromSuite(
+          testSuiteId,
+          testCaseId,
+        );
+        if (removed) {
+          res.status(200).json({ message: "Test case removed successfully" });
+        } else {
+          res.status(404).json({ message: "Test case not found in suite" });
+        }
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Failed to remove test case from suite" });
       }
-    } catch (error) {
-      res.status(500).json({ message: "Failed to remove test case from suite" });
-    }
-  });
+    },
+  );
 
   // Helper endpoints for test case filtering
   app.get("/api/projects/:id/test-cases", async (req, res) => {
@@ -843,8 +939,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test Cases
   app.get("/api/test-cases", async (req, res) => {
     try {
-      const testSuiteId = req.query.testSuiteId ? parseInt(req.query.testSuiteId as string) : undefined;
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const testSuiteId = req.query.testSuiteId
+        ? parseInt(req.query.testSuiteId as string)
+        : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
@@ -867,8 +967,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalCount: testCases.length,
             totalPages: 1,
             hasNextPage: false,
-            hasPreviousPage: false
-          }
+            hasPreviousPage: false,
+          },
         });
       }
 
@@ -880,15 +980,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const now = new Date();
         switch (dateRange) {
           case "last7days":
-            finalDateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateFrom = new Date(
+              now.getTime() - 7 * 24 * 60 * 60 * 1000,
+            ).toISOString();
             finalDateTo = now.toISOString();
             break;
           case "last30days":
-            finalDateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateFrom = new Date(
+              now.getTime() - 30 * 24 * 60 * 60 * 1000,
+            ).toISOString();
             finalDateTo = now.toISOString();
             break;
           case "last90days":
-            finalDateFrom = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+            finalDateFrom = new Date(
+              now.getTime() - 90 * 24 * 60 * 60 * 1000,
+            ).toISOString();
             finalDateTo = now.toISOString();
             break;
         }
@@ -897,23 +1003,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use database-level pagination and filtering
       const result = await storage.getTestCasesPaginated({
         projectId,
-        moduleId: moduleFilter && moduleFilter !== "all" ? parseInt(moduleFilter) : undefined,
-        componentId: componentFilter && componentFilter !== "all" ? parseInt(componentFilter) : undefined,
-        priority: priorityFilter && priorityFilter !== "all" ? priorityFilter : undefined,
-        status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+        moduleId:
+          moduleFilter && moduleFilter !== "all"
+            ? parseInt(moduleFilter)
+            : undefined,
+        componentId:
+          componentFilter && componentFilter !== "all"
+            ? parseInt(componentFilter)
+            : undefined,
+        priority:
+          priorityFilter && priorityFilter !== "all"
+            ? priorityFilter
+            : undefined,
+        status:
+          statusFilter && statusFilter !== "all" ? statusFilter : undefined,
         search: searchQuery,
         dateFrom: finalDateFrom,
         dateTo: finalDateTo,
         page,
-        limit
+        limit,
       });
 
       // Populate with user data
       const users = await storage.getUsers();
-      const testCasesWithUsers = result.data.map(testCase => ({
+      const testCasesWithUsers = result.data.map((testCase) => ({
         ...testCase,
-        assignee: users.find(user => user.id === testCase.assignedTo),
-        createdByUser: users.find(user => user.id === testCase.createdBy),
+        assignee: users.find((user) => user.id === testCase.assignedTo),
+        createdByUser: users.find((user) => user.id === testCase.createdBy),
       }));
 
       // Return paginated response
@@ -925,8 +1041,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalCount: result.totalCount,
           totalPages: result.totalPages,
           hasNextPage: result.hasNextPage,
-          hasPreviousPage: result.hasPreviousPage
-        }
+          hasPreviousPage: result.hasPreviousPage,
+        },
       });
     } catch (error) {
       console.error("Error fetching test cases:", error);
@@ -945,20 +1061,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const match = tc.testCaseId?.match(/TC-(\d+)/);
         if (match) {
           const num = parseInt(match[1]);
-          console.log("Found test case ID:", tc.testCaseId, "Extracted number:", num);
+          console.log(
+            "Found test case ID:",
+            tc.testCaseId,
+            "Extracted number:",
+            num,
+          );
           return num > max ? num : max;
         }
         return max;
       }, 0);
 
       console.log("Max ID found:", maxId);
-      const nextId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
+      const nextId = `TC-${(maxId + 1).toString().padStart(4, "0")}`;
       console.log("Generated next ID:", nextId);
 
       res.json({ testCaseId: nextId });
     } catch (error) {
       console.error("Error generating test case ID:", error);
-      res.status(500).json({ message: "Failed to generate test case ID", error: error instanceof Error ? error.message : "Unknown error" });
+      res
+        .status(500)
+        .json({
+          message: "Failed to generate test case ID",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
     }
   });
 
@@ -990,14 +1116,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return max;
       }, 0);
 
-      const generatedTestCaseId = `TC-${(maxId + 1).toString().padStart(4, '0')}`;
+      const generatedTestCaseId = `TC-${(maxId + 1).toString().padStart(4, "0")}`;
       console.log("Generated test case ID:", generatedTestCaseId);
 
       // Add the generated ID to the request data and ensure steps is a proper array
       const dataWithId = {
         ...req.body,
         testCaseId: generatedTestCaseId,
-        steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
+        steps: Array.isArray(req.body.steps)
+          ? req.body.steps.filter((step: any) => step && step.trim() !== "")
+          : [],
       };
 
       const validatedData = insertTestCaseSchema.parse(dataWithId);
@@ -1010,11 +1138,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== TEST CASE CREATION ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
 
-      res.status(400).json({ 
-        message: "Invalid test case data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Invalid test case data",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -1028,8 +1159,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
 
       // Check if this is a partial update (like status change)
-      const isPartialUpdate = Object.keys(req.body).length === 1 && 
-        ['status', 'priority', 'assignedTo'].includes(Object.keys(req.body)[0]);
+      const isPartialUpdate =
+        Object.keys(req.body).length === 1 &&
+        ["status", "priority", "assignedTo"].includes(Object.keys(req.body)[0]);
 
       if (isPartialUpdate) {
         // For partial updates, just validate the specific fields
@@ -1046,7 +1178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ensure steps is a proper array
         const dataWithFixedSteps = {
           ...req.body,
-          steps: Array.isArray(req.body.steps) ? req.body.steps.filter((step: any) => step && step.trim() !== "") : []
+          steps: Array.isArray(req.body.steps)
+            ? req.body.steps.filter((step: any) => step && step.trim() !== "")
+            : [],
         };
 
         const validatedData = updateTestCaseSchema.parse(dataWithFixedSteps);
@@ -1063,11 +1197,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("=== TEST CASE UPDATE ERROR ===");
       console.error("Error details:", error);
-      console.error("Error message:", error instanceof Error ? error.message : "Unknown");
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown",
+      );
 
-      res.status(400).json({ 
-        message: "Failed to update test case", 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      res.status(400).json({
+        message: "Failed to update test case",
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -1088,7 +1225,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test Runs
   app.get("/api/test-runs", async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
@@ -1120,7 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (startDate) {
-          testRuns = testRuns.filter(tr => {
+          testRuns = testRuns.filter((tr) => {
             const createdAt = new Date(tr.createdAt);
             return createdAt >= startDate! && createdAt <= endDate;
           });
@@ -1216,8 +1355,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Defects
   app.get("/api/defects", async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
-      const filterProjectId = req.query.filterProjectId ? parseInt(req.query.filterProjectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
+      const filterProjectId = req.query.filterProjectId
+        ? parseInt(req.query.filterProjectId as string)
+        : undefined;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const status = req.query.status as string;
@@ -1232,31 +1375,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply additional project filter if specified
       if (filterProjectId) {
-        defects = defects.filter(d => d.projectId === filterProjectId);
+        defects = defects.filter((d) => d.projectId === filterProjectId);
       }
 
       // Apply status filter
       if (status && status !== "all") {
-        defects = defects.filter(d => d.status === status);
+        defects = defects.filter((d) => d.status === status);
       }
 
       // Apply severity filter
       if (severity && severity !== "all") {
-        defects = defects.filter(d => d.severity === severity);
+        defects = defects.filter((d) => d.severity === severity);
       }
 
       // Apply priority filter
       if (priority && priority !== "all") {
-        defects = defects.filter(d => d.priority === priority);
+        defects = defects.filter((d) => d.priority === priority);
       }
 
       // Apply search filter
       if (search && search.trim()) {
         const searchLower = search.toLowerCase();
-        defects = defects.filter(d => 
-          d.title.toLowerCase().includes(searchLower) ||
-          d.defectId.toLowerCase().includes(searchLower) ||
-          (d.description && d.description.toLowerCase().includes(searchLower))
+        defects = defects.filter(
+          (d) =>
+            d.title.toLowerCase().includes(searchLower) ||
+            d.defectId.toLowerCase().includes(searchLower) ||
+            (d.description &&
+              d.description.toLowerCase().includes(searchLower)),
         );
       }
 
@@ -1285,7 +1430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (startDate) {
-          defects = defects.filter(d => {
+          defects = defects.filter((d) => {
             const createdAt = new Date(d.createdAt);
             return createdAt >= startDate! && createdAt <= endDate;
           });
@@ -1301,10 +1446,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Populate with user data
       const users = await storage.getUsers();
-      const defectsWithUsers = paginatedDefects.map(defect => ({
+      const defectsWithUsers = paginatedDefects.map((defect) => ({
         ...defect,
-        assignee: users.find(user => user.id === defect.assignedTo),
-        reporter: users.find(user => user.id === defect.reportedBy),
+        assignee: users.find((user) => user.id === defect.assignedTo),
+        reporter: users.find((user) => user.id === defect.reportedBy),
       }));
 
       res.json({
@@ -1315,12 +1460,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           total,
           totalPages: Math.ceil(total / limit),
           hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
+          hasPrev: page > 1,
+        },
       });
     } catch (error) {
       console.error("Error fetching defects:", error);
-      res.status(500).json({ message: "Database connection unavailable. Please try again later." });
+      res
+        .status(500)
+        .json({
+          message: "Database connection unavailable. Please try again later.",
+        });
     }
   });
 
@@ -1349,12 +1498,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return max;
       }, 0);
 
-      const generatedDefectId = `DEF-${(maxId + 1).toString().padStart(4, '0')}`;
+      const generatedDefectId = `DEF-${(maxId + 1).toString().padStart(4, "0")}`;
 
       // Add the generated ID to the request data
       const dataWithId = {
         ...req.body,
-        defectId: generatedDefectId
+        defectId: generatedDefectId,
       };
 
       const validatedData = insertDefectWithIdSchema.parse(dataWithId);
@@ -1363,25 +1512,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defect = await storage.createDefect(validatedData);
 
       // Try to create corresponding Azure DevOps work item
-      console.log('🔍 About to check if Azure DevOps is configured...');
+      console.log("🔍 About to check if Azure DevOps is configured...");
 
       // Get settings directly to debug
       const debugSettings = await settingsService.getSettings();
-      console.log('🔍 Direct settings check:', {
+      console.log("🔍 Direct settings check:", {
         enabled: debugSettings.azureDevOps?.enabled,
         org: debugSettings.azureDevOps?.organization,
         project: debugSettings.azureDevOps?.project,
-        hasToken: !!debugSettings.azureDevOps?.personalAccessToken
+        hasToken: !!debugSettings.azureDevOps?.personalAccessToken,
       });
 
       const isConfigured = await azureDevOpsService.isConfigured();
-      console.log('🔍 Azure DevOps configuration check result:', isConfigured);
+      console.log("🔍 Azure DevOps configuration check result:", isConfigured);
 
       if (isConfigured) {
         try {
           // Get user information for the reporter
           const reporter = await storage.getUser(defect.reportedBy);
-          const reporterName = reporter ? reporter.fullName : 'QualityBytes User';
+          const reporterName = reporter
+            ? reporter.fullName
+            : "QualityBytes User";
 
           // Get test case title if available
           let testCaseTitle;
@@ -1396,43 +1547,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Create Azure DevOps work item
           const azureResult = await azureDevOpsService.createBugWorkItem(
-            defect, 
-            reporterName, 
+            defect,
+            reporterName,
             testCaseTitle,
-            teamName
+            teamName,
           );
 
           if (azureResult.success && azureResult.workItemId) {
             // Update defect with Azure DevOps information
-            const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(azureResult.workItemId);
+            const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(
+              azureResult.workItemId,
+            );
             await storage.updateDefect(defect.id, {
               azureWorkItemId: azureResult.workItemId,
-              azureWorkItemUrl: azureWorkItemUrl
+              azureWorkItemUrl: azureWorkItemUrl,
             });
 
-            console.log(`✅ Azure DevOps work item created: ${azureResult.workItemId} for defect ${defect.defectId}`);
+            console.log(
+              `✅ Azure DevOps work item created: ${azureResult.workItemId} for defect ${defect.defectId}`,
+            );
 
             // Return defect with Azure DevOps information
             return res.status(201).json({
               ...defect,
               azureWorkItemId: azureResult.workItemId,
               azureWorkItemUrl: azureWorkItemUrl,
-              azureDevOpsSuccess: true
+              azureDevOpsSuccess: true,
             });
           } else {
-            console.warn(`⚠️ Failed to create Azure DevOps work item for defect ${defect.defectId}:`, azureResult.error);
+            console.warn(
+              `⚠️ Failed to create Azure DevOps work item for defect ${defect.defectId}:`,
+              azureResult.error,
+            );
           }
         } catch (azureError) {
-          console.error(`❌ Azure DevOps integration error for defect ${defect.defectId}:`, azureError);
+          console.error(
+            `❌ Azure DevOps integration error for defect ${defect.defectId}:`,
+            azureError,
+          );
           // Don't fail the defect creation if Azure DevOps fails
         }
       } else {
-        console.log('ℹ️ Azure DevOps not configured - skipping work item creation');
+        console.log(
+          "ℹ️ Azure DevOps not configured - skipping work item creation",
+        );
       }
 
       res.status(201).json(defect);
     } catch (error) {
-      console.error('Error creating defect:', error);
+      console.error("Error creating defect:", error);
       res.status(400).json({ message: "Invalid defect data" });
     }
   });
@@ -1454,13 +1617,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If this defect was synced to Azure DevOps, update it there too
-      if (originalDefect.azureWorkItemId && await azureDevOpsService.isConfigured()) {
+      if (
+        originalDefect.azureWorkItemId &&
+        (await azureDevOpsService.isConfigured())
+      ) {
         try {
-          console.log(`🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`);
+          console.log(
+            `🔄 Updating Azure DevOps work item ${originalDefect.azureWorkItemId} for defect ${originalDefect.defectId}`,
+          );
 
           // Get test case title - check if testCaseId is being updated or use existing
           let testCaseTitle;
-          const testCaseId = req.body.testCaseId !== undefined ? req.body.testCaseId : updatedDefect.testCaseId;
+          const testCaseId =
+            req.body.testCaseId !== undefined
+              ? req.body.testCaseId
+              : updatedDefect.testCaseId;
           if (testCaseId) {
             const testCase = await storage.getTestCase(testCaseId);
             testCaseTitle = testCase?.title;
@@ -1475,45 +1646,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Use updated values where available, otherwise fall back to original
             priority: req.body.priority || originalDefect.priority,
             severity: req.body.severity || originalDefect.severity,
-            status: req.body.status || originalDefect.status
+            status: req.body.status || originalDefect.status,
           };
 
           // Update all changed fields in Azure DevOps
           const azureResult = await azureDevOpsService.updateWorkItem(
             originalDefect.azureWorkItemId,
             updateData,
-            testCaseTitle
+            testCaseTitle,
           );
 
           if (azureResult.success) {
-            console.log(`✅ Azure DevOps work item ${originalDefect.azureWorkItemId} updated successfully`);
+            console.log(
+              `✅ Azure DevOps work item ${originalDefect.azureWorkItemId} updated successfully`,
+            );
           } else {
-            console.warn(`⚠️ Failed to update Azure DevOps work item ${originalDefect.azureWorkItemId}:`, azureResult.error);
+            console.warn(
+              `⚠️ Failed to update Azure DevOps work item ${originalDefect.azureWorkItemId}:`,
+              azureResult.error,
+            );
           }
         } catch (azureError) {
-          console.error(`❌ Azure DevOps update error for defect ${originalDefect.defectId}:`, azureError);
+          console.error(
+            `❌ Azure DevOps update error for defect ${originalDefect.defectId}:`,
+            azureError,
+          );
           // Don't fail the defect update if Azure DevOps fails
         }
       }
 
       res.json(updatedDefect);
     } catch (error) {
-      console.error('Error updating defect:', error);
+      console.error("Error updating defect:", error);
       res.status(500).json({ message: "Failed to update defect" });
     }
   });
 
   app.delete("/api/defects/bulk", requireAuth, async (req, res) => {
     try {
-      console.log('🔍 Bulk delete request received:', req.body);
+      console.log("🔍 Bulk delete request received:", req.body);
       const { ids } = req.body;
-      
+
       if (!Array.isArray(ids) || ids.length === 0) {
-        console.log('❌ Invalid IDs array:', ids);
+        console.log("❌ Invalid IDs array:", ids);
         return res.status(400).json({ message: "Invalid or empty IDs array" });
       }
 
-      console.log('🔍 Processing bulk delete for IDs:', ids);
+      console.log("🔍 Processing bulk delete for IDs:", ids);
       let deletedCount = 0;
       const errors = [];
 
@@ -1530,30 +1709,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors.push(errorMsg);
           }
         } catch (error) {
-          const errorMsg = `Failed to delete defect ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMsg = `Failed to delete defect ${id}: ${error instanceof Error ? error.message : "Unknown error"}`;
           console.log(`❌ ${errorMsg}`);
           errors.push(errorMsg);
         }
       }
 
-      console.log(`🔍 Bulk delete completed. Deleted: ${deletedCount}, Errors: ${errors.length}`);
+      console.log(
+        `🔍 Bulk delete completed. Deleted: ${deletedCount}, Errors: ${errors.length}`,
+      );
 
       if (deletedCount === 0) {
-        return res.status(404).json({ 
-          message: "No defects were deleted", 
+        return res.status(404).json({
+          message: "No defects were deleted",
           errors,
-          deletedCount: 0
+          deletedCount: 0,
         });
       }
 
-      res.json({ 
-        message: `${deletedCount} defect${deletedCount > 1 ? 's' : ''} deleted successfully`,
+      res.json({
+        message: `${deletedCount} defect${deletedCount > 1 ? "s" : ""} deleted successfully`,
         deletedCount,
-        errors: errors.length > 0 ? errors : undefined
+        errors: errors.length > 0 ? errors : undefined,
       });
     } catch (error) {
-      console.error('❌ Bulk delete error:', error);
-      res.status(500).json({ message: `Failed to delete defects: ${error instanceof Error ? error.message : 'Unknown error'}` });
+      console.error("❌ Bulk delete error:", error);
+      res
+        .status(500)
+        .json({
+          message: `Failed to delete defects: ${error instanceof Error ? error.message : "Unknown error"}`,
+        });
     }
   });
 
@@ -1596,37 +1781,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/test-run-results/:id", licenseMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const result = await storage.updateTestRunResult(id, req.body);
-      if (!result) {
-        return res.status(404).json({ error: "Test run result not found" });
-      }
-
-      // If status is being updated (not just notes), change test run status to "in progress"
-      if (req.body.status && req.body.status !== "not_executed") {
-        const testRun = await storage.getTestRun(result.testRunId);
-        if (testRun && testRun.status !== "in progress") {
-          await storage.updateTestRun(result.testRunId, { 
-            status: "in progress",
-            startedAt: new Date()
-          });
-          console.log(`Auto-updated test run ${result.testRunId} status to "in progress"`);
+  app.patch(
+    "/api/test-run-results/:id",
+    licenseMiddleware,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const result = await storage.updateTestRunResult(id, req.body);
+        if (!result) {
+          return res.status(404).json({ error: "Test run result not found" });
         }
-      }
 
-      res.json(result);
-    } catch (error) {
-      console.error("Error updating test run result:", error);
-      res.status(500).json({ error: "Failed to update test run result" });
-    }
-  });
+        // If status is being updated (not just notes), change test run status to "in progress"
+        if (req.body.status && req.body.status !== "not_executed") {
+          const testRun = await storage.getTestRun(result.testRunId);
+          if (testRun && testRun.status !== "in progress") {
+            await storage.updateTestRun(result.testRunId, {
+              status: "in progress",
+              startedAt: new Date(),
+            });
+            console.log(
+              `Auto-updated test run ${result.testRunId} status to "in progress"`,
+            );
+          }
+        }
+
+        res.json(result);
+      } catch (error) {
+        console.error("Error updating test run result:", error);
+        res.status(500).json({ error: "Failed to update test run result" });
+      }
+    },
+  );
 
   // Dashboard Statistics (protected by license)
   app.get("/api/dashboard/stats", licenseMiddleware, async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
@@ -1637,9 +1830,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter by project if projectId is provided
       if (projectId) {
-        testCases = testCases.filter(tc => tc.projectId === projectId);
-        testRuns = testRuns.filter(tr => tr.projectId === projectId);
-        defects = defects.filter(d => d.projectId === projectId);
+        testCases = testCases.filter((tc) => tc.projectId === projectId);
+        testRuns = testRuns.filter((tr) => tr.projectId === projectId);
+        defects = defects.filter((d) => d.projectId === projectId);
       }
 
       // Apply date filtering
@@ -1667,17 +1860,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter data by date range if specified
       if (startDate) {
-        testCases = testCases.filter(tc => {
+        testCases = testCases.filter((tc) => {
           const createdAt = new Date(tc.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
 
-        testRuns = testRuns.filter(tr => {
+        testRuns = testRuns.filter((tr) => {
           const createdAt = new Date(tr.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
 
-        defects = defects.filter(d => {
+        defects = defects.filter((d) => {
           const createdAt = new Date(d.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
@@ -1693,24 +1886,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter test run results by date if specified
       let filteredTestRunResults = allTestRunResults;
       if (startDate) {
-        filteredTestRunResults = allTestRunResults.filter(result => {
+        filteredTestRunResults = allTestRunResults.filter((result) => {
           const executedAt = new Date(result.executedAt || result.createdAt);
           return executedAt >= startDate! && executedAt <= endDate;
         });
       }
 
       // Calculate pass rate from actual test executions
-      const executedResults = filteredTestRunResults.filter(result => 
-        result.status && result.status !== "not_executed"
+      const executedResults = filteredTestRunResults.filter(
+        (result) => result.status && result.status !== "not_executed",
       );
-      const passedResults = filteredTestRunResults.filter(result => 
-        result.status === "passed"
+      const passedResults = filteredTestRunResults.filter(
+        (result) => result.status === "passed",
       );
 
       const totalTestCases = testCases.length;
-      const openDefects = defects.filter(d => d.status === "open").length;
-      const passRate = executedResults.length > 0 ? 
-        (passedResults.length / executedResults.length * 100).toFixed(1) : "0";
+      const openDefects = defects.filter((d) => d.status === "open").length;
+      const passRate =
+        executedResults.length > 0
+          ? ((passedResults.length / executedResults.length) * 100).toFixed(1)
+          : "0";
 
       res.json({
         totalTestCases,
@@ -1726,7 +1921,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports Statistics with pre-calculated distributions
   app.get("/api/reports/stats", licenseMiddleware, async (req, res) => {
     try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
@@ -1737,9 +1934,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter by project if projectId is provided
       if (projectId) {
-        testCases = testCases.filter(tc => tc.projectId === projectId);
-        defects = defects.filter(d => d.projectId === projectId);
-        testRuns = testRuns.filter(tr => tr.projectId === projectId);
+        testCases = testCases.filter((tc) => tc.projectId === projectId);
+        defects = defects.filter((d) => d.projectId === projectId);
+        testRuns = testRuns.filter((tr) => tr.projectId === projectId);
       }
 
       // Apply date filtering
@@ -1767,17 +1964,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter data by date range if specified
       if (startDate) {
-        testCases = testCases.filter(tc => {
+        testCases = testCases.filter((tc) => {
           const createdAt = new Date(tc.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
 
-        defects = defects.filter(d => {
+        defects = defects.filter((d) => {
           const createdAt = new Date(d.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
 
-        testRuns = testRuns.filter(tr => {
+        testRuns = testRuns.filter((tr) => {
           const createdAt = new Date(tr.createdAt);
           return createdAt >= startDate! && createdAt <= endDate;
         });
@@ -1790,10 +1987,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, {});
 
       // Calculate Test Cases by Priority
-      const testCasesByPriority = testCases.reduce((acc: any, testCase: any) => {
-        acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
-        return acc;
-      }, {});
+      const testCasesByPriority = testCases.reduce(
+        (acc: any, testCase: any) => {
+          acc[testCase.priority] = (acc[testCase.priority] || 0) + 1;
+          return acc;
+        },
+        {},
+      );
 
       // Calculate Defect Status Distribution (by severity)
       const defectsBySeverity = defects.reduce((acc: any, defect: any) => {
@@ -1802,15 +2002,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, {});
 
       // Calculate other metrics
-      const executedTestCases = testCases.filter(tc => tc.status !== "draft").length;
-      const defectResolutionRate = defects.length > 0 
-        ? Math.round((defects.filter(d => d.status === "resolved" || d.status === "closed").length / defects.length) * 100)
-        : 0;
+      const executedTestCases = testCases.filter(
+        (tc) => tc.status !== "draft",
+      ).length;
+      const defectResolutionRate =
+        defects.length > 0
+          ? Math.round(
+              (defects.filter(
+                (d) => d.status === "resolved" || d.status === "closed",
+              ).length /
+                defects.length) *
+                100,
+            )
+          : 0;
 
       // Calculate test automation percentage
-      const automationRate = testCases.length > 0 
-        ? Math.round((testCases.filter(tc => tc.isAutomated).length / testCases.length) * 100)
-        : 0;
+      const automationRate =
+        testCases.length > 0
+          ? Math.round(
+              (testCases.filter((tc) => tc.isAutomated).length /
+                testCases.length) *
+                100,
+            )
+          : 0;
 
       res.json({
         // Basic counts
@@ -1829,8 +2043,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defectsBySeverity,
 
         // Additional breakdowns
-        automatedTestCases: testCases.filter(tc => tc.isAutomated).length,
-        resolvedDefects: defects.filter(d => d.status === "resolved" || d.status === "closed").length,
+        automatedTestCases: testCases.filter((tc) => tc.isAutomated).length,
+        resolvedDefects: defects.filter(
+          (d) => d.status === "resolved" || d.status === "closed",
+        ).length,
       });
     } catch (error) {
       console.error("Error fetching reports statistics:", error);
@@ -1841,13 +2057,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Azure DevOps Webhook endpoint
   app.post("/api/webhooks/azure-devops", async (req, res) => {
     try {
-      const signature = req.headers['x-vss-signature'] as string;
+      const signature = req.headers["x-vss-signature"] as string;
       const payload = JSON.stringify(req.body);
 
       console.log("📥 Received Azure DevOps webhook:", {
         eventType: req.body.eventType,
         workItemId: req.body.resource?.workItemId,
-        hasSignature: !!signature
+        hasSignature: !!signature,
       });
 
       // Get webhook secret from settings
@@ -1858,10 +2074,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { azureWebhookService } = await import("./azureWebhookService");
 
       // Validate signature if secret is configured
-      if (webhookSecret && !azureWebhookService.validateWebhookSignature(payload, signature, webhookSecret)) {
-        return res.status(401).json({ 
-          success: false, 
-          message: "Invalid webhook signature" 
+      if (
+        webhookSecret &&
+        !azureWebhookService.validateWebhookSignature(
+          payload,
+          signature,
+          webhookSecret,
+        )
+      ) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid webhook signature",
         });
       }
 
@@ -1873,13 +2096,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json(result);
       }
-
     } catch (error) {
       console.error("❌ Error processing Azure DevOps webhook:", error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         message: "Failed to process webhook",
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -1898,14 +2120,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/settings/azure-devops", async (req, res) => {
     try {
       const azureSettings = req.body;
-      const updatedSettings = await settingsService.updateAzureDevOpsSettings(azureSettings);
+      const updatedSettings =
+        await settingsService.updateAzureDevOpsSettings(azureSettings);
 
-      console.log(`🔧 Azure DevOps settings updated: enabled=${azureSettings.enabled}, org=${azureSettings.organization}, project=${azureSettings.project}`);
+      console.log(
+        `🔧 Azure DevOps settings updated: enabled=${azureSettings.enabled}, org=${azureSettings.organization}, project=${azureSettings.project}`,
+      );
 
       res.json(updatedSettings);
     } catch (error) {
       console.error("Error updating Azure DevOps settings:", error);
-      res.status(500).json({ message: "Failed to update Azure DevOps settings" });
+      res
+        .status(500)
+        .json({ message: "Failed to update Azure DevOps settings" });
     }
   });
 
@@ -1915,9 +2142,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(testResult);
     } catch (error) {
       console.error("Error testing Azure DevOps connection:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to test Azure DevOps connection" 
+      res.status(500).json({
+        success: false,
+        message: "Failed to test Azure DevOps connection",
       });
     }
   });
@@ -1939,11 +2166,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/events", (req, res) => {
     // Set headers for SSE
     res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Cache-Control",
     });
 
     // Generate unique client ID
@@ -1954,11 +2181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       sseService.addClient(clientId, res);
 
       // Handle client disconnect
-      req.on('close', () => {
+      req.on("close", () => {
         sseService.removeClient(clientId);
       });
 
-      req.on('aborted', () => {
+      req.on("aborted", () => {
         sseService.removeClient(clientId);
       });
     });

@@ -1,5 +1,6 @@
 # Use Node.js 20 LTS
-FROM node:20-alpine
+# FROM node:20-alpine
+FROM node:20-bullseye
 
 # Set working directory
 WORKDIR /app
@@ -26,9 +27,13 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 # Build the application 
 RUN vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# Create non-root user for other platforms
+# RUN addgroup -g 1001 -S nodejs
+# RUN adduser -S nextjs -u 1001
+
+# For linux
+RUN groupadd -g 1001 nodejs
+RUN useradd -u 1001 -g nodejs -m nextjs
 
 # Change ownership of the app directory
 RUN chown -R nextjs:nodejs /app
