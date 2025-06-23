@@ -2,6 +2,7 @@
 import { storage } from "./storage";
 import { settingsService } from "./settingsService";
 import { eventLogger } from "./eventLogger";
+import { azureDevOpsService } from "./azureDevOpsService";
 
 interface AzureWebhookPayload {
   eventType: string;
@@ -173,8 +174,8 @@ export class AzureWebhookService {
     }
 
     try {
-      // Create new defect in QualityBytes
-      const azureWorkItemUrl = `https://dev.azure.com/${payload.resourceContainers.account.id}/${payload.resourceContainers.project.id}/_workitems/edit/${workItemId}`;
+      // Create new defect in QualityBytes with proper Azure work item URL
+      const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(workItemId);
       
       const newDefect = await storage.createDefect({
         ...defectData,
