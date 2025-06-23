@@ -421,21 +421,23 @@ export class AzureWebhookService {
       }
     }
 
-    if (fields['System.Description']) {
-      // Extract description from HTML content if needed
+    // Handle Repro Steps updates (primary source for description in Azure DevOps)
+    if (fields['Microsoft.VSTS.TCM.ReproSteps']) {
+      const reproStepsValue = fields['Microsoft.VSTS.TCM.ReproSteps'].newValue || fields['Microsoft.VSTS.TCM.ReproSteps'];
+      const description = this.extractDescriptionFromReproSteps(reproStepsValue);
+      if (description) {
+        changes.description = description;
+        console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
+      }
+    }
+
+    // Handle System.Description updates (secondary source)
+    if (fields['System.Description'] && !changes.description) {
       const descriptionValue = fields['System.Description'].newValue || fields['System.Description'];
       const description = this.extractDescriptionFromHtml(descriptionValue);
       if (description) {
         changes.description = description;
-      }
-    }
-
-    if (fields['Microsoft.VSTS.TCM.ReproSteps']) {
-      // Extract description from repro steps as backup
-      const reproStepsValue = fields['Microsoft.VSTS.TCM.ReproSteps'].newValue || fields['Microsoft.VSTS.TCM.ReproSteps'];
-      const description = this.extractDescriptionFromReproSteps(reproStepsValue);
-      if (description && !changes.description) {
-        changes.description = description;
+        console.log(`🔄 Updated description from System.Description: ${description.substring(0, 100)}...`);
       }
     }
 
