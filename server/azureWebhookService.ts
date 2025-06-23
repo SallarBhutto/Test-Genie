@@ -424,10 +424,19 @@ export class AzureWebhookService {
     // Handle Repro Steps updates (primary source for description in Azure DevOps)
     if (fields['Microsoft.VSTS.TCM.ReproSteps']) {
       const reproStepsValue = fields['Microsoft.VSTS.TCM.ReproSteps'].newValue || fields['Microsoft.VSTS.TCM.ReproSteps'];
+      console.log(`🔍 Processing Repro Steps update:`, {
+        hasNewValue: !!fields['Microsoft.VSTS.TCM.ReproSteps'].newValue,
+        valueType: typeof reproStepsValue,
+        valueLength: reproStepsValue?.length || 0,
+        valuePreview: reproStepsValue?.substring(0, 100) + '...' || 'empty'
+      });
+      
       const description = this.extractDescriptionFromReproSteps(reproStepsValue);
       if (description) {
         changes.description = description;
         console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
+      } else {
+        console.log(`⚠️ No description extracted from Repro Steps`);
       }
     }
 
@@ -515,12 +524,32 @@ export class AzureWebhookService {
   private extractDescriptionFromReproSteps(reproSteps: string): string | null {
     if (!reproSteps) return null;
 
-    // Look for description pattern in the repro steps
-    const descriptionMatch = reproSteps.match(/\*\*Description:\*\*\s*(.+?)(?:\n\n|\*\*)/);
+    console.log(`🔍 Extracting description from Repro Steps:`, reproSteps.substring(0, 200) + '...');
+
+    // Try to extract clean text from HTML content
+    const cleanText = this.extractDescriptionFromHtml(reproSteps);
+    if (cleanText && cleanText.length > 3) {
+      console.log(`✅ Successfully extracted from Repro Steps HTML: ${cleanText.substring(0, 100)}...`);
+      return cleanText;
+    }
+
+    // Fallback: Look for specific description pattern in the repro steps
+    const descriptionMatch = reproSteps.match(/\*\*Description:\*\*\s*(.+?)(?:\n\n|\*\*)/s);
     if (descriptionMatch) {
+      console.log(`✅ Found description pattern in Repro Steps: ${descriptionMatch[1].substring(0, 100)}...`);
       return descriptionMatch[1].trim();
     }
 
+    // If no specific pattern, treat the entire content as description (cleaned)
+    if (reproSteps.length > 10) {
+      const fallbackDescription = reproSteps.replace(/<[^>]*>/g, '').trim();
+      if (fallbackDescription.length > 10) {
+        console.log(`✅ Using entire Repro Steps as description: ${fallbackDescription.substring(0, 100)}...`);
+        return fallbackDescription.length > 1000 ? fallbackDescription.substring(0, 1000) + '...' : fallbackDescription;
+      }
+    }
+
+    console.log(`❌ No usable content found in Repro Steps`);
     return null;
   }
 
