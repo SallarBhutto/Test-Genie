@@ -1393,7 +1393,7 @@ export async function initializeDefaultUser() {
       await storage.createUser({
         username: "admin",
         password: "123456",
-        email: "admin@testgenie.com",
+        email: "admin@qualitybytes.com",
         fullName: "Administrator",
         role: "admin",
       });
