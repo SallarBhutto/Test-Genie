@@ -1,5 +1,5 @@
 version: '3.8'
-
+ 
 services:
   # PostgreSQL Database
   postgres:
@@ -19,7 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+ 
   # QualityBytes Application (pull from Docker Hub)
   app:
     image: samosalabsapps/qualitybytes:latest
@@ -29,7 +29,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       SESSION_SECRET: your-super-secret-session-key-change-this-in-production
-      LICENSE_KEY: QB-QBYT-D3C0-B66C-8AE6
+      LICENSE_KEY: 
     ports:
       - "5000:5000"
     depends_on:
@@ -41,6 +41,6 @@ services:
       - npx drizzle-kit push --config ./drizzle.config.ts && npm run start
     restart: unless-stopped
     # No volumes needed unless you're mounting external config/data
-
+ 
 volumes:
   postgres_data:
