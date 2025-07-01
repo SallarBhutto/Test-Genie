@@ -141,11 +141,11 @@ export class AzureDevOpsService {
       }
 
       // Add repro steps with description and test case reference
-      let reproSteps = `**Defect Description:**\n${defect.description}\n\n**Defect ID:** ${defect.defectId}`;
+      let reproSteps = `${defect.description}`;
       
-      if (testCaseTitle) {
-        reproSteps += `\n\n**Related Test Case:** ${testCaseTitle}`;
-      }
+      // if (testCaseTitle) {
+      //   reproSteps += `\n\n**Related Test Case:** ${testCaseTitle}`;
+      // }
       
       workItemFields.push({
         op: 'add',
@@ -288,13 +288,15 @@ export class AzureDevOpsService {
         });
         
         // Also update the Repro Steps field with a simpler format
-        const reproSteps = `**Description:** ${updates.description}\n\n` +
-                          `**Defect ID:** ${updates.defectId || 'N/A'}\n\n` +
-                          (testCaseTitle ? `**Related Test Case:** ${testCaseTitle}\n\n` : '') +
-                          `**Priority:** ${updates.priority || 'N/A'}\n\n` +
-                          `**Severity:** ${updates.severity || 'N/A'}\n\n` +
-                          `**Status:** ${updates.status || 'N/A'}\n\n` +
-                          `*Synced from QualityBytes*`;
+        // const reproSteps = `**Description:** ${updates.description}\n\n` +
+        //                   `**Defect ID:** ${updates.defectId || 'N/A'}\n\n` +
+        //                   (testCaseTitle ? `**Related Test Case:** ${testCaseTitle}\n\n` : '') +
+        //                   `**Priority:** ${updates.priority || 'N/A'}\n\n` +
+        //                   `**Severity:** ${updates.severity || 'N/A'}\n\n` +
+        //                   `**Status:** ${updates.status || 'N/A'}\n\n` +
+        //                   `*Synced from QualityBytes*`;
+        
+        const reproSteps = updates.description;
         
         workItemFields.push({
           op: 'add',

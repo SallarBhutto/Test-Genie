@@ -431,7 +431,7 @@ export class AzureWebhookService {
         valuePreview: reproStepsValue?.substring(0, 100) + '...' || 'empty'
       });
       
-      const description = this.extractDescriptionFromReproSteps(reproStepsValue);
+      const description = reproStepsValue; //this.extractDescriptionFromReproSteps(reproStepsValue);
       if (description) {
         changes.description = description;
         console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
