@@ -1814,6 +1814,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Defects Statistics (protected by license)
+  app.get("/api/defects/stats", licenseMiddleware, async (req, res) => {
+    try {
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
+      const filterProjectId = req.query.filterProjectId
+        ? parseInt(req.query.filterProjectId as string)
+        : undefined;
+      const status = req.query.status as string;
+      const severity = req.query.severity as string;
+      const priority = req.query.priority as string;
+      const search = req.query.search as string;
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+
+      let defects = await storage.getDefects(projectId);
+
+      // Apply additional project filter if specified
+      if (filterProjectId) {
+        defects = defects.filter((d) => d.projectId === filterProjectId);
+      }
+
+      // Apply status filter
+      if (status && status !== "all") {
+        defects = defects.filter((d) => d.status === status);
+      }
+
+      // Apply severity filter
+      if (severity && severity !== "all") {
+        defects = defects.filter((d) => d.severity === severity);
+      }
+
+      // Apply priority filter
+      if (priority && priority !== "all") {
+        defects = defects.filter((d) => d.priority === priority);
+      }
+
+      // Apply search filter
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase();
+        defects = defects.filter(
+          (d) =>
+            d.title.toLowerCase().includes(searchLower) ||
+            d.defectId.toLowerCase().includes(searchLower) ||
+            (d.description &&
+              d.description.toLowerCase().includes(searchLower)),
+        );
+      }
+
+      // Apply date filtering
+      if (dateRange || (dateFrom && dateTo)) {
+        const now = new Date();
+        let startDate: Date | null = null;
+        let endDate: Date = now;
+
+        if (dateRange === "custom" && dateFrom && dateTo) {
+          startDate = new Date(dateFrom);
+          endDate = new Date(dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (dateRange) {
+          switch (dateRange) {
+            case "last7days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "last30days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "last90days":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+
+        if (startDate) {
+          defects = defects.filter((d) => {
+            const createdAt = new Date(d.createdAt);
+            return createdAt >= startDate! && createdAt <= endDate;
+          });
+        }
+      }
+
+      // Calculate status-based counts
+      const totalDefects = defects.length;
+      const openDefects = defects.filter((d) => d.status === "open").length;
+      const inProgressDefects = defects.filter((d) => d.status === "in_progress").length;
+      const resolvedDefects = defects.filter((d) => d.status === "resolved").length;
+      const closedDefects = defects.filter((d) => d.status === "closed").length;
+      const reopenedDefects = defects.filter((d) => d.status === "reopened").length;
+
+      res.json({
+        totalDefects,
+        openDefects,
+        inProgressDefects,
+        resolvedDefects,
+        closedDefects,
+        reopenedDefects,
+      });
+    } catch (error) {
+      console.error("Error fetching defects statistics:", error);
+      res.status(500).json({ message: "Failed to fetch defects statistics" });
+    }
+  });
+
   // Dashboard Statistics (protected by license)
   app.get("/api/dashboard/stats", licenseMiddleware, async (req, res) => {
     try {

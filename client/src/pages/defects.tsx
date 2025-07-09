@@ -94,6 +94,43 @@ export default function Defects() {
   const defects = defectsResponse?.data || [];
   const pagination = defectsResponse?.pagination;
 
+  const { data: defectStats } = useQuery({
+    queryKey: ["/api/defects/stats", selectedProject?.id, statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+
+      if (statusFilter !== "all") {
+        params.append('status', statusFilter);
+      }
+
+      if (severityFilter !== "all") {
+        params.append('severity', severityFilter);
+      }
+
+      if (priorityFilter !== "all") {
+        params.append('priority', priorityFilter);
+      }
+
+      if (projectFilter !== "all") {
+        params.append('filterProjectId', projectFilter);
+      }
+
+      if (debouncedSearchQuery.trim()) {
+        params.append('search', debouncedSearchQuery.trim());
+      }
+
+      const response = await fetch(`/api/defects/stats?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defect statistics');
+      }
+      return response.json();
+    },
+  });
+
   const { data: projects = [] } = useQuery({
     queryKey: ["/api/projects"],
   });
@@ -263,7 +300,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Defects</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {pagination?.total || 0}
+                  {defectStats?.totalDefects || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
@@ -279,7 +316,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Open</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.filter((d: any) => d.status === "open").length || 0}
+                  {defectStats?.openDefects || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
@@ -295,7 +332,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">In Progress</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.filter((d: any) => d.status === "in_progress").length || 0}
+                  {defectStats?.inProgressDefects || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -311,7 +348,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Resolved</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.filter((d: any) => d.status === "resolved").length || 0}
+                  {defectStats?.resolvedDefects || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
@@ -327,7 +364,7 @@ export default function Defects() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Closed</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  {defects?.filter((d: any) => d.status === "closed").length || 0}
+                  {defectStats?.closedDefects || 0}
                 </p>
               </div>
               <div className="w-8 h-8 bg-gray-100 dark:bg-gray-900/20 rounded-lg flex items-center justify-center">
