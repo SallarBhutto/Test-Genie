@@ -144,19 +144,19 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>Edit Defect</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-y-auto flex-1">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="sm:col-span-2">
                     <FormLabel>Title *</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter defect title" {...field} />
@@ -170,7 +170,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                 control={form.control}
                 name="description"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className="sm:col-span-2">
                     <FormLabel>Description *</FormLabel>
                     <FormControl>
                       <div className="space-y-2">
@@ -352,7 +352,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
               />
             </div>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
