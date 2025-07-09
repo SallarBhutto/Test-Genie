@@ -2162,6 +2162,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Azure DevOps Sync endpoints
+  app.post("/api/azure/sync", requireAuth, async (req: any, res) => {
+    try {
+      const currentUser = req.user;
+      
+      // Only admins can trigger sync
+      if (currentUser.role !== "admin") {
+        return res.status(403).json({
+          message: "Permission denied. Only administrators can trigger Azure DevOps sync."
+        });
+      }
+
+      const { azureSyncService } = await import("./azureSyncService");
+      const result = await azureSyncService.syncAllBugs();
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Error triggering Azure sync:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to trigger sync",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/azure/sync/project/:projectId", requireAuth, async (req: any, res) => {
+    try {
+      const currentUser = req.user;
+      
+      // Only admins can trigger sync
+      if (currentUser.role !== "admin") {
+        return res.status(403).json({
+          message: "Permission denied. Only administrators can trigger Azure DevOps sync."
+        });
+      }
+
+      const projectId = parseInt(req.params.projectId);
+      const { azureSyncService } = await import("./azureSyncService");
+      const result = await azureSyncService.syncProjectBugs(projectId);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Error triggering project sync:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to trigger project sync",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.get("/api/azure/sync/status", requireAuth, async (req, res) => {
+    try {
+      const { azureSyncService } = await import("./azureSyncService");
+      const status = await azureSyncService.getSyncStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      res.status(500).json({ 
+        message: "Failed to get sync status",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Server-Sent Events endpoint for real-time updates
   app.get("/api/events", (req, res) => {
     // Set headers for SSE

@@ -30,6 +30,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sync, Loader2, Info } from "lucide-react";
+
 
 interface AzureDevOpsSettings {
   enabled: boolean;
@@ -56,6 +59,10 @@ const azureDevOpsSchema = z.object({
 export default function Settings() {
   const { toast } = useToast();
   const [showToken, setShowToken] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [syncStatus, setSyncStatus] = useState<any>(null);
 
   // Fetch current settings
   const { data: settings, isLoading } = useQuery<SystemSettings>({
@@ -118,6 +125,16 @@ export default function Settings() {
     },
   });
 
+  // Fetch projects for sync dropdown
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const response = await fetch("/api/projects");
+      if (!response.ok) throw new Error("Failed to fetch projects");
+      return response.json();
+    },
+  });
+
   // Update form values when settings data loads
   useEffect(() => {
     if (settings?.azureDevOps) {
@@ -129,6 +146,8 @@ export default function Settings() {
         webhookSecret: settings.azureDevOps.webhookSecret || "",
       });
     }
+
+    fetchSyncStatus();
   }, [settings, form]);
 
   const handleAzureDevOpsSubmit = (data: z.infer<typeof azureDevOpsSchema>) => {
@@ -149,6 +168,104 @@ export default function Settings() {
 
   const connectionStatus = getConnectionStatus();
   const StatusIcon = connectionStatus.icon;
+
+    const fetchSyncStatus = async () => {
+    try {
+      const response = await fetch("/api/azure/sync/status");
+      if (response.ok) {
+        const status = await response.json();
+        setSyncStatus(status);
+      }
+    } catch (error) {
+      console.error("Error fetching sync status:", error);
+    }
+  };
+
+  const testConnection = async () => {
+    testConnectionMutation.mutate();
+  };
+
+  const handleFullSync = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const response = await apiRequest("POST", "/api/azure/sync");
+
+      const result = await response.json();
+      setSyncResult(result);
+
+      if (result.success) {
+        toast({
+          title: "Sync Completed",
+          description: `Created: ${result.stats.created}, Updated: ${result.stats.updated}`,
+        });
+        // Refresh sync status
+        fetchSyncStatus();
+      } else {
+        toast({
+          title: "Sync Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      const errorMessage = "Failed to start sync";
+      setSyncResult({ success: false, message: errorMessage });
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleProjectSync = async () => {
+    if (!selectedProjectId) return;
+
+    setIsSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const response = await fetch(`/api/azure/sync/project/${selectedProjectId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+      setSyncResult(result);
+
+      if (result.success) {
+        toast({
+          title: "Project Sync Completed",
+          description: `Created: ${result.stats.created}, Updated: ${result.stats.updated}`,
+        });
+        // Refresh sync status
+        fetchSyncStatus();
+      } else {
+        toast({
+          title: "Project Sync Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      const errorMessage = "Failed to start project sync";
+      setSyncResult({ success: false, message: errorMessage });
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -417,6 +534,197 @@ export default function Settings() {
               )}
             </CardContent>
           </Card>
+
+        {/* Azure DevOps Sync Section */}
+        {settings?.azureDevOps.enabled && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sync className="h-5 w-5" />
+                Azure DevOps Sync
+              </CardTitle>
+              <CardDescription>
+                Synchronize all bugs from Azure DevOps to QualityBytes. This will create new defects for Azure work items that don't exist in QualityBytes and update existing ones.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Sync Status */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Synced Defects</Label>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {syncStatus?.totalDefectsWithAzureId || 0}
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Defects linked to Azure work items
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Total Projects</Label>
+                  <div className="text-2xl font-bold text-green-600">
+                    {syncStatus?.totalProjects || 0}
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Projects in QualityBytes
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Sync-Enabled Projects</Label>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {syncStatus?.projectsWithTeamNames || 0}
+                  </div>
+                  <p className="text-xs text-neutral-500">
+                    Projects with team names configured
+                  </p>
+                </div>
+              </div>
+
+              {/* Sync Actions */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Full Sync</h4>
+                    <p className="text-sm text-neutral-500">
+                      Sync all bugs from all Azure area paths to their corresponding QualityBytes projects
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleFullSync}
+                    disabled={isSyncing}
+                    className="min-w-[120px]"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Sync className="h-4 w-4 mr-2" />
+                        Start Sync
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Project-Specific Sync</h4>
+                    <p className="text-sm text-neutral-500">
+                      Sync bugs for a specific project only
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select
+                      value={selectedProjectId}
+                      onValueChange={setSelectedProjectId}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects
+                          ?.filter(p => p.teamName)
+                          .map((project) => (
+                            <SelectItem key={project.id} value={project.id.toString()}>
+                              {project.name} ({project.teamName})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleProjectSync}
+                      disabled={!selectedProjectId || isSyncing}
+                      variant="outline"
+                    >
+                      {isSyncing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sync className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sync Results */}
+              {syncResult && (
+                <div className={`p-4 rounded-lg border ${
+                  syncResult.success 
+                    ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
+                    : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    {syncResult.success ? (
+                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    )}
+                    <div className="space-y-2 flex-1">
+                      <p className={`font-medium ${
+                        syncResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'
+                      }`}>
+                        {syncResult.message}
+                      </p>
+
+                      {syncResult.stats && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">Total:</span> {syncResult.stats.totalAzureWorkItems}
+                          </div>
+                          <div>
+                            <span className="font-medium">Created:</span> {syncResult.stats.created}
+                          </div>
+                          <div>
+                            <span className="font-medium">Updated:</span> {syncResult.stats.updated}
+                          </div>
+                          <div>
+                            <span className="font-medium">Errors:</span> {syncResult.stats.errors}
+                          </div>
+                        </div>
+                      )}
+
+                      {syncResult.errors && syncResult.errors.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">Errors:</p>
+                          {syncResult.errors.slice(0, 5).map((error, index) => (
+                            <p key={index} className="text-xs text-red-700 dark:text-red-300">
+                              • {error}
+                            </p>
+                          ))}
+                          {syncResult.errors.length > 5 && (
+                            <p className="text-xs text-red-600">
+                              ...and {syncResult.errors.length - 5} more errors
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Info Section */}
+              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-2">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium text-blue-800 dark:text-blue-200">
+                      How Azure Sync Works
+                    </p>
+                    <ul className="space-y-1 text-blue-700 dark:text-blue-300">
+                      <li>• Fetches all Bug work items from Azure DevOps</li>
+                      <li>• Uses project Team Names to match Azure Area Paths</li>
+                      <li>• Creates new defects for work items not in QualityBytes</li>
+                      <li>• Updates existing defects with latest Azure data</li>
+                      <li>• Maintains bidirectional sync with webhook integration</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         </TabsContent>
       </Tabs>
     </div>
