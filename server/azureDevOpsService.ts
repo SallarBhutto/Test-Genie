@@ -222,6 +222,42 @@ export class AzureDevOpsService {
     return description;
   }
 
+  private formatDescriptionWithImages(defect: any, testCaseTitle?: string): string {
+    let description = `<h3>Bug Report from QualityBytes</h3>`;
+    
+    if (defect.defectId) {
+      description += `<p><strong>Defect ID:</strong> ${defect.defectId}</p>`;
+    }
+    
+    description += `<p><strong>Description:</strong></p>`;
+    // Preserve the original HTML content with images
+    description += `<div>${defect.description}</div>`;
+    
+    if (testCaseTitle) {
+      description += `<p><strong>Related Test Case:</strong> ${testCaseTitle}</p>`;
+    }
+    
+    if (defect.priority) {
+      description += `<p><strong>Priority:</strong> ${defect.priority}</p>`;
+    }
+    
+    if (defect.severity) {
+      description += `<p><strong>Severity:</strong> ${defect.severity}</p>`;
+    }
+    
+    if (defect.status) {
+      description += `<p><strong>Status:</strong> ${defect.status}</p>`;
+    }
+    
+    if (defect.createdAt) {
+      description += `<p><strong>Reported Date:</strong> ${new Date(defect.createdAt).toLocaleDateString()}</p>`;
+    }
+    
+    description += `<p><em>This bug was updated from QualityBytes test management system.</em></p>`;
+
+    return description;
+  }
+
   async updateWorkItem(workItemId: number, updates: any, testCaseTitle?: string): Promise<{ success: boolean; error?: string }> {
     try {
       console.log(`🔍 Azure DevOps update request for work item ${workItemId}:`, JSON.stringify(updates, null, 2));
@@ -277,34 +313,49 @@ export class AzureDevOpsService {
 
       // Update description if provided
       if (updates.description) {
-        const formattedDescription = this.formatDescription(updates, testCaseTitle);
-        console.log(`📝 Adding description update:`, formattedDescription);
+        // Check if the description contains Azure DevOps images
+        const hasAzureImages = updates.description?.includes('_apis/wit/attachments/');
         
-        // Update both System.Description and Repro Steps for better visibility
-        workItemFields.push({
-          op: 'add',
-          path: '/fields/System.Description',
-          value: formattedDescription
-        });
-        
-        // Also update the Repro Steps field with a simpler format
-        // const reproSteps = `**Description:** ${updates.description}\n\n` +
-        //                   `**Defect ID:** ${updates.defectId || 'N/A'}\n\n` +
-        //                   (testCaseTitle ? `**Related Test Case:** ${testCaseTitle}\n\n` : '') +
-        //                   `**Priority:** ${updates.priority || 'N/A'}\n\n` +
-        //                   `**Severity:** ${updates.severity || 'N/A'}\n\n` +
-        //                   `**Status:** ${updates.status || 'N/A'}\n\n` +
-        //                   `*Synced from QualityBytes*`;
-        
-        const reproSteps = updates.description;
-        
-        workItemFields.push({
-          op: 'add',
-          path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
-          value: reproSteps
-        });
-        
-        console.log(`📝 Adding repro steps update:`, reproSteps);
+        if (hasAzureImages) {
+          // If description contains Azure images, preserve the HTML format
+          console.log(`📝 Preserving Azure DevOps images in description update`);
+          
+          // For System.Description, use the formatted version but preserve image HTML
+          const formattedDescription = this.formatDescriptionWithImages(updates, testCaseTitle);
+          workItemFields.push({
+            op: 'add',
+            path: '/fields/System.Description',
+            value: formattedDescription
+          });
+          
+          // For Repro Steps, preserve the original HTML with images
+          workItemFields.push({
+            op: 'add',
+            path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
+            value: updates.description
+          });
+          
+          console.log(`📝 Added description update with preserved images`);
+        } else {
+          // Standard text-based description update
+          const formattedDescription = this.formatDescription(updates, testCaseTitle);
+          console.log(`📝 Adding standard description update:`, formattedDescription);
+          
+          // Update both System.Description and Repro Steps for better visibility
+          workItemFields.push({
+            op: 'add',
+            path: '/fields/System.Description',
+            value: formattedDescription
+          });
+          
+          workItemFields.push({
+            op: 'add',
+            path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
+            value: updates.description
+          });
+          
+          console.log(`📝 Adding repro steps update:`, updates.description);
+        }
       }
 
       // Update status if provided

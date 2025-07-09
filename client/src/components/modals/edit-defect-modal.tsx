@@ -180,10 +180,16 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                           {...field} 
                         />
                         {field.value?.includes('<') && field.value?.includes('_apis/wit/attachments/') && (
-                          <div className="p-3 bg-gray-50 border rounded-md">
-                            <div className="text-sm text-gray-600 mb-2">Preview (contains Azure DevOps content):</div>
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <div className="text-sm text-blue-800 mb-2 font-medium">
+                              ℹ️ This description contains Azure DevOps images
+                            </div>
+                            <div className="text-xs text-blue-600 mb-2">
+                              Images will be preserved when updating Azure DevOps. Edit carefully to maintain image references.
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">Preview:</div>
                             <div 
-                              className="prose prose-sm max-w-none text-sm"
+                              className="prose prose-sm max-w-none text-sm bg-white p-2 rounded border"
                               dangerouslySetInnerHTML={{ __html: field.value }}
                             />
                           </div>
