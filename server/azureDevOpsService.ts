@@ -313,12 +313,13 @@ export class AzureDevOpsService {
 
       // Update description if provided
       if (updates.description) {
-        // Check if the description contains Azure DevOps images
+        // Check if the description contains Azure DevOps images or HTML content
         const hasAzureImages = updates.description?.includes('_apis/wit/attachments/');
+        const hasHtmlContent = updates.description?.includes('<') && updates.description?.includes('>');
         
-        if (hasAzureImages) {
-          // If description contains Azure images, preserve the HTML format
-          console.log(`📝 Preserving Azure DevOps images in description update`);
+        if (hasAzureImages || hasHtmlContent) {
+          // If description contains Azure images or HTML, preserve the HTML format
+          console.log(`📝 Preserving HTML content in description update (images: ${hasAzureImages}, html: ${hasHtmlContent})`);
           
           // For System.Description, use the formatted version but preserve image HTML
           const formattedDescription = this.formatDescriptionWithImages(updates, testCaseTitle);
@@ -335,7 +336,7 @@ export class AzureDevOpsService {
             value: updates.description
           });
           
-          console.log(`📝 Added description update with preserved images`);
+          console.log(`📝 Added description update with preserved HTML content`);
         } else {
           // Standard text-based description update
           const formattedDescription = this.formatDescription(updates, testCaseTitle);

@@ -503,18 +503,9 @@ export class AzureWebhookService {
     const hasAzureImages = htmlContent.includes('_apis/wit/attachments/');
 
     if (hasAzureImages) {
-      // For content with Azure DevOps images, preserve the HTML structure
-      // but clean it up for better display
-      const cleanedHtml = htmlContent
-        .replace(/&nbsp;/g, ' ') // Replace &nbsp; with spaces
-        .replace(/&lt;/g, '<') // Decode HTML entities
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .trim();
-
-      return cleanedHtml;
+      // For content with Azure DevOps images, preserve the HTML structure completely
+      console.log(`🔍 Preserving HTML content with Azure DevOps images`);
+      return htmlContent.trim();
     }
 
     // For content without images, convert to clean text as before
