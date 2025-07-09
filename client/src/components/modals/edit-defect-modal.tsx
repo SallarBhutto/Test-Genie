@@ -170,20 +170,16 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
   });
 
   const onSubmit = (data: InsertDefect) => {
-    // Check if the description contains HTML and preserve it if the text content is similar
-    const currentPlainText = extractPlainTextFromHtml(originalHtmlDescription);
-    const submittedText = data.description || "";
+    // Check if the description contains Azure DevOps images
+    const hasAzureImages = originalHtmlDescription.includes('<') && 
+                          originalHtmlDescription.includes('_apis/wit/attachments/');
     
-    // If the original was HTML and the submitted text is similar to the extracted plain text,
-    // preserve the original HTML structure
-    const shouldPreserveHtml = originalHtmlDescription.includes('<') && 
-                               originalHtmlDescription.includes('_apis/wit/attachments/') &&
-                               currentPlainText.trim() === submittedText.trim();
+    const finalData = { ...data };
     
-    const finalData = {
-      ...data,
-      description: shouldPreserveHtml ? originalHtmlDescription : data.description
-    };
+    if (hasAzureImages) {
+      // Preserve the original HTML description completely and don't send description update
+      finalData.description = originalHtmlDescription;
+    }
     
     updateDefectMutation.mutate(finalData);
   };
@@ -220,25 +216,36 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                     <FormLabel>Description *</FormLabel>
                     <FormControl>
                       <div className="space-y-2">
-                        <Textarea 
-                          placeholder="Describe the defect in detail" 
-                          className="min-h-24"
-                          {...field} 
-                        />
-                        {originalHtmlDescription.includes('<') && originalHtmlDescription.includes('_apis/wit/attachments/') && (
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <div className="text-sm text-blue-800 mb-2 font-medium">
-                              ℹ️ This description contains Azure DevOps images
+                        {originalHtmlDescription.includes('<') && originalHtmlDescription.includes('_apis/wit/attachments/') ? (
+                          <div className="space-y-3">
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-md">
+                              <div className="flex items-start space-x-2">
+                                <div className="text-amber-600 mt-0.5">🔒</div>
+                                <div>
+                                  <div className="text-sm font-medium text-amber-800 mb-1">
+                                    Description contains Azure DevOps images
+                                  </div>
+                                  <div className="text-xs text-amber-700">
+                                    This description cannot be edited from QualityBytes to preserve images. 
+                                    Please update the description directly in Azure DevOps if changes are needed.
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-blue-600 mb-2">
-                              Only text is shown for editing. Images and formatting will be preserved when saving.
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <div className="text-sm text-gray-600 mb-2 font-medium">Current description content:</div>
+                              <div 
+                                className="prose prose-sm max-w-none text-sm bg-white p-3 rounded border max-h-48 overflow-y-auto"
+                                dangerouslySetInnerHTML={{ __html: originalHtmlDescription }}
+                              />
                             </div>
-                            <div className="text-sm text-gray-600 mb-2">Original content preview:</div>
-                            <div 
-                              className="prose prose-sm max-w-none text-sm bg-white p-2 rounded border max-h-40 overflow-y-auto"
-                              dangerouslySetInnerHTML={{ __html: originalHtmlDescription }}
-                            />
                           </div>
+                        ) : (
+                          <Textarea 
+                            placeholder="Describe the defect in detail" 
+                            className="min-h-24"
+                            {...field} 
+                          />
                         )}
                       </div>
                     </FormControl>
