@@ -1401,6 +1401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange as string;
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
+      const sortBy = req.query.sortBy as string || 'defectId';
+      const sortOrder = req.query.sortOrder as string || 'asc';
 
       let defects = await storage.getDefects(projectId);
 
@@ -1466,6 +1468,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return createdAt >= startDate! && createdAt <= endDate;
           });
         }
+      }
+
+      // Apply sorting
+      if (sortBy && sortOrder) {
+        defects.sort((a, b) => {
+          let aValue: any = a[sortBy as keyof typeof a];
+          let bValue: any = b[sortBy as keyof typeof b];
+
+          // Handle different data types
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+          }
+
+          // Handle dates
+          if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
+            aValue = new Date(aValue).getTime();
+            bValue = new Date(bValue).getTime();
+          }
+
+          // Handle null/undefined values
+          if (aValue == null && bValue == null) return 0;
+          if (aValue == null) return sortOrder === 'asc' ? 1 : -1;
+          if (bValue == null) return sortOrder === 'asc' ? -1 : 1;
+
+          if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+          return 0;
+        });
       }
 
       // Calculate total count before pagination

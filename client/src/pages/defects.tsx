@@ -14,7 +14,7 @@ import { Plus, Search, Edit, Trash2, Filter } from "lucide-react";
 import CreateDefectModal from "@/components/modals/create-defect-modal";
 import EditDefectModal from "@/components/modals/edit-defect-modal";
 import { useProject } from "@/contexts/ProjectContext";
-import { useSorting } from "@/hooks/useSorting";
+
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import {
@@ -38,6 +38,8 @@ export default function Defects() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedDefects, setSelectedDefects] = useState<Set<number>>(new Set());
+  const [sortBy, setSortBy] = useState("defectId");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { selectedProject } = useProject();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -49,10 +51,10 @@ export default function Defects() {
   useEffect(() => {
     setCurrentPage(1);
     setSelectedDefects(new Set());
-  }, [statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery, selectedProject]);
+  }, [statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery, selectedProject, sortBy, sortOrder]);
 
   const { data: defectsResponse, isLoading } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery],
+    queryKey: ["/api/defects", selectedProject?.id, currentPage, pageSize, statusFilter, severityFilter, priorityFilter, projectFilter, debouncedSearchQuery, sortBy, sortOrder],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -81,6 +83,14 @@ export default function Defects() {
 
       if (debouncedSearchQuery.trim()) {
         params.append('search', debouncedSearchQuery.trim());
+      }
+
+      if (sortBy) {
+        params.append('sortBy', sortBy);
+      }
+
+      if (sortOrder) {
+        params.append('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/defects?${params}`);
@@ -178,12 +188,20 @@ export default function Defects() {
     },
   });
 
-  const { sortedData: sortedDefects, sortConfig, requestSort } = useSorting(defects, "defectId");
+  // Handle server-side sorting
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allDefectIds = new Set(sortedDefects.map((defect: any) => defect.id));
+      const allDefectIds = new Set(defects.map((defect: any) => defect.id));
       setSelectedDefects(allDefectIds);
     } else {
       setSelectedDefects(new Set());
@@ -200,8 +218,8 @@ export default function Defects() {
     setSelectedDefects(newSelected);
   };
 
-  const isAllSelected = sortedDefects.length > 0 && selectedDefects.size === sortedDefects.length;
-  const isIndeterminate = selectedDefects.size > 0 && selectedDefects.size < sortedDefects.length;
+  const isAllSelected = defects.length > 0 && selectedDefects.size === defects.length;
+  const isIndeterminate = selectedDefects.size > 0 && selectedDefects.size < defects.length;
 
   const handleBulkDelete = () => {
     if (selectedDefects.size === 0) return;
@@ -480,65 +498,65 @@ export default function Defects() {
                     </TableHead>
                     <SortableTableHead
                       sortKey="defectId"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Defect ID
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="title"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Title
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="severity"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Severity
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="priority"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Priority
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="status"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Status
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="assignedTo"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Assigned To
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="reportedBy"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Reported By
                     </SortableTableHead>
                     <SortableTableHead
                       sortKey="createdAt"
-                      currentSortKey={sortConfig.key}
-                      sortDirection={sortConfig.direction}
-                      onSort={requestSort}
+                      currentSortKey={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
                     >
                       Created
                     </SortableTableHead>
@@ -546,7 +564,7 @@ export default function Defects() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedDefects.map((defect: any) => (
+                  {defects.map((defect: any) => (
                     <TableRow key={defect.id}>
                       <TableCell>
                         <Checkbox 
