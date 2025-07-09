@@ -309,14 +309,15 @@ export class AzureWebhookService {
         return null;
       }
 
-      // Extract description from repro steps as primary source
+      // Extract description and steps to reproduce with correct mapping
       let description = "Imported from Azure DevOps";
+      let stepsToReproduce = "Imported from Azure DevOps";
 
-      // Check what fields are available for description
+      // Check what fields are available
       const hasReproSteps = resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'];
       const hasSystemDesc = resource.fields?.['System.Description'];
 
-      console.log("🔍 Starting description extraction from:", {
+      console.log("🔍 Starting field extraction with swapped mapping:", {
         hasReproSteps: !!hasReproSteps,
         hasSystemDesc: !!hasSystemDesc,
         reproStepsValue: hasReproSteps,
@@ -324,35 +325,35 @@ export class AzureWebhookService {
         availableFields: Object.keys(resource.fields || {})
       });
 
-      // Priority 1: Use ReproSteps if available (highest priority)
+      // Azure ReproSteps -> QualityBytes description
       if (hasReproSteps) {
         const reproValue = typeof hasReproSteps === 'string' ? hasReproSteps : hasReproSteps?.newValue;
         if (reproValue) {
-          console.log("🔍 Using ReproSteps as description source:", reproValue);
+          console.log("🔍 Using Azure ReproSteps for QualityBytes description:", reproValue);
           const reproContent = this.extractDescriptionFromHtml(reproValue);
           if (reproContent && reproContent.length > 3) {
             description = reproContent;
-            console.log("🔍 Successfully extracted from ReproSteps");
+            console.log("🔍 Successfully extracted description from Azure ReproSteps");
           }
         }
       }
 
-      // Priority 2: Use System.Description only if ReproSteps didn't work
-      if (description === "Imported from Azure DevOps" && hasSystemDesc) {
+      // Azure System.Description -> QualityBytes stepsToReproduce
+      if (hasSystemDesc) {
         const descValue = typeof hasSystemDesc === 'string' ? hasSystemDesc : hasSystemDesc?.newValue;
         if (descValue) {
-          console.log("🔍 Falling back to System.Description:", descValue);
+          console.log("🔍 Using Azure System.Description for QualityBytes stepsToReproduce:", descValue);
           const sysDescContent = this.extractDescriptionFromHtml(descValue);
           if (sysDescContent && sysDescContent.length > 3) {
-            description = sysDescContent;
-            console.log("🔍 Successfully extracted from System.Description");
+            stepsToReproduce = sysDescContent;
+            console.log("🔍 Successfully extracted stepsToReproduce from Azure System.Description");
           }
         }
       }
 
-      console.log("🔍 Final description extraction result:", {
+      console.log("🔍 Final field extraction result:", {
         extractedDescription: description,
-        originalDefault: "Imported from Azure DevOps"
+        extractedStepsToReproduce: stepsToReproduce
       });
 
       // Extract other fields with defaults - handle both create and update scenarios
@@ -381,7 +382,7 @@ export class AzureWebhookService {
         priority,
         severity,
         projectId: projectId || 2, // Use mapped project or default to project 2
-        stepsToReproduce: description,
+        stepsToReproduce: stepsToReproduce,
         environment: 'Azure DevOps Import',
         attachments: null
       };
@@ -420,10 +421,10 @@ export class AzureWebhookService {
       }
     }
 
-    // Handle Repro Steps updates (primary source for description in Azure DevOps)
+    // Handle Repro Steps updates (maps to QualityBytes description)
     if (fields['Microsoft.VSTS.TCM.ReproSteps']) {
       const reproStepsValue = fields['Microsoft.VSTS.TCM.ReproSteps'].newValue || fields['Microsoft.VSTS.TCM.ReproSteps'];
-      console.log(`🔍 Processing Repro Steps update:`, {
+      console.log(`🔍 Processing Repro Steps update (maps to description):`, {
         hasNewValue: !!fields['Microsoft.VSTS.TCM.ReproSteps'].newValue,
         valueType: typeof reproStepsValue,
         valueLength: reproStepsValue?.length || 0,
@@ -431,33 +432,21 @@ export class AzureWebhookService {
         containsImages: reproStepsValue?.includes('_apis/wit/attachments/') || false
       });
 
-      // Check if the content contains Azure DevOps images
-      const hasAzureImages = reproStepsValue?.includes('_apis/wit/attachments/');
-
-      if (hasAzureImages) {
-        // Preserve HTML content for images
-        const description = this.extractDescriptionFromHtml(reproStepsValue);
-        if (description) {
-          changes.description = description;
-          console.log(`🔄 Updated description from Repro Steps (with images): ${description.substring(0, 100)}...`);
-        }
-      } else {
-        // Use regular processing for text-only content
-        const description = this.extractDescriptionFromHtml(reproStepsValue);
-        if (description) {
-          changes.description = description;
-          console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
-        }
+      // Azure ReproSteps maps to QualityBytes description
+      const description = this.extractDescriptionFromHtml(reproStepsValue);
+      if (description) {
+        changes.description = description;
+        console.log(`🔄 Updated description from Azure Repro Steps: ${description.substring(0, 100)}...`);
       }
     }
 
-    // Handle System.Description updates (secondary source)
-    if (fields['System.Description'] && !changes.description) {
+    // Handle System.Description updates (maps to QualityBytes stepsToReproduce)
+    if (fields['System.Description']) {
       const descriptionValue = fields['System.Description'].newValue || fields['System.Description'];
-      const description = this.extractDescriptionFromHtml(descriptionValue);
-      if (description) {
-        changes.description = description;
-        console.log(`🔄 Updated description from System.Description: ${description.substring(0, 100)}...`);
+      const stepsToReproduce = this.extractDescriptionFromHtml(descriptionValue);
+      if (stepsToReproduce) {
+        changes.stepsToReproduce = stepsToReproduce;
+        console.log(`🔄 Updated stepsToReproduce from Azure System.Description: ${stepsToReproduce.substring(0, 100)}...`);
       }
     }
 

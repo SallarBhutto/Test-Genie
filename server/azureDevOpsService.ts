@@ -97,7 +97,7 @@ export class AzureDevOpsService {
         {
           op: 'add', 
           path: '/fields/System.Description',
-          value: this.formatDescription(defect, testCaseTitle)
+          value: defect.stepsToReproduce || defect.description
         },
         {
           op: 'add',
@@ -140,17 +140,11 @@ export class AzureDevOpsService {
         console.log(`🔍 Azure DevOps Area Path: Using default (project only)`);
       }
 
-      // Add repro steps with description and test case reference
-      let reproSteps = `${defect.description}`;
-      
-      // if (testCaseTitle) {
-      //   reproSteps += `\n\n**Related Test Case:** ${testCaseTitle}`;
-      // }
-      
+      // Add repro steps with QualityBytes description
       workItemFields.push({
         op: 'add',
         path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
-        value: reproSteps
+        value: defect.description
       });
 
       const url = `${this.baseUrl}/${this.config.project}/_apis/wit/workitems/$Bug?api-version=${this.config.apiVersion}`;
