@@ -534,11 +534,11 @@ export class AzureWebhookService {
     }
 
     // Fallback: Look for specific description pattern in the repro steps
-    const descriptionMatch = reproSteps.match(/\*\*Description:\*\*\s*(.+?)(?:\n\n|\*\*)/s);
-    if (descriptionMatch) {
-      console.log(`✅ Found description pattern in Repro Steps: ${descriptionMatch[1].substring(0, 100)}...`);
-      return descriptionMatch[1].trim();
-    }
+    // const descriptionMatch = reproSteps.match(/\*\*Description:\*\*\s*(.+?)(?:\n\n|\*\*)/s);
+    // if (descriptionMatch) {
+    //   console.log(`✅ Found description pattern in Repro Steps: ${descriptionMatch[1].substring(0, 100)}...`);
+    //   return descriptionMatch[1].trim();
+    // }
 
     // If no specific pattern, treat the entire content as description (cleaned)
     if (reproSteps.length > 10) {
