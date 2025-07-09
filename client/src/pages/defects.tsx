@@ -521,14 +521,9 @@ export default function Defects() {
                         {defect.defectId}
                       </TableCell>
                       <TableCell className="max-w-xs">
-                        {defect.description?.includes('<') && defect.description?.includes('_apis/wit/attachments/') ? (
-                          <div 
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: defect.description }}
-                          />
-                        ) : (
-                          defect.description
-                        )}
+                        <div className="font-medium text-neutral-900 dark:text-white truncate">
+                          {defect.title}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={cn("status-badge", getSeverityBadge(defect.severity))}>
