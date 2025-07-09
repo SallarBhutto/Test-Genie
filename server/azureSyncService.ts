@@ -1,4 +1,3 @@
-
 import { storage } from "./storage";
 import { settingsService } from "./settingsService";
 import { eventLogger } from "./eventLogger";
@@ -31,8 +30,63 @@ interface WorkItemDetails {
 }
 
 export class AzureSyncService {
-  private getAuthHeaders() {
-    return azureDevOpsService['getAuthHeaders']?.() || this.createAuthHeaders();
+  /**
+   * Test Azure DevOps connection and authentication
+   */
+  private async testConnection(organization: string, project: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const url = `https://dev.azure.com/${organization}/${project}/_apis/wit/workitemtypes?api-version=7.0`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: await this.getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.includes('<html')) {
+          return {
+            success: false,
+            message: 'Authentication failed. Please check your Personal Access Token and ensure it has the necessary permissions (Work Items - Read).'
+          };
+        }
+
+        return {
+          success: false,
+          message: `Connection test failed: ${response.status} - ${responseText}`
+        };
+      }
+
+      const responseText = await response.text();
+
+      if (responseText.trim().startsWith('<!DOCTYPE') || responseText.includes('<html')) {
+        return {
+          success: false,
+          message: 'Received HTML response instead of JSON. This indicates an authentication or permissions issue.'
+        };
+      }
+
+      // Try to parse the response
+      JSON.parse(responseText);
+
+      return {
+        success: true,
+        message: 'Connection successful'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  private async getAuthHeaders() {
+    if (azureDevOpsService['getAuthHeaders']) {
+      return azureDevOpsService['getAuthHeaders']();
+    }
+    return await this.createAuthHeaders();
   }
 
   private createAuthHeaders() {
@@ -66,10 +120,10 @@ export class AzureSyncService {
       wiql += ` ORDER BY [System.Id] DESC`;
 
       const url = `https://dev.azure.com/${organization}/${project}/_apis/wit/wiql?api-version=7.0`;
-      
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        headers: await this.getAuthHeaders(),
         body: JSON.stringify({ query: wiql })
       });
 
@@ -99,12 +153,12 @@ export class AzureSyncService {
       for (let i = 0; i < workItemIds.length; i += batchSize) {
         const batch = workItemIds.slice(i, i + batchSize);
         const ids = batch.join(',');
-        
+
         const url = `https://dev.azure.com/${organization}/${project}/_apis/wit/workitems?ids=${ids}&api-version=7.0`;
-        
+
         const response = await fetch(url, {
           method: 'GET',
-          headers: this.getAuthHeaders()
+          headers: await this.getAuthHeaders()
         });
 
         if (!response.ok) {
@@ -162,6 +216,12 @@ export class AzureSyncService {
 
       if (!azureConfig?.enabled || !azureConfig.organization || !azureConfig.project || !azureConfig.personalAccessToken) {
         throw new Error('Azure DevOps integration not configured or disabled');
+      }
+
+      // Test the connection before proceeding
+      const connectionTestResult = await this.testConnection(azureConfig.organization, azureConfig.project);
+      if (!connectionTestResult.success) {
+        throw new Error(`Azure DevOps connection failed: ${connectionTestResult.message}`);
       }
 
       // Get all QualityBytes projects with team names
@@ -238,12 +298,12 @@ export class AzureSyncService {
                 if (existingDefect) {
                   // Convert to webhook payload and process as update
                   const webhookPayload = this.createWebhookPayload(workItem);
-                  
+
                   console.log(`🔄 Updating existing defect ${existingDefect.defectId} from work item ${workItemId}`);
-                  
+
                   // Use the webhook service to handle the update
                   const result = await azureWebhookService['handleWorkItemUpdated'](webhookPayload, workItemId);
-                  
+
                   if (result.success) {
                     stats.updated++;
                     console.log(`✅ Updated defect ${existingDefect.defectId}`);
@@ -255,13 +315,13 @@ export class AzureSyncService {
               } else {
                 // Work item doesn't exist - create new defect
                 console.log(`🆕 Creating new defect from work item ${workItemId}`);
-                
+
                 // Convert to webhook payload and process as creation
                 const webhookPayload = this.createWebhookPayload(workItem);
-                
+
                 // Use the webhook service to handle the creation
                 const result = await azureWebhookService['handleWorkItemCreated'](webhookPayload, workItemId);
-                
+
                 if (result.success) {
                   stats.created++;
                   console.log(`✅ Created defect from work item ${workItemId}`);
@@ -305,7 +365,7 @@ export class AzureSyncService {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('❌ Full sync failed:', errorMsg);
-      
+
       eventLogger.logEvent({
         type: 'sync_error',
         message: 'Full sync failed',
@@ -340,7 +400,7 @@ export class AzureSyncService {
     try {
       const defects = await storage.getDefects();
       const projects = await storage.getProjects();
-      
+
       const totalDefectsWithAzureId = defects.filter(d => d.azureWorkItemId).length;
       const projectsWithTeamNames = projects.filter(p => p.teamName).length;
 
