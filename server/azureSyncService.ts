@@ -35,46 +35,121 @@ export class AzureSyncService {
    */
   private async testConnection(organization: string, project: string): Promise<{ success: boolean; message: string }> {
     try {
-      const url = `https://dev.azure.com/${organization}/${project}/_apis/wit/workitemtypes?api-version=7.0`;
+      // First test: Check if we can access the project itself
+      const projectUrl = `https://dev.azure.com/${organization}/_apis/projects/${project}?api-version=7.0`;
+      
+      console.log(`🔍 Testing Azure DevOps connection to: ${projectUrl}`);
+      
+      const headers = await this.getAuthHeaders();
+      console.log(`🔍 Using headers:`, { ...headers, Authorization: '[REDACTED]' });
 
-      const response = await fetch(url, {
+      const projectResponse = await fetch(projectUrl, {
         method: 'GET',
-        headers: await this.getAuthHeaders()
+        headers
       });
 
-      if (!response.ok) {
-        const responseText = await response.text();
+      console.log(`🔍 Project API response status: ${projectResponse.status}`);
+
+      if (!projectResponse.ok) {
+        const responseText = await projectResponse.text();
+        console.log(`🔍 Project API response text:`, responseText.substring(0, 200));
 
         if (responseText.trim().startsWith('<!DOCTYPE') || responseText.includes('<html')) {
           return {
             success: false,
-            message: 'Authentication failed. Please check your Personal Access Token and ensure it has the necessary permissions (Work Items - Read).'
+            message: 'Authentication failed. The Personal Access Token is invalid or lacks permissions. Please ensure the token has "Work Items - Read" permissions and is not expired.'
+          };
+        }
+
+        if (projectResponse.status === 401) {
+          return {
+            success: false,
+            message: 'Unauthorized: Please check your Personal Access Token. It may be invalid or expired.'
+          };
+        }
+
+        if (projectResponse.status === 403) {
+          return {
+            success: false,
+            message: 'Forbidden: The Personal Access Token lacks necessary permissions. Ensure it has "Work Items - Read" access.'
+          };
+        }
+
+        if (projectResponse.status === 404) {
+          return {
+            success: false,
+            message: `Project '${project}' not found in organization '${organization}'. Please verify the organization and project names.`
           };
         }
 
         return {
           success: false,
-          message: `Connection test failed: ${response.status} - ${responseText}`
+          message: `Connection test failed: ${projectResponse.status} - ${responseText}`
         };
       }
 
-      const responseText = await response.text();
+      const projectText = await projectResponse.text();
 
-      if (responseText.trim().startsWith('<!DOCTYPE') || responseText.includes('<html')) {
+      if (projectText.trim().startsWith('<!DOCTYPE') || projectText.includes('<html')) {
         return {
           success: false,
-          message: 'Received HTML response instead of JSON. This indicates an authentication or permissions issue.'
+          message: 'Received HTML response instead of JSON. This indicates an authentication or permissions issue with your Personal Access Token.'
         };
       }
 
-      // Try to parse the response
-      JSON.parse(responseText);
+      // Try to parse the project response
+      try {
+        const projectData = JSON.parse(projectText);
+        console.log(`✅ Successfully accessed project: ${projectData.name || 'Unknown'}`);
+      } catch (parseError) {
+        return {
+          success: false,
+          message: 'Invalid JSON response from Azure DevOps. This may indicate an authentication issue.'
+        };
+      }
+
+      // Second test: Check work item types access
+      const workItemTypesUrl = `https://dev.azure.com/${organization}/${project}/_apis/wit/workitemtypes?api-version=7.0`;
+      
+      const workItemResponse = await fetch(workItemTypesUrl, {
+        method: 'GET',
+        headers
+      });
+
+      if (!workItemResponse.ok) {
+        const responseText = await workItemResponse.text();
+        
+        if (workItemResponse.status === 403) {
+          return {
+            success: false,
+            message: 'Project access succeeded but Work Items access failed. Please ensure your Personal Access Token has "Work Items - Read" permissions.'
+          };
+        }
+
+        return {
+          success: false,
+          message: `Work Items API test failed: ${workItemResponse.status} - ${responseText}`
+        };
+      }
+
+      const workItemText = await workItemResponse.text();
+      
+      try {
+        const workItemData = JSON.parse(workItemText);
+        console.log(`✅ Work Items API access successful. Found ${workItemData.count || 0} work item types.`);
+      } catch (parseError) {
+        return {
+          success: false,
+          message: 'Invalid JSON response from Work Items API.'
+        };
+      }
 
       return {
         success: true,
-        message: 'Connection successful'
+        message: 'Connection successful. Both project and work items access verified.'
       };
     } catch (error) {
+      console.error('❌ Azure DevOps connection test error:', error);
       return {
         success: false,
         message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`

@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Loader2, Info } from "lucide-react";
+import { RefreshCw, Loader2, Info, AlertCircle } from "lucide-react";
 
 
 interface AzureDevOpsSettings {
