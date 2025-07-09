@@ -144,13 +144,13 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Defect</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -189,7 +189,7 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                             </div>
                             <div className="text-sm text-gray-600 mb-2">Preview:</div>
                             <div 
-                              className="prose prose-sm max-w-none text-sm bg-white p-2 rounded border"
+                              className="prose prose-sm max-w-none text-sm bg-white p-2 rounded border max-h-40 overflow-y-auto"
                               dangerouslySetInnerHTML={{ __html: field.value }}
                             />
                           </div>
