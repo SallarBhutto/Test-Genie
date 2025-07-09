@@ -1504,6 +1504,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Defects Statistics (must be before /:id route)
+  app.get("/api/defects/stats", async (req, res) => {
+    try {
+      console.log("📊 Fetching defects statistics...");
+      
+      const projectId = req.query.projectId
+        ? parseInt(req.query.projectId as string)
+        : undefined;
+      const filterProjectId = req.query.filterProjectId
+        ? parseInt(req.query.filterProjectId as string)
+        : undefined;
+      const status = req.query.status as string;
+      const severity = req.query.severity as string;
+      const priority = req.query.priority as string;
+      const search = req.query.search as string;
+      const dateRange = req.query.dateRange as string;
+      const dateFrom = req.query.dateFrom as string;
+      const dateTo = req.query.dateTo as string;
+
+      console.log("📊 Query parameters:", {
+        projectId,
+        filterProjectId,
+        status,
+        severity,
+        priority,
+        search,
+        dateRange,
+        dateFrom,
+        dateTo
+      });
+
+      // Ensure we have a fallback for database issues
+      let defects = [];
+      try {
+        console.log("📊 About to call storage.getDefects with projectId:", projectId);
+        defects = await storage.getDefects(projectId);
+        console.log("📊 Initial defects count:", defects.length);
+        console.log("📊 Sample defects:", defects.slice(0, 2));
+      } catch (dbError) {
+        console.error("📊 Database error fetching defects:", dbError);
+        console.error("📊 Database error stack:", dbError instanceof Error ? dbError.stack : 'No stack');
+        // Return empty stats instead of throwing
+        return res.json({
+          totalDefects: 0,
+          openDefects: 0,
+          inProgressDefects: 0,
+          resolvedDefects: 0,
+          closedDefects: 0,
+          reopenedDefects: 0,
+        });
+      }
+
+      // Ensure defects is an array
+      if (!Array.isArray(defects)) {
+        console.warn("📊 Defects is not an array:", typeof defects);
+        defects = [];
+      }
+
+      // Apply additional project filter if specified
+      if (filterProjectId) {
+        defects = defects.filter((d) => d && d.projectId === filterProjectId);
+        console.log("📊 After project filter:", defects.length);
+      }
+
+      // Apply status filter
+      if (status && status !== "all") {
+        defects = defects.filter((d) => d && d.status === status);
+        console.log("📊 After status filter:", defects.length);
+      }
+
+      // Apply severity filter
+      if (severity && severity !== "all") {
+        defects = defects.filter((d) => d && d.severity === severity);
+        console.log("📊 After severity filter:", defects.length);
+      }
+
+      // Apply priority filter
+      if (priority && priority !== "all") {
+        defects = defects.filter((d) => d && d.priority === priority);
+        console.log("📊 After priority filter:", defects.length);
+      }
+
+      // Apply search filter
+      if (search && search.trim()) {
+        const searchLower = search.toLowerCase();
+        defects = defects.filter(
+          (d) =>
+            d &&
+            d.title &&
+            d.defectId &&
+            (d.title.toLowerCase().includes(searchLower) ||
+            d.defectId.toLowerCase().includes(searchLower) ||
+            (d.description &&
+              d.description.toLowerCase().includes(searchLower))),
+        );
+        console.log("📊 After search filter:", defects.length);
+      }
+
+      // Apply date filtering
+      if (dateRange || (dateFrom && dateTo)) {
+        const now = new Date();
+        let startDate: Date | null = null;
+        let endDate: Date = now;
+
+        if (dateRange === "custom" && dateFrom && dateTo) {
+          startDate = new Date(dateFrom);
+          endDate = new Date(dateTo);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (dateRange) {
+          switch (dateRange) {
+            case "last7days":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "last30days":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            case "last90days":
+              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+              break;
+          }
+        }
+
+        if (startDate) {
+          defects = defects.filter((d) => {
+            if (!d || !d.createdAt) return false;
+            try {
+              const createdAt = new Date(d.createdAt);
+              return createdAt >= startDate! && createdAt <= endDate;
+            } catch (error) {
+              console.warn("📊 Invalid date in defect:", d.id, d.createdAt);
+              return false;
+            }
+          });
+          console.log("📊 After date filter:", defects.length);
+        }
+      }
+
+      // Calculate status-based counts with safe filtering
+      const totalDefects = defects.length;
+      const openDefects = defects.filter((d) => d && d.status === "open").length;
+      const inProgressDefects = defects.filter((d) => d && d.status === "in_progress").length;
+      const resolvedDefects = defects.filter((d) => d && d.status === "resolved").length;
+      const closedDefects = defects.filter((d) => d && d.status === "closed").length;
+      const reopenedDefects = defects.filter((d) => d && d.status === "reopened").length;
+
+      const result = {
+        totalDefects,
+        openDefects,
+        inProgressDefects,
+        resolvedDefects,
+        closedDefects,
+        reopenedDefects,
+      };
+
+      console.log("📊 Final statistics:", result);
+      res.json(result);
+    } catch (error) {
+      console.error("❌ Error fetching defects statistics:", error);
+      console.error("❌ Error details:", error instanceof Error ? error.message : "Unknown error");
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ 
+        message: "Failed to fetch defects statistics",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/defects/:id", async (req, res) => {
     try {
       const defect = await storage.getDefect(parseInt(req.params.id));
@@ -1841,170 +2008,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
-
-  // Defects Statistics
-  app.get("/api/defects/stats", async (req, res) => {
-    try {
-      console.log("📊 Fetching defects statistics...");
-      
-      const projectId = req.query.projectId
-        ? parseInt(req.query.projectId as string)
-        : undefined;
-      const filterProjectId = req.query.filterProjectId
-        ? parseInt(req.query.filterProjectId as string)
-        : undefined;
-      const status = req.query.status as string;
-      const severity = req.query.severity as string;
-      const priority = req.query.priority as string;
-      const search = req.query.search as string;
-      const dateRange = req.query.dateRange as string;
-      const dateFrom = req.query.dateFrom as string;
-      const dateTo = req.query.dateTo as string;
-
-      console.log("📊 Query parameters:", {
-        projectId,
-        filterProjectId,
-        status,
-        severity,
-        priority,
-        search,
-        dateRange,
-        dateFrom,
-        dateTo
-      });
-
-      // Ensure we have a fallback for database issues
-      let defects = [];
-      try {
-        defects = await storage.getDefects(projectId);
-        console.log("📊 Initial defects count:", defects.length);
-      } catch (dbError) {
-        console.error("📊 Database error fetching defects:", dbError);
-        // Return empty stats instead of throwing
-        return res.json({
-          totalDefects: 0,
-          openDefects: 0,
-          inProgressDefects: 0,
-          resolvedDefects: 0,
-          closedDefects: 0,
-          reopenedDefects: 0,
-        });
-      }
-
-      // Ensure defects is an array
-      if (!Array.isArray(defects)) {
-        console.warn("📊 Defects is not an array:", typeof defects);
-        defects = [];
-      }
-
-      // Apply additional project filter if specified
-      if (filterProjectId) {
-        defects = defects.filter((d) => d && d.projectId === filterProjectId);
-        console.log("📊 After project filter:", defects.length);
-      }
-
-      // Apply status filter
-      if (status && status !== "all") {
-        defects = defects.filter((d) => d && d.status === status);
-        console.log("📊 After status filter:", defects.length);
-      }
-
-      // Apply severity filter
-      if (severity && severity !== "all") {
-        defects = defects.filter((d) => d && d.severity === severity);
-        console.log("📊 After severity filter:", defects.length);
-      }
-
-      // Apply priority filter
-      if (priority && priority !== "all") {
-        defects = defects.filter((d) => d && d.priority === priority);
-        console.log("📊 After priority filter:", defects.length);
-      }
-
-      // Apply search filter
-      if (search && search.trim()) {
-        const searchLower = search.toLowerCase();
-        defects = defects.filter(
-          (d) =>
-            d &&
-            d.title &&
-            d.defectId &&
-            (d.title.toLowerCase().includes(searchLower) ||
-            d.defectId.toLowerCase().includes(searchLower) ||
-            (d.description &&
-              d.description.toLowerCase().includes(searchLower))),
-        );
-        console.log("📊 After search filter:", defects.length);
-      }
-
-      // Apply date filtering
-      if (dateRange || (dateFrom && dateTo)) {
-        const now = new Date();
-        let startDate: Date | null = null;
-        let endDate: Date = now;
-
-        if (dateRange === "custom" && dateFrom && dateTo) {
-          startDate = new Date(dateFrom);
-          endDate = new Date(dateTo);
-          endDate.setHours(23, 59, 59, 999);
-        } else if (dateRange) {
-          switch (dateRange) {
-            case "last7days":
-              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              break;
-            case "last30days":
-              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-              break;
-            case "last90days":
-              startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-              break;
-          }
-        }
-
-        if (startDate) {
-          defects = defects.filter((d) => {
-            if (!d || !d.createdAt) return false;
-            try {
-              const createdAt = new Date(d.createdAt);
-              return createdAt >= startDate! && createdAt <= endDate;
-            } catch (error) {
-              console.warn("📊 Invalid date in defect:", d.id, d.createdAt);
-              return false;
-            }
-          });
-          console.log("📊 After date filter:", defects.length);
-        }
-      }
-
-      // Calculate status-based counts with safe filtering
-      const totalDefects = defects.length;
-      const openDefects = defects.filter((d) => d && d.status === "open").length;
-      const inProgressDefects = defects.filter((d) => d && d.status === "in_progress").length;
-      const resolvedDefects = defects.filter((d) => d && d.status === "resolved").length;
-      const closedDefects = defects.filter((d) => d && d.status === "closed").length;
-      const reopenedDefects = defects.filter((d) => d && d.status === "reopened").length;
-
-      const result = {
-        totalDefects,
-        openDefects,
-        inProgressDefects,
-        resolvedDefects,
-        closedDefects,
-        reopenedDefects,
-      };
-
-      console.log("📊 Final statistics:", result);
-      res.json(result);
-    } catch (error) {
-      console.error("❌ Error fetching defects statistics:", error);
-      console.error("❌ Error details:", error instanceof Error ? error.message : "Unknown error");
-      console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
-      res.status(500).json({ 
-        message: "Failed to fetch defects statistics",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
 
   // Dashboard Statistics
   app.get("/api/dashboard/stats", async (req, res) => {
