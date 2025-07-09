@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for HTML content from Azure DevOps */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.prose div {
+  margin-bottom: 0.5rem;
+}
+
+.prose br {
+  content: "";
+  margin: 0.25rem 0;
+  display: block;
+  font-size: 24%;
+}
+
 :root {
   --background: 210 11% 98%; /* #F8FAFC */
   --foreground: 215 28% 17%; /* #1E293B */

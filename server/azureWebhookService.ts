@@ -428,15 +428,27 @@ export class AzureWebhookService {
         hasNewValue: !!fields['Microsoft.VSTS.TCM.ReproSteps'].newValue,
         valueType: typeof reproStepsValue,
         valueLength: reproStepsValue?.length || 0,
-        valuePreview: reproStepsValue?.substring(0, 100) + '...' || 'empty'
+        valuePreview: reproStepsValue?.substring(0, 100) + '...' || 'empty',
+        containsImages: reproStepsValue?.includes('_apis/wit/attachments/') || false
       });
       
-      const description = reproStepsValue; //this.extractDescriptionFromReproSteps(reproStepsValue);
-      if (description) {
-        changes.description = description;
-        console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
+      // Check if the content contains Azure DevOps images
+      const hasAzureImages = reproStepsValue?.includes('_apis/wit/attachments/');
+      
+      if (hasAzureImages) {
+        // Preserve HTML content for images
+        const description = this.extractDescriptionFromHtml(reproStepsValue);
+        if (description) {
+          changes.description = description;
+          console.log(`🔄 Updated description from Repro Steps (with images): ${description.substring(0, 100)}...`);
+        }
       } else {
-        console.log(`⚠️ No description extracted from Repro Steps`);
+        // Use regular processing for text-only content
+        const description = this.extractDescriptionFromHtml(reproStepsValue);
+        if (description) {
+          changes.description = description;
+          console.log(`🔄 Updated description from Repro Steps: ${description.substring(0, 100)}...`);
+        }
       }
     }
 
@@ -478,7 +490,7 @@ export class AzureWebhookService {
   }
 
   /**
-   * Extract clean description from HTML content
+   * Extract clean description from HTML content while preserving important formatting and images
    */
   private extractDescriptionFromHtml(htmlContent: string): string | null {
     if (!htmlContent) return null;
@@ -488,7 +500,28 @@ export class AzureWebhookService {
       return htmlContent.trim();
     }
 
-    // Simple HTML to text conversion for description
+    // Check if this contains Azure DevOps image references
+    const hasAzureImages = htmlContent.includes('_apis/wit/attachments/');
+    
+    if (hasAzureImages) {
+      // For content with Azure DevOps images, preserve the HTML structure
+      // but clean it up for better display
+      const cleanedHtml = htmlContent
+        .replace(/&nbsp;/g, ' ') // Replace &nbsp; with spaces
+        .replace(/&lt;/g, '<') // Decode HTML entities
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+      
+      // Add a note about Azure DevOps images
+      const imageNote = '\n\n[Note: This content contains images from Azure DevOps. Images may require Azure DevOps authentication to view.]';
+      
+      return cleanedHtml + imageNote;
+    }
+
+    // For content without images, convert to clean text as before
     const textContent = htmlContent
       .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
       .replace(/<\/p>/gi, '\n\n') // Convert </p> to double newlines

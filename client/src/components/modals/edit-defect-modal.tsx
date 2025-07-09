@@ -173,11 +173,22 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                   <FormItem className="col-span-2">
                     <FormLabel>Description *</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe the defect in detail" 
-                        className="min-h-24"
-                        {...field} 
-                      />
+                      <div className="space-y-2">
+                        <Textarea 
+                          placeholder="Describe the defect in detail" 
+                          className="min-h-24"
+                          {...field} 
+                        />
+                        {field.value?.includes('<') && field.value?.includes('_apis/wit/attachments/') && (
+                          <div className="p-3 bg-gray-50 border rounded-md">
+                            <div className="text-sm text-gray-600 mb-2">Preview (contains Azure DevOps content):</div>
+                            <div 
+                              className="prose prose-sm max-w-none text-sm"
+                              dangerouslySetInnerHTML={{ __html: field.value }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

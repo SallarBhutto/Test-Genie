@@ -58,31 +58,31 @@ export default function Defects() {
         page: currentPage.toString(),
         limit: pageSize.toString(),
       });
-      
+
       if (selectedProject?.id) {
         params.append('projectId', selectedProject.id.toString());
       }
-      
+
       if (statusFilter !== "all") {
         params.append('status', statusFilter);
       }
-      
+
       if (severityFilter !== "all") {
         params.append('severity', severityFilter);
       }
-      
+
       if (priorityFilter !== "all") {
         params.append('priority', priorityFilter);
       }
-      
+
       if (projectFilter !== "all") {
         params.append('filterProjectId', projectFilter);
       }
-      
+
       if (debouncedSearchQuery.trim()) {
         params.append('search', debouncedSearchQuery.trim());
       }
-      
+
       const response = await fetch(`/api/defects?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch defects');
@@ -168,10 +168,10 @@ export default function Defects() {
 
   const handleBulkDelete = () => {
     if (selectedDefects.size === 0) return;
-    
+
     const selectedCount = selectedDefects.size;
     const confirmMessage = `Are you sure you want to delete ${selectedCount} defect${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`;
-    
+
     if (window.confirm(confirmMessage)) {
       bulkDeleteDefectsMutation.mutate(Array.from(selectedDefects));
     }
@@ -520,8 +520,15 @@ export default function Defects() {
                       <TableCell className="font-medium text-primary">
                         {defect.defectId}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {defect.title}
+                      <TableCell className="max-w-xs">
+                        {defect.description?.includes('<') && defect.description?.includes('_apis/wit/attachments/') ? (
+                          <div 
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: defect.description }}
+                          />
+                        ) : (
+                          defect.description
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={cn("status-badge", getSeverityBadge(defect.severity))}>
@@ -633,7 +640,7 @@ export default function Defects() {
             </Select>
             <span className="text-sm text-neutral-600 dark:text-neutral-400">per page</span>
           </div>
-          
+
           <div className="flex items-center">
             <Pagination>
               <PaginationContent>
@@ -643,7 +650,7 @@ export default function Defects() {
                     className={!pagination.hasPrev ? "pointer-events-none opacity-50" : "cursor-pointer"}
                   />
                 </PaginationItem>
-                
+
                 {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                   let pageNum;
                   if (pagination.totalPages <= 5) {
@@ -655,7 +662,7 @@ export default function Defects() {
                   } else {
                     pageNum = pagination.page - 2 + i;
                   }
-                  
+
                   return (
                     <PaginationItem key={pageNum}>
                       <PaginationLink
@@ -668,7 +675,7 @@ export default function Defects() {
                     </PaginationItem>
                   );
                 })}
-                
+
                 <PaginationItem>
                   <PaginationNext 
                     onClick={() => pagination.hasNext && setCurrentPage(currentPage + 1)}
