@@ -85,12 +85,43 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
   // Extract the actual test cases array from the response
   const testCases = testCasesResponse?.data || [];
 
+  // Store original HTML description for saving
+  const [originalHtmlDescription, setOriginalHtmlDescription] = useState<string>("");
+
+  // Function to extract plain text from HTML
+  const extractPlainTextFromHtml = (htmlContent: string): string => {
+    if (!htmlContent) return "";
+    
+    // If it's already plain text, return it directly
+    if (!htmlContent.includes('<')) {
+      return htmlContent;
+    }
+
+    // Create a temporary div to parse HTML and extract text
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Get text content and clean it up
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    return textContent
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .replace(/\n\s+/g, '\n') // Clean up newlines
+      .trim();
+  };
+
   // Update form when defect data is loaded
   useEffect(() => {
     if (defect && open) {
+      // Store the original HTML description
+      setOriginalHtmlDescription(defect.description || "");
+      
+      // Extract plain text for display in textarea
+      const plainTextDescription = extractPlainTextFromHtml(defect.description || "");
+      
       form.reset({
         title: defect.title,
-        description: defect.description,
+        description: plainTextDescription,
         status: defect.status,
         severity: defect.severity,
         priority: defect.priority,
@@ -139,7 +170,22 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
   });
 
   const onSubmit = (data: InsertDefect) => {
-    updateDefectMutation.mutate(data);
+    // Check if the description contains HTML and preserve it if the text content is similar
+    const currentPlainText = extractPlainTextFromHtml(originalHtmlDescription);
+    const submittedText = data.description || "";
+    
+    // If the original was HTML and the submitted text is similar to the extracted plain text,
+    // preserve the original HTML structure
+    const shouldPreserveHtml = originalHtmlDescription.includes('<') && 
+                               originalHtmlDescription.includes('_apis/wit/attachments/') &&
+                               currentPlainText.trim() === submittedText.trim();
+    
+    const finalData = {
+      ...data,
+      description: shouldPreserveHtml ? originalHtmlDescription : data.description
+    };
+    
+    updateDefectMutation.mutate(finalData);
   };
 
   return (
@@ -179,18 +225,18 @@ export default function EditDefectModal({ open, onOpenChange, defectId }: EditDe
                           className="min-h-24"
                           {...field} 
                         />
-                        {field.value?.includes('<') && field.value?.includes('_apis/wit/attachments/') && (
+                        {originalHtmlDescription.includes('<') && originalHtmlDescription.includes('_apis/wit/attachments/') && (
                           <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <div className="text-sm text-blue-800 mb-2 font-medium">
                               ℹ️ This description contains Azure DevOps images
                             </div>
                             <div className="text-xs text-blue-600 mb-2">
-                              Images will be preserved when updating Azure DevOps. Edit carefully to maintain image references.
+                              Only text is shown for editing. Images and formatting will be preserved when saving.
                             </div>
-                            <div className="text-sm text-gray-600 mb-2">Preview:</div>
+                            <div className="text-sm text-gray-600 mb-2">Original content preview:</div>
                             <div 
                               className="prose prose-sm max-w-none text-sm bg-white p-2 rounded border max-h-40 overflow-y-auto"
-                              dangerouslySetInnerHTML={{ __html: field.value }}
+                              dangerouslySetInnerHTML={{ __html: originalHtmlDescription }}
                             />
                           </div>
                         )}
