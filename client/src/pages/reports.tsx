@@ -18,6 +18,7 @@ import {
   CalendarIcon
 } from "lucide-react";
 import DefectStatusChart from "@/components/charts/defect-status-chart";
+import DefectStatusPriorityChart from "@/components/charts/defect-status-priority-chart";
 import { useProject } from "@/contexts/ProjectContext";
 
 export default function Reports() {
@@ -237,9 +238,10 @@ export default function Reports() {
         </Card>
       </div>
 
-      {/* Charts Section - Only DefectStatusChart */}
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DefectStatusChart defects={filteredDefects || []} />
+        <DefectStatusPriorityChart defects={filteredDefects || []} />
       </div>
 
       {/* Test Case Analysis */}
