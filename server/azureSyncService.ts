@@ -158,14 +158,7 @@ export class AzureSyncService {
   }
 
   private async getAuthHeaders() {
-    if (azureDevOpsService['getAuthHeaders']) {
-      return azureDevOpsService['getAuthHeaders']();
-    }
-    return await this.createAuthHeaders();
-  }
-
-  private createAuthHeaders() {
-    const settings = settingsService.getSettings();
+    const settings = await settingsService.getSettings();
     const token = Buffer.from(`:${settings.azureDevOps?.personalAccessToken || ''}`).toString('base64');
     return {
       'Authorization': `Basic ${token}`,
