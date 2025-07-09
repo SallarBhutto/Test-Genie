@@ -81,7 +81,29 @@ export default function Dashboard() {
     },
   });
 
+  // Separate query to get ALL defects for the chart
+  const { data: allDefectsResponse } = useQuery({
+    queryKey: ["/api/defects/chart", selectedProject?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000', // Get all defects for accurate chart
+      });
+      
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch defects');
+      }
+      return response.json();
+    },
+  });
+
   const defects = defectsResponse?.data || [];
+  const allDefects = allDefectsResponse?.data || [];
 
   const { data: testRuns } = useQuery({
     queryKey: ["/api/test-runs", selectedProject?.id],
@@ -225,7 +247,7 @@ export default function Dashboard() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* <TestExecutionChart /> */}
-        <DefectStatusChart defects={(defects as any[]) || []} />
+        <DefectStatusChart defects={(allDefects as any[]) || []} />
         {/* Quick Actions */}
         <Card>
           <CardHeader>
