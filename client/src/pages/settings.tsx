@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sync, Loader2, Info } from "lucide-react";
+import { RefreshCw, Loader2, Info } from "lucide-react";
 
 
 interface AzureDevOpsSettings {
@@ -540,7 +540,7 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sync className="h-5 w-5" />
+                <RefreshCw className="h-5 w-5" />
                 Azure DevOps Sync
               </CardTitle>
               <CardDescription>
@@ -600,7 +600,7 @@ export default function Settings() {
                       </>
                     ) : (
                       <>
-                        <Sync className="h-4 w-4 mr-2" />
+                        <RefreshCw className="h-4 w-4 mr-2" />
                         Start Sync
                       </>
                     )}
@@ -640,7 +640,7 @@ export default function Settings() {
                       {isSyncing ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Sync className="h-4 w-4" />
+                        <RefreshCw className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
