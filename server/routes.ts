@@ -1814,9 +1814,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Defects Statistics (protected by license)
+  // Defects Statistics
   app.get("/api/defects/stats", async (req, res) => {
     try {
+      console.log("📊 Fetching defects statistics...");
+      
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
         : undefined;
@@ -1831,26 +1833,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateFrom = req.query.dateFrom as string;
       const dateTo = req.query.dateTo as string;
 
+      console.log("📊 Query parameters:", {
+        projectId,
+        filterProjectId,
+        status,
+        severity,
+        priority,
+        search,
+        dateRange,
+        dateFrom,
+        dateTo
+      });
+
       let defects = await storage.getDefects(projectId);
+      console.log("📊 Initial defects count:", defects.length);
 
       // Apply additional project filter if specified
       if (filterProjectId) {
         defects = defects.filter((d) => d.projectId === filterProjectId);
+        console.log("📊 After project filter:", defects.length);
       }
 
       // Apply status filter
       if (status && status !== "all") {
         defects = defects.filter((d) => d.status === status);
+        console.log("📊 After status filter:", defects.length);
       }
 
       // Apply severity filter
       if (severity && severity !== "all") {
         defects = defects.filter((d) => d.severity === severity);
+        console.log("📊 After severity filter:", defects.length);
       }
 
       // Apply priority filter
       if (priority && priority !== "all") {
         defects = defects.filter((d) => d.priority === priority);
+        console.log("📊 After priority filter:", defects.length);
       }
 
       // Apply search filter
@@ -1863,6 +1882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             (d.description &&
               d.description.toLowerCase().includes(searchLower)),
         );
+        console.log("📊 After search filter:", defects.length);
       }
 
       // Apply date filtering
@@ -1894,6 +1914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const createdAt = new Date(d.createdAt);
             return createdAt >= startDate! && createdAt <= endDate;
           });
+          console.log("📊 After date filter:", defects.length);
         }
       }
 
@@ -1905,17 +1926,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const closedDefects = defects.filter((d) => d.status === "closed").length;
       const reopenedDefects = defects.filter((d) => d.status === "reopened").length;
 
-      res.json({
+      const result = {
         totalDefects,
         openDefects,
         inProgressDefects,
         resolvedDefects,
         closedDefects,
         reopenedDefects,
-      });
+      };
+
+      console.log("📊 Final statistics:", result);
+      res.json(result);
     } catch (error) {
-      console.error("Error fetching defects statistics:", error);
-      res.status(500).json({ message: "Failed to fetch defects statistics" });
+      console.error("❌ Error fetching defects statistics:", error);
+      console.error("❌ Error details:", error instanceof Error ? error.message : "Unknown error");
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ 
+        message: "Failed to fetch defects statistics",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
