@@ -1815,7 +1815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Defects Statistics (protected by license)
-  app.get("/api/defects/stats", licenseMiddleware, async (req, res) => {
+  app.get("/api/defects/stats", async (req, res) => {
     try {
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
