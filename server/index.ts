@@ -74,9 +74,7 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Apply license middleware to root path and dashboard routes
-  app.get('/', licenseMiddleware, (req, res, next) => next());
-  app.get('/dashboard', licenseMiddleware, (req, res, next) => next());
+  // Routes no longer require license middleware - validation happens only at login
   
   // Setup vite AFTER API routes to prevent interference
   if (app.get("env") === "development") {

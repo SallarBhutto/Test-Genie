@@ -131,6 +131,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Username and password required" });
       }
 
+      // Validate license before allowing login
+      const licenseKey = req.headers['x-license-key'] as string || process.env.LICENSE_KEY;
+      
+      // In development mode, bypass license validation if no key is provided
+      if (process.env.NODE_ENV !== 'development' || licenseKey) {
+        if (!licenseKey) {
+          return res.status(403).json({ 
+            message: 'License key required. Provide via X-License-Key header or LICENSE_KEY environment variable.' 
+          });
+        }
+
+        try {
+          const { validateLicense } = await import('./utils/license');
+          const isValid = await validateLicense(licenseKey);
+          
+          if (!isValid) {
+            return res.status(403).json({ 
+              message: 'Invalid or expired license key.' 
+            });
+          }
+        } catch (error) {
+          console.error('License validation error during login:', error);
+          // In development mode, allow continuation if validation service is unavailable
+          if (process.env.NODE_ENV !== 'development') {
+            return res.status(500).json({ 
+              message: 'License validation service unavailable.' 
+            });
+          }
+        }
+      }
+
       const user = await storage.getUserByUsername(username);
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -1100,7 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/test-cases", licenseMiddleware, async (req, res) => {
+  app.post("/api/test-cases", async (req, res) => {
     console.log("=== TEST CASE CREATION START ===");
     console.log("Raw request body:", req.body);
 
@@ -1272,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/test-runs", licenseMiddleware, async (req, res) => {
+  app.post("/api/test-runs", async (req, res) => {
     try {
       const { testCaseIds, ...testRunData } = req.body;
       const validatedData = insertTestRunSchema.parse(testRunData);
@@ -1313,7 +1344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/test-runs/:id", licenseMiddleware, async (req, res) => {
+  app.patch("/api/test-runs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       console.log("Updating test run", id, "with data:", req.body);
@@ -1781,10 +1812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch(
-    "/api/test-run-results/:id",
-    licenseMiddleware,
-    async (req, res) => {
+  app.patch("/api/test-run-results/:id", async (req, res) => {
       try {
         const id = parseInt(req.params.id);
         const result = await storage.updateTestRunResult(id, req.body);
@@ -1978,8 +2006,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard Statistics (protected by license)
-  app.get("/api/dashboard/stats", licenseMiddleware, async (req, res) => {
+  // Dashboard Statistics
+  app.get("/api/dashboard/stats", async (req, res) => {
     try {
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
@@ -2083,7 +2111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reports Statistics with pre-calculated distributions
-  app.get("/api/reports/stats", licenseMiddleware, async (req, res) => {
+  app.get("/api/reports/stats", async (req, res) => {
     try {
       const projectId = req.query.projectId
         ? parseInt(req.query.projectId as string)
