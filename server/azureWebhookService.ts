@@ -1,4 +1,3 @@
-
 import { storage } from "./storage";
 import { settingsService } from "./settingsService";
 import { eventLogger } from "./eventLogger";
@@ -50,7 +49,7 @@ interface AzureWebhookPayload {
 }
 
 export class AzureWebhookService {
-  
+
   /**
    * Validates webhook signature to ensure it comes from Azure DevOps
    */
@@ -59,24 +58,24 @@ export class AzureWebhookService {
       console.warn("⚠️ Webhook signature validation skipped - no secret configured");
       return true; // Allow if no secret is configured
     }
-    
+
     const crypto = require('crypto');
     const expectedSignature = crypto
       .createHmac('sha256', secret)
       .update(payload)
       .digest('hex');
-    
+
     const receivedSignature = signature.replace('sha256=', '');
-    
+
     const isValid = crypto.timingSafeEqual(
       Buffer.from(expectedSignature, 'hex'),
       Buffer.from(receivedSignature, 'hex')
     );
-    
+
     if (!isValid) {
       console.error("❌ Webhook signature validation failed");
     }
-    
+
     return isValid;
   }
 
@@ -87,7 +86,7 @@ export class AzureWebhookService {
     try {
       // Azure DevOps work item webhooks use different field names for work item ID
       const workItemId = payload.resource?.workItemId || payload.resource?.id;
-      
+
       // Log webhook received
       eventLogger.logEvent({
         type: 'webhook_received',
@@ -131,7 +130,7 @@ export class AzureWebhookService {
 
     } catch (error) {
       console.error("❌ Error processing Azure DevOps webhook:", error);
-      
+
       // Log sync error
       eventLogger.logEvent({
         type: 'sync_error',
@@ -139,7 +138,7 @@ export class AzureWebhookService {
         message: "Error processing webhook",
         error: error instanceof Error ? error.message : "Unknown error occurred"
       });
-      
+
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
@@ -176,7 +175,7 @@ export class AzureWebhookService {
     try {
       // Create new defect in QualityBytes with proper Azure work item URL
       const azureWorkItemUrl = await azureDevOpsService.getWorkItemUrl(workItemId);
-      
+
       const newDefect = await storage.createDefect({
         ...defectData,
         azureWorkItemId: workItemId,
@@ -290,20 +289,20 @@ export class AzureWebhookService {
 
       // Extract title (required) - handle both create and update scenarios
       let title = resource.fields?.['System.Title']?.newValue;
-      
+
       // For created items, the title might be in a different structure
       if (!title && resource.fields?.['System.Title']) {
         // Try getting the value directly if newValue is not available
         title = resource.fields['System.Title'];
       }
-      
+
       // Log the title extraction process for debugging
       console.log("🔍 Title extraction debug:", {
         titleField: resource.fields?.['System.Title'],
         extractedTitle: title,
         allFields: Object.keys(resource.fields || {})
       });
-      
+
       if (!title) {
         console.warn("⚠️ No title found in work item");
         console.warn("Available fields:", Object.keys(resource.fields || {}));
@@ -312,11 +311,11 @@ export class AzureWebhookService {
 
       // Extract description from repro steps as primary source
       let description = "Imported from Azure DevOps";
-      
+
       // Check what fields are available for description
       const hasReproSteps = resource.fields?.['Microsoft.VSTS.TCM.ReproSteps'];
       const hasSystemDesc = resource.fields?.['System.Description'];
-      
+
       console.log("🔍 Starting description extraction from:", {
         hasReproSteps: !!hasReproSteps,
         hasSystemDesc: !!hasSystemDesc,
@@ -337,7 +336,7 @@ export class AzureWebhookService {
           }
         }
       }
-      
+
       // Priority 2: Use System.Description only if ReproSteps didn't work
       if (description === "Imported from Azure DevOps" && hasSystemDesc) {
         const descValue = typeof hasSystemDesc === 'string' ? hasSystemDesc : hasSystemDesc?.newValue;
@@ -360,11 +359,11 @@ export class AzureWebhookService {
       const statusValue = resource.fields?.['System.State']?.newValue || resource.fields?.['System.State'];
       const priorityValue = resource.fields?.['Microsoft.VSTS.Common.Priority']?.newValue || resource.fields?.['Microsoft.VSTS.Common.Priority'];
       const severityValue = resource.fields?.['Microsoft.VSTS.Common.Severity']?.newValue || resource.fields?.['Microsoft.VSTS.Common.Severity'];
-      
+
       const status = this.mapAzureStatusToQualityBytes(statusValue) || 'open';
       const priority = this.mapAzurePriorityToQualityBytes(priorityValue) || 'medium';
       const severity = this.mapAzureSeverityToQualityBytes(severityValue) || 'medium';
-      
+
       console.log("🔍 Field extraction debug:", {
         statusValue,
         priorityValue,
@@ -431,10 +430,10 @@ export class AzureWebhookService {
         valuePreview: reproStepsValue?.substring(0, 100) + '...' || 'empty',
         containsImages: reproStepsValue?.includes('_apis/wit/attachments/') || false
       });
-      
+
       // Check if the content contains Azure DevOps images
       const hasAzureImages = reproStepsValue?.includes('_apis/wit/attachments/');
-      
+
       if (hasAzureImages) {
         // Preserve HTML content for images
         const description = this.extractDescriptionFromHtml(reproStepsValue);
@@ -494,7 +493,7 @@ export class AzureWebhookService {
    */
   private extractDescriptionFromHtml(htmlContent: string): string | null {
     if (!htmlContent) return null;
-    
+
     // If it's already plain text, return it directly
     if (!htmlContent.includes('<')) {
       return htmlContent.trim();
@@ -502,7 +501,7 @@ export class AzureWebhookService {
 
     // Check if this contains Azure DevOps image references
     const hasAzureImages = htmlContent.includes('_apis/wit/attachments/');
-    
+
     if (hasAzureImages) {
       // For content with Azure DevOps images, preserve the HTML structure
       // but clean it up for better display
@@ -514,11 +513,8 @@ export class AzureWebhookService {
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .trim();
-      
-      // Add a note about Azure DevOps images
-      const imageNote = '\n\n[Note: This content contains images from Azure DevOps. Images may require Azure DevOps authentication to view.]';
-      
-      return cleanedHtml + imageNote;
+
+      return cleanedHtml;
     }
 
     // For content without images, convert to clean text as before
@@ -623,7 +619,7 @@ export class AzureWebhookService {
     try {
       // Get all projects from storage
       const projects = await storage.getProjects();
-      
+
       // Extract team name from area path (e.g., "ZDP-PIM\Merch" -> "Merch")
       const teamName = areaPath.split('\\').pop()?.trim();
       if (!teamName) return null;
@@ -634,7 +630,7 @@ export class AzureWebhookService {
       );
 
       console.log(`🔍 Area path mapping: "${areaPath}" -> team "${teamName}" -> project ${matchingProject?.id || 'not found'}`);
-      
+
       return matchingProject?.id || null;
     } catch (error) {
       console.error("❌ Error mapping area path to project:", error);
