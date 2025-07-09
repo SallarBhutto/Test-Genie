@@ -313,50 +313,23 @@ export class AzureDevOpsService {
 
       // Update description if provided
       if (updates.description) {
-        // Check if the description contains Azure DevOps images or HTML content
-        const hasAzureImages = updates.description?.includes('_apis/wit/attachments/');
-        const hasHtmlContent = updates.description?.includes('<') && updates.description?.includes('>');
+        console.log(`📝 Preserving original description content without QualityBytes metadata`);
         
-        if (hasAzureImages || hasHtmlContent) {
-          // If description contains Azure images or HTML, preserve the HTML format
-          console.log(`📝 Preserving HTML content in description update (images: ${hasAzureImages}, html: ${hasHtmlContent})`);
-          
-          // For System.Description, use the formatted version but preserve image HTML
-          const formattedDescription = this.formatDescriptionWithImages(updates, testCaseTitle);
-          workItemFields.push({
-            op: 'add',
-            path: '/fields/System.Description',
-            value: formattedDescription
-          });
-          
-          // For Repro Steps, preserve the original HTML with images
-          workItemFields.push({
-            op: 'add',
-            path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
-            value: updates.description
-          });
-          
-          console.log(`📝 Added description update with preserved HTML content`);
-        } else {
-          // Standard text-based description update
-          const formattedDescription = this.formatDescription(updates, testCaseTitle);
-          console.log(`📝 Adding standard description update:`, formattedDescription);
-          
-          // Update both System.Description and Repro Steps for better visibility
-          workItemFields.push({
-            op: 'add',
-            path: '/fields/System.Description',
-            value: formattedDescription
-          });
-          
-          workItemFields.push({
-            op: 'add',
-            path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
-            value: updates.description
-          });
-          
-          console.log(`📝 Adding repro steps update:`, updates.description);
-        }
+        // Always preserve the original description content without adding QualityBytes metadata
+        // Update both System.Description and Repro Steps with the original content
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/System.Description',
+          value: updates.description
+        });
+        
+        workItemFields.push({
+          op: 'add',
+          path: '/fields/Microsoft.VSTS.TCM.ReproSteps',
+          value: updates.description
+        });
+        
+        console.log(`📝 Added description update with original content preserved`);
       }
 
       // Update status if provided
