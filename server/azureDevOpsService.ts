@@ -280,7 +280,7 @@ export class AzureDevOpsService {
       this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
       
       // First, verify the work item exists
-      const checkUrl = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const checkUrl = `${this.baseUrl}/${this.config.project}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       console.log(`🔍 Check URL: ${checkUrl}`);
       console.log(`🔍 Base URL: ${this.baseUrl}`);
       const checkResponse = await fetch(checkUrl, {
@@ -399,7 +399,7 @@ export class AzureDevOpsService {
 
       console.log(`🔄 Sending ${workItemFields.length} field updates to Azure DevOps work item ${workItemId}`);
       
-      const url = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const url = `${this.baseUrl}/${this.config.project}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       
       const response = await fetch(url, {
         method: 'PATCH',
@@ -470,7 +470,7 @@ export class AzureDevOpsService {
       
       console.log(`🔍 Using base URL: ${this.baseUrl}`);
       
-      const url = `${this.baseUrl}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
+      const url = `${this.baseUrl}/${this.config.project}/_apis/wit/workitems/${workItemId}?api-version=${this.config.apiVersion}`;
       console.log(`🔍 Request URL: ${url}`);
       
       const authHeaders = this.getAuthHeaders();
@@ -540,7 +540,7 @@ export class AzureDevOpsService {
           personalAccessToken: settings.azureDevOps.personalAccessToken,
           apiVersion: '7.0'
         };
-        this.baseUrl = `https://dev.azure.com/${this.config.organization}/_apis`;
+        this.baseUrl = `https://dev.azure.com/${this.config.organization}`;
         console.log('🔍 Updated Azure DevOps config and baseUrl for defect creation');
       }
       
