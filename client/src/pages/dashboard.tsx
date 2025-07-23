@@ -3,21 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  FileText, 
-  Play, 
-  Bug, 
-  CheckCircle, 
-  TrendingUp, 
-  ArrowUp, 
-  ArrowDown, 
+import {
+  FileText,
+  Play,
+  Bug,
+  CheckCircle,
+  TrendingUp,
+  ArrowUp,
+  ArrowDown,
   Plus,
   Search,
   Edit,
   Trash2,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import CreateTestCaseModal from "@/components/modals/create-test-case-modal";
 import CreateDefectModal from "@/components/modals/create-defect-modal";
@@ -43,17 +50,17 @@ export default function Dashboard() {
     queryKey: ["/api/test-cases", selectedProject?.id, 1, 5], // Show only 5 recent test cases
     queryFn: async () => {
       const params = new URLSearchParams({
-        page: '1',
-        limit: '5',
+        page: "1",
+        limit: "5",
       });
-      
+
       if (selectedProject?.id) {
-        params.append('projectId', selectedProject.id.toString());
+        params.append("projectId", selectedProject.id.toString());
       }
-      
+
       const response = await fetch(`/api/test-cases?${params}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch test cases');
+        throw new Error("Failed to fetch test cases");
       }
       return response.json();
     },
@@ -62,26 +69,48 @@ export default function Dashboard() {
   const testCases = testCasesResponse?.data || [];
 
   const { data: defectsResponse } = useQuery({
-    queryKey: ["/api/defects", selectedProject?.id, 1, 100], // Get more defects for chart
+    queryKey: ["/api/defects", selectedProject?.id, 1, 10000], // Get more defects for chart
     queryFn: async () => {
       const params = new URLSearchParams({
-        page: '1',
-        limit: '100', // Get enough for dashboard overview
+        page: "1",
+        limit: "100", // Get enough for dashboard overview
       });
-      
+
       if (selectedProject?.id) {
-        params.append('projectId', selectedProject.id.toString());
+        params.append("projectId", selectedProject.id.toString());
       }
-      
+
       const response = await fetch(`/api/defects?${params}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch defects');
+        throw new Error("Failed to fetch defects");
+      }
+      return response.json();
+    },
+  });
+
+  // Separate query to get ALL defects for the chart
+  const { data: allDefectsResponse } = useQuery({
+    queryKey: ["/api/defects/chart", selectedProject?.id],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "10000", // Get all defects for accurate chart
+      });
+
+      if (selectedProject?.id) {
+        params.append("projectId", selectedProject.id.toString());
+      }
+
+      const response = await fetch(`/api/defects?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch defects");
       }
       return response.json();
     },
   });
 
   const defects = defectsResponse?.data || [];
+  const allDefects = allDefectsResponse?.data || [];
 
   const { data: testRuns } = useQuery({
     queryKey: ["/api/test-runs", selectedProject?.id],
@@ -91,30 +120,36 @@ export default function Dashboard() {
     queryKey: ["/api/users"],
   });
 
-  const filteredTestCases = (testCases as any[] || []).filter((testCase: any) =>
-    testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTestCases = ((testCases as any[]) || []).filter(
+    (testCase: any) =>
+      testCase.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      testCase.testCaseId.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
       passed: "status-passed",
-      failed: "status-failed", 
+      failed: "status-failed",
       blocked: "status-blocked",
       ready: "status-ready",
       draft: "status-draft",
     };
-    return statusClasses[status as keyof typeof statusClasses] || "status-draft";
+    return (
+      statusClasses[status as keyof typeof statusClasses] || "status-draft"
+    );
   };
 
   const getPriorityBadge = (priority: string) => {
     const priorityClasses = {
       critical: "priority-critical",
       high: "priority-high",
-      medium: "priority-medium", 
+      medium: "priority-medium",
       low: "priority-low",
     };
-    return priorityClasses[priority as keyof typeof priorityClasses] || "priority-medium";
+    return (
+      priorityClasses[priority as keyof typeof priorityClasses] ||
+      "priority-medium"
+    );
   };
 
   if (statsLoading || testCasesLoading) {
@@ -141,7 +176,9 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Test Cases</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                  Total Test Cases
+                </p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
                   {(stats as any)?.totalTestCases || 0}
                 </p>
@@ -152,7 +189,9 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 flex items-center text-sm">
               <span className="text-neutral-500 dark:text-neutral-400">
-                {selectedProject ? `Project: ${selectedProject.name}` : 'All Projects'}
+                {selectedProject
+                  ? `Project: ${selectedProject.name}`
+                  : "All Projects"}
               </span>
             </div>
           </CardContent>
@@ -162,7 +201,9 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Test Runs</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                  Test Runs
+                </p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
                   {(stats as any)?.testRuns || 0}
                 </p>
@@ -183,7 +224,9 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Open Defects</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                  Open Defects
+                </p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
                   {(stats as any)?.openDefects || 0}
                 </p>
@@ -204,7 +247,9 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Pass Rate</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                  Pass Rate
+                </p>
                 <p className="text-3xl font-bold text-neutral-900 dark:text-white">
                   {(stats as any)?.passRate || "0%"}
                 </p>
@@ -225,15 +270,15 @@ export default function Dashboard() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* <TestExecutionChart /> */}
-        <DefectStatusChart defects={(defects as any[]) || []} />
+        <DefectStatusChart defects={(allDefects as any[]) || []} />
         {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={() => setShowCreateTestCase(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -243,8 +288,8 @@ export default function Dashboard() {
               <Play className="w-4 h-4 mr-2" />
               Run Test Suite
             </Button> */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => setShowCreateDefect(true)}
             >
@@ -267,7 +312,13 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Recent Test Runs</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setLocation('/test-runs')}>View All</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/test-runs")}
+                >
+                  View All
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -276,65 +327,82 @@ export default function Dashboard() {
                   testRuns.slice(0, 3).map((testRun: any) => {
                     const getStatusIcon = (status: string) => {
                       switch (status) {
-                        case 'completed':
-                          return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
-                        case 'running':
-                          return <Play className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
-                        case 'failed':
-                          return <Bug className="w-5 h-5 text-red-600 dark:text-red-400" />;
+                        case "completed":
+                          return (
+                            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          );
+                        case "running":
+                          return (
+                            <Play className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                          );
+                        case "failed":
+                          return (
+                            <Bug className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          );
                         default:
-                          return <Play className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
+                          return (
+                            <Play className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          );
                       }
                     };
 
                     const getStatusColor = (status: string) => {
                       switch (status) {
-                        case 'completed':
-                          return 'bg-green-100 dark:bg-green-900/20';
-                        case 'running':
-                          return 'bg-yellow-100 dark:bg-yellow-900/20';
-                        case 'failed':
-                          return 'bg-red-100 dark:bg-red-900/20';
+                        case "completed":
+                          return "bg-green-100 dark:bg-green-900/20";
+                        case "running":
+                          return "bg-yellow-100 dark:bg-yellow-900/20";
+                        case "failed":
+                          return "bg-red-100 dark:bg-red-900/20";
                         default:
-                          return 'bg-blue-100 dark:bg-blue-900/20';
+                          return "bg-blue-100 dark:bg-blue-900/20";
                       }
                     };
 
                     const getStatusTextColor = (status: string) => {
                       switch (status) {
-                        case 'completed':
-                          return 'text-green-600 dark:text-green-400';
-                        case 'running':
-                          return 'text-yellow-600 dark:text-yellow-400';
-                        case 'failed':
-                          return 'text-red-600 dark:text-red-400';
+                        case "completed":
+                          return "text-green-600 dark:text-green-400";
+                        case "running":
+                          return "text-yellow-600 dark:text-yellow-400";
+                        case "failed":
+                          return "text-red-600 dark:text-red-400";
                         default:
-                          return 'text-blue-600 dark:text-blue-400';
+                          return "text-blue-600 dark:text-blue-400";
                       }
                     };
 
                     return (
-                      <div key={testRun.id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                      <div
+                        key={testRun.id}
+                        className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg"
+                      >
                         <div className="flex items-center space-x-4">
-                          <div className={`w-10 h-10 ${getStatusColor(testRun.status)} rounded-lg flex items-center justify-center`}>
+                          <div
+                            className={`w-10 h-10 ${getStatusColor(testRun.status)} rounded-lg flex items-center justify-center`}
+                          >
                             {getStatusIcon(testRun.status)}
                           </div>
                           <div>
-                            <p className="font-medium text-neutral-900 dark:text-white">{testRun.name}</p>
+                            <p className="font-medium text-neutral-900 dark:text-white">
+                              {testRun.name}
+                            </p>
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                              {testRun.executedAt ? 
-                                `Executed ${new Date(testRun.executedAt).toLocaleDateString()}` : 
-                                `Created ${new Date(testRun.createdAt).toLocaleDateString()}`
-                              }
+                              {testRun.executedAt
+                                ? `Executed ${new Date(testRun.executedAt).toLocaleDateString()}`
+                                : `Created ${new Date(testRun.createdAt).toLocaleDateString()}`}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`text-sm font-medium ${getStatusTextColor(testRun.status)}`}>
-                            {testRun.status.charAt(0).toUpperCase() + testRun.status.slice(1)}
+                          <p
+                            className={`text-sm font-medium ${getStatusTextColor(testRun.status)}`}
+                          >
+                            {testRun.status.charAt(0).toUpperCase() +
+                              testRun.status.slice(1)}
                           </p>
                           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {testRun.description || 'No description'}
+                            {testRun.description || "No description"}
                           </p>
                         </div>
                       </div>
@@ -349,8 +417,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-
-        
       </div>
 
       {/* Test Case Management Section */}
@@ -394,8 +460,10 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {filteredTestCases.slice(0, 10).map((testCase: any) => {
-                  const assignedUser = (users as any[]).find((u: any) => u.id === testCase.assignedTo);
-                  
+                  const assignedUser = (users as any[]).find(
+                    (u: any) => u.id === testCase.assignedTo,
+                  );
+
                   return (
                     <TableRow key={testCase.id}>
                       <TableCell>
@@ -406,12 +474,22 @@ export default function Dashboard() {
                       </TableCell>
                       <TableCell>{testCase.title}</TableCell>
                       <TableCell>
-                        <Badge className={cn("status-badge", getPriorityBadge(testCase.priority))}>
+                        <Badge
+                          className={cn(
+                            "status-badge",
+                            getPriorityBadge(testCase.priority),
+                          )}
+                        >
                           {testCase.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn("status-badge", getStatusBadge(testCase.status))}>
+                        <Badge
+                          className={cn(
+                            "status-badge",
+                            getStatusBadge(testCase.status),
+                          )}
+                        >
                           {testCase.status}
                         </Badge>
                       </TableCell>
@@ -420,12 +498,20 @@ export default function Dashboard() {
                           {assignedUser && (
                             <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
                               <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                {assignedUser.fullName ? assignedUser.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() : assignedUser.username[0].toUpperCase()}
+                                {assignedUser.fullName
+                                  ? assignedUser.fullName
+                                      .split(" ")
+                                      .map((n: string) => n[0])
+                                      .join("")
+                                      .toUpperCase()
+                                  : assignedUser.username[0].toUpperCase()}
                               </span>
                             </div>
                           )}
                           <span className="text-sm">
-                            {assignedUser?.fullName || assignedUser?.username || "Unassigned"}
+                            {assignedUser?.fullName ||
+                              assignedUser?.username ||
+                              "Unassigned"}
                           </span>
                         </div>
                       </TableCell>
@@ -454,13 +540,13 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <CreateTestCaseModal 
-        open={showCreateTestCase} 
-        onOpenChange={setShowCreateTestCase} 
+      <CreateTestCaseModal
+        open={showCreateTestCase}
+        onOpenChange={setShowCreateTestCase}
       />
-      <CreateDefectModal 
-        open={showCreateDefect} 
-        onOpenChange={setShowCreateDefect} 
+      <CreateDefectModal
+        open={showCreateDefect}
+        onOpenChange={setShowCreateDefect}
       />
     </div>
   );

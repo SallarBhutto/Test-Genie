@@ -213,7 +213,7 @@ export class AzureWebhookService {
   }
 
   /**
-   * Handle workitem.updated event - update existing defect in QualityBytes
+   * Handle workitem.updated event - update existing defect or create new one if not found
    */
   private async handleWorkItemUpdated(payload: AzureWebhookPayload, workItemId: number) {
     console.log(`🔄 Processing workitem.updated for work item ${workItemId}`);
@@ -222,10 +222,10 @@ export class AzureWebhookService {
     const defect = await this.findDefectByWorkItemId(workItemId);
     if (!defect) {
       console.log("ℹ️ No matching defect found for work item:", workItemId);
-      return {
-        success: true,
-        message: "No matching defect found"
-      };
+      console.log("🆕 Creating new defect from updated work item since it doesn't exist in QualityBytes");
+      
+      // Create new defect using the same logic as workitem.created
+      return await this.handleWorkItemCreated(payload, workItemId);
     }
 
     console.log(`✅ Found matching defect: ${defect.defectId} for work item ${workItemId}`);
